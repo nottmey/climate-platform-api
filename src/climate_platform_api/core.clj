@@ -21,7 +21,8 @@
   (ls/compile
     (dls/gen-schema
       {:resolve-db #(d/db db-conn)
-       :attributes (dld/attributes (d/db db-conn))})))
+       :attributes (->> (dld/attributes (d/db db-conn))
+                        (filter #(schema/valid-attribute-ident? (:db/id %))))})))
 
 ; http://localhost:8888/ide
 (defonce server nil)
