@@ -1,1 +1,12 @@
-{:deps {}}
+{:paths   ["src" "resources"]
+ :deps    {org.clojure/clojure              {:mvn/version "1.11.1"}
+           com.datomic/dev-local            {:mvn/version "1.0.243"}
+           io.aviso/pretty                  {:mvn/version "1.1.1"}
+           com.walmartlabs/lacinia          {:mvn/version "1.1"}
+           com.walmartlabs/lacinia-pedestal {:mvn/version "1.1"}
+           ch.qos.logback/logback-classic   {:mvn/version "1.2.11"}
+           ch.qos.logback/logback-core      {:mvn/version "1.2.11"}
+           io.pedestal/pedestal.log         {:mvn/version "0.5.10"}
+           nottmey/datomic-lacinia          {:git/url "https://github.com/nottmey/datomic-lacinia"
+                                             :git/sha "3762d94cdf3ad7a9de193eaad8c26612f0be6ffd"}}
+ :aliases {:repl {:extra-paths ["repl"]}}}
