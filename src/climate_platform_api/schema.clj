@@ -3,4 +3,4 @@
 (def initial-attributes [])
 
 (def valid-attribute-ident?
-  (set [:db/id :db/ident :db/doc]))
+  (set [:db/doc]))
