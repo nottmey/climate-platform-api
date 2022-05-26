@@ -2,7 +2,8 @@
   (:require [clojure.java.io :as io]
             [clojure.data.csv :as csv]
             [clojure.edn :as edn]
-            [clojure.instant :as instant]))
+            [clojure.instant :as instant])
+  (:import (java.net URI)))
 
 (defn csv-lines->maps [csv-columns csv-data]
   (map zipmap
@@ -61,7 +62,8 @@
    {:date "2005-07-16"}))
 
 (defn load-csv-data [{:keys [csv/file csv/skip-lines csv/columns
-                             steps/cleaning steps/expanding steps/splitting steps/coercing steps/adding]}]
+                             steps/cleaning steps/expanding steps/splitting steps/coercing
+                             steps/merging steps/prepending]}]
   (with-open [reader (io/reader file)]
     (let [csv-maps (csv-lines->maps
                      columns
@@ -70,74 +72,76 @@
                      (map (clean-values-fn cleaning))
                      (mapcat (expand-columns-fn expanding))
                      (map (splitting-columns-fn splitting))
-                     (map (coerce-values-fn coercing)))
-          result   (sequence csv-xf csv-maps)]
+                     (map (coerce-values-fn coercing))
+                     (map #(merge % merging)))
+          result   (concat
+                     prepending
+                     (sequence csv-xf csv-maps))]
       (doall result))))
 
-
-(comment
+(def initial-data
   (load-csv-data
-    {:csv/file        "resources/data/gistemp/l-oti/GLB.Ts+dSST.csv"
-     :csv/skip-lines  2
-     :csv/columns     [:time.slot/year
-                       "Jan"
-                       "Feb"
-                       "Mar"
-                       "Apr"
-                       "May"
-                       "Jun"
-                       "Jul"
-                       "Aug"
-                       "Sep"
-                       "Oct"
-                       "Nov"
-                       "Dec"
-                       "J-D"
-                       "D-N"
-                       "DJF"
-                       "MAM"
-                       "JJA"
-                       "SON"]
-     :steps/cleaning  ["***"]
-     :steps/expanding {:common-columns [:time.slot/year]
-                       :column-name    :time.slot/month
-                       :value-name     :temparature/difference}
-     :steps/splitting {:time.slot/month #(if (contains? #{"J-D" "D-N" "DJF" "MAM" "JJA" "SON"} %)
-                                           :time.slot/consecutive-months
-                                           :time.slot/month)}
-     :steps/coercing  {:time.slot/year               parse-long
-                       :time.slot/month              #(condp = %
-                                                        "Jan" 1
-                                                        "Feb" 2
-                                                        "Mar" 3
-                                                        "Apr" 4
-                                                        "May" 5
-                                                        "Jun" 6
-                                                        "Jul" 7
-                                                        "Aug" 8
-                                                        "Sep" 9
-                                                        "Oct" 10
-                                                        "Nov" 11
-                                                        "Dec" 12)
-                       :time.slot/consecutive-months #(condp = %
+    {:csv/file         "resources/data/gistemp/l-oti/GLB.Ts+dSST.csv"
+     :csv/skip-lines   2
+     :csv/columns      [:time.slot/year
+                        "Jan"
+                        "Feb"
+                        "Mar"
+                        "Apr"
+                        "May"
+                        "Jun"
+                        "Jul"
+                        "Aug"
+                        "Sep"
+                        "Oct"
+                        "Nov"
+                        "Dec"
+                        "J-D"
+                        "D-N"
+                        "DJF"
+                        "MAM"
+                        "JJA"
+                        "SON"]
+     :steps/cleaning   ["***"]
+     :steps/expanding  {:common-columns [:time.slot/year]
+                        :column-name    :time.slot/month
+                        :value-name     :value/temperature}
+     :steps/splitting  {:time.slot/month #(if (contains? #{"J-D" "D-N" "DJF" "MAM" "JJA" "SON"} %)
+                                            :time.slot/custom
+                                            :time.slot/month)}
+     :steps/coercing   {:time.slot/year    parse-long
+                        :time.slot/month   #(condp = %
+                                              "Jan" 1
+                                              "Feb" 2
+                                              "Mar" 3
+                                              "Apr" 4
+                                              "May" 5
+                                              "Jun" 6
+                                              "Jul" 7
+                                              "Aug" 8
+                                              "Sep" 9
+                                              "Oct" 10
+                                              "Nov" 11
+                                              "Dec" 12)
+                        :time.slot/custom  #(hash-map :time.slot.custom/consecutive-months
+                                                      (condp = %
                                                         "J-D" "JJASON"
                                                         "D-N" "DJFMAM"
-                                                        %)
-                       :temparature/difference       parse-double}
-     ; TODO implement prepending data and merging into individual values (instead of "steps/adding")
-     ; TODO add "base-period" with value ":time.slot/consecutive-years" 1951-1980
-     :steps/adding    {:value/type             :value.type/aggregation
-                       :value.aggregation/type :value.aggregation.type/mean
-                       :value/unit             :value.unit/celsius
-                       :source/dataset         {:source.dataset/name "GLOBAL Land-Ocean Temperature Index"
-                                                :source/direct       {:source/short-name  "GISTEMP v4"
-                                                                      :source/long-name   "GISS Surface Temperature Analysis (GISTEMP), version 4"
-                                                                      :source/description "The GISS Surface Temperature Analysis ver. 4 (GISTEMP v4) is an estimate of global surface temperature change. Graphs and tables are updated around the middle of every month using current data files from NOAA GHCN v4 (meteorological stations) and ERSST v5 (ocean areas), combined as described in our publications Hansen et al. (2010) and Lenssen et al. (2019)."
-                                                                      :source/homepage    "https://data.giss.nasa.gov/gistemp/"}
-                                                :source/underlying   [{:source/short-name "NOAA GHCN v4"}
-                                                                      {:source/short-name "ERSST v5"}]}}}))
-
-(def initial-data [])
+                                                        %))
+                        :value/temperature parse-double}
+     :steps/merging    {:value.generation/method  :value.generation.method/aggregation
+                        :value.aggregation/method :value.aggregation.method/mean
+                        :value/unit               :value.unit/celsius
+                        :value/context            :value.context/difference-to-base-period
+                        :value/dataset            {:dataset/name "GLOBAL Land-Ocean Temperature Index"}}
+     :steps/prepending [{:dataset/name        "GLOBAL Land-Ocean Temperature Index"
+                         :dataset/base-period {:time.slot.custom/consecutive-years "1951-1980"}
+                         :source/direct       {:source/short-name  "GISTEMP v4"
+                                               :source/long-name   "GISS Surface Temperature Analysis (GISTEMP), version 4"
+                                               :source/description "The GISS Surface Temperature Analysis ver. 4 (GISTEMP v4) is an estimate of global surface temperature change. Graphs and tables are updated around the middle of every month using current data files from NOAA GHCN v4 (meteorological stations) and ERSST v5 (ocean areas), combined as described in our publications Hansen et al. (2010) and Lenssen et al. (2019)."
+                                               :source/homepage    (URI. "https://data.giss.nasa.gov/gistemp/")}
+                         :source/underlying   [{:source/short-name "NOAA GHCN v4"}
+                                               {:source/short-name "ERSST v5"}]}]}))
 
 
 

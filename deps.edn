@@ -9,5 +9,5 @@
            ch.qos.logback/logback-core      {:mvn/version "1.2.11"}
            io.pedestal/pedestal.log         {:mvn/version "0.5.10"}
            nottmey/datomic-lacinia          {:git/url "https://github.com/nottmey/datomic-lacinia"
-                                             :git/sha "3762d94cdf3ad7a9de193eaad8c26612f0be6ffd"}}
+                                             :git/sha "eda51b4b0f9f45d0f9986ad08759f56ce37aae92"}}
  :aliases {:repl {:extra-paths ["repl"]}}}
