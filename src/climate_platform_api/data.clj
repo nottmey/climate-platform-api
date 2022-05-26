@@ -1,8 +1,7 @@
 (ns climate-platform-api.data
-  (:require [clojure.java.io :as io]
-            [clojure.data.csv :as csv]
-            [clojure.edn :as edn]
-            [clojure.instant :as instant])
+  (:require [clojure.data.csv :as csv]
+            [clojure.instant :as instant]
+            [clojure.java.io :as io])
   (:import (java.net URI)))
 
 (defn csv-lines->maps [csv-columns csv-data]

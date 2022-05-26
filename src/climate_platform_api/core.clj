@@ -1,12 +1,12 @@
 (ns climate-platform-api.core
-  (:require [datomic-lacinia.schema :as dls]
-            [datomic-lacinia.datomic :as dld]
-            [com.walmartlabs.lacinia.schema :as ls]
-            [com.walmartlabs.lacinia.pedestal2 :as lp]
-            [datomic.client.api :as d]
-            [io.pedestal.http :as http]
+  (:require [climate-platform-api.data :as data]
             [climate-platform-api.schema :as schema]
-            [climate-platform-api.data :as data]))
+            [com.walmartlabs.lacinia.pedestal2 :as lp]
+            [com.walmartlabs.lacinia.schema :as ls]
+            [datomic-lacinia.datomic :as dld]
+            [datomic-lacinia.schema :as dls]
+            [datomic.client.api :as d]
+            [io.pedestal.http :as http]))
 
 (defonce db-client (d/client {:server-type :dev-local
                               :storage-dir :mem
