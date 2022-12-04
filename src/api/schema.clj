@@ -1,4 +1,4 @@
-(ns climate-platform-api.schema)
+(ns api.schema)
 
 (def initial-attributes
   [{:db/ident       :time.slot/month

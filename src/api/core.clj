@@ -1,6 +1,6 @@
-(ns climate-platform-api.core
-  (:require [climate-platform-api.data :as data]
-            [climate-platform-api.schema :as schema]
+(ns api.core
+  (:require [api.data :as data]
+            [api.schema :as schema]
             [com.walmartlabs.lacinia.pedestal2 :as lp]
             [com.walmartlabs.lacinia.schema :as ls]
             [datomic-lacinia.datomic :as dld]

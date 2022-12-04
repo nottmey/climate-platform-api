@@ -1,4 +1,4 @@
 (ns user
-  (:require [climate-platform-api.core :refer [start!]]))
+  (:require [api.core :as core]))
 
-(start!)
+(def start! core/start!)

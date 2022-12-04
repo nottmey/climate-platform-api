@@ -1,4 +1,4 @@
-(ns climate-platform-api.data
+(ns api.data
   (:require [clojure.data.csv :as csv]
             [clojure.instant :as instant]
             [clojure.java.io :as io])
