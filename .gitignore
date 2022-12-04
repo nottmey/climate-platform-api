@@ -1,6 +1,7 @@
 .clj-kondo/**
 !.clj-kondo/config.edn
 .cpcache/
+.datomic-ions/
 .idea/
 .nrepl-port
 *.iml
