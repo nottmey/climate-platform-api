@@ -60,6 +60,5 @@
 (defn get-schema [db]
   (->> (d/pull db '{:eid 0 :selector [{:db.install/attribute [*]}]})
        :db.install/attribute
-       (remove (fn [m] (str/starts-with? (namespace (:db/ident m)) "db")))
        (map #(update % :db/valueType :db/ident))
        (map #(update % :db/cardinality :db/ident))))

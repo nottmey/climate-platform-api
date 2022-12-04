@@ -1,5 +1,5 @@
 {:server-type :ion
  :region      "eu-central-1"
- :system      "climate-ideas"
+ :system      "climate-platform"
  ; ClientApiGatewayEndpoint output from cloudformation stack
- :endpoint    "https://g96u70pn2b.execute-api.eu-central-1.amazonaws.com"}
+ :endpoint    "https://lq9ksphsr1.execute-api.eu-central-1.amazonaws.com"}
