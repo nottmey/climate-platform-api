@@ -1,7 +1,6 @@
 (ns ions.utils
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.string :as str]
             [datomic.client.api :as d]
             [cognitect.anomalies :as anomalies]
             [io.pedestal.log :as log]))
@@ -60,6 +59,5 @@
 (defn get-schema [db]
   (->> (d/pull db '{:eid 0 :selector [{:db.install/attribute [*]}]})
        :db.install/attribute
-       (remove (fn [m] (str/starts-with? (namespace (:db/ident m)) "db")))
        (map #(update % :db/valueType :db/ident))
        (map #(update % :db/cardinality :db/ident))))

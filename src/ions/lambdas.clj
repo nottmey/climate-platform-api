@@ -11,3 +11,6 @@
   (-> (utils/get-db)
       utils/get-schema
       write-end-str))
+
+(comment
+  (get-schema nil))

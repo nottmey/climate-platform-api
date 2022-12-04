@@ -1,3 +1,3 @@
-{:app-name "climate-ideas"
- :lambdas  {:get-schema {:fn          ions/get-schema
+{:app-name "climate-platform"
+ :lambdas  {:get-schema {:fn          ions.lambdas/get-schema
                          :description "demo function for example deployment"}}}

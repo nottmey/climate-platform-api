@@ -5,3 +5,7 @@
 .idea/
 .nrepl-port
 *.iml
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out
