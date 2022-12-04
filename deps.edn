@@ -5,7 +5,7 @@
            com.datomic/client-api         {:mvn/version "1.0.58"} ; matches version in ion
            com.datomic/client-cloud       {:mvn/version "1.0.120"} ; matches version in ion
            com.datomic/client-impl-shared {:mvn/version "1.0.98"} ; matches version in ion
-           com.datomic/ion                {:mvn/version "1.0.59"}
+           com.datomic/ion                {:mvn/version "1.0.59"} ; matches version in ion
            io.pedestal/pedestal.log       {:mvn/version "0.5.10"}
            org.clojure/clojure            {:mvn/version "1.11.1"}
            org.clojure/data.json          {:mvn/version "2.4.0"}
