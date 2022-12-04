@@ -1,9 +1,13 @@
 {:paths   ["src" "resources"]
- :deps    {ch.qos.logback/logback-classic   {:mvn/version "1.4.5"}
-           ch.qos.logback/logback-core      {:mvn/version "1.4.5"}
-           com.cognitect/anomalies          {:mvn/version "0.1.12"}
-           com.datomic/client-cloud         {:mvn/version "1.0.122"}
-           io.pedestal/pedestal.log         {:mvn/version "0.5.10"}
-           org.clojure/clojure              {:mvn/version "1.11.1"}
-           org.clojure/data.json            {:mvn/version "2.4.0"}}
+ :deps    {ch.qos.logback/logback-classic {:mvn/version "1.4.5"}
+           ch.qos.logback/logback-core    {:mvn/version "1.4.5"}
+           com.cognitect/anomalies        {:mvn/version "0.1.12"}
+           com.datomic/client             {:mvn/version "1.0.126"}
+           com.datomic/client-api         {:mvn/version "1.0.58"}
+           com.datomic/client-cloud       {:mvn/version "1.0.120"}
+           com.datomic/client-impl-shared {:mvn/version "1.0.98"}
+           io.pedestal/pedestal.log       {:mvn/version "0.5.10"}
+           org.clojure/clojure            {:mvn/version "1.11.1"}
+           org.clojure/data.json          {:mvn/version "2.4.0"}
+           org.slf4j/slf4j-api            {:mvn/version "1.7.32"}}
  :aliases {:repl {:extra-paths ["repl"]}}}
