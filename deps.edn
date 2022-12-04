@@ -9,6 +9,7 @@
            com.walmartlabs/lacinia-pedestal {:mvn/version "1.1"}
            io.aviso/pretty                  {:mvn/version "1.3"}
            io.pedestal/pedestal.log         {:mvn/version "0.5.10"}
+           javax.xml.bind/jaxb-api          {:mvn/version "2.4.0-b180830.0359"}
            nottmey/datomic-lacinia          {:git/url "git@github.com:nottmey/datomic-lacinia.git"
                                              :sha     "eda51b4b0f9f45d0f9986ad08759f56ce37aae92"}
            org.clojure/clojure              {:mvn/version "1.11.1"}
