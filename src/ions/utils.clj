@@ -1,7 +1,6 @@
 (ns ions.utils
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.string :as str]
             [datomic.client.api :as d]
             [cognitect.anomalies :as anomalies]
             [io.pedestal.log :as log]))
