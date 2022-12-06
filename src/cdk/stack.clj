@@ -1,6 +1,7 @@
 (ns cdk.stack
-  (:import (software.amazon.awscdk App Environment RemovalPolicy Stack StackProps)
-           (software.amazon.awscdk.services.s3 Bucket$Builder)))
+  (:require [cdk.app-sync :as as]
+            [io.pedestal.log :as log])
+  (:import (software.amazon.awscdk App Environment Stack StackProps)))
 
 (defn synth [opts]
   (let [app   (App.)
@@ -9,15 +10,12 @@
                             (.account (System/getenv "CDK_DEFAULT_ACCOUNT"))
                             (.region (System/getenv "CDK_DEFAULT_REGION"))
                             (.build)))
-                  (.description "Some description")
-                  (.tags {"Type"        "Example"
-                          "Application" "hello-cdk"})
+                  (.description "Delivering a dynamically generated AppSync gateway based on our datomic instance.")
+                  (.tags {"Type"        "API"
+                          "Application" "climate-platform"})
                   (.build))
-        stack (Stack. app "HelloCdkStack" props)]
-    (-> (Bucket$Builder/create stack "MyFirstBucket")
-        (.versioned true)
-        (.removalPolicy RemovalPolicy/DESTROY)
-        (.autoDeleteObjects true)
-        (.build))
+        stack (Stack. app "climate-platform-app-sync" props)]
+    (log/info :message "Synthesizing api stack" :options opts)
+    (as/app-sync stack)
     (.synth app)))
 
