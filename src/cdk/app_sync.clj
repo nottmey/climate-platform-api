@@ -1,5 +1,4 @@
 (ns cdk.app-sync
-  (:require [clojure.string :as str])
   (:import (software.amazon.awscdk RemovalPolicy Stack)
            (software.amazon.awscdk.services.appsync CfnApiKey$Builder CfnDataSource$Builder CfnDataSource$DynamoDBConfigProperty CfnGraphQLApi$Builder CfnGraphQLSchema$Builder CfnResolver$Builder)
            (software.amazon.awscdk.services.dynamodb Attribute AttributeType BillingMode StreamViewType Table$Builder)
@@ -17,7 +16,7 @@
     ; tutorial https://github.com/aws-samples/aws-cdk-examples/blob/6c7efd82807d60648543393cc70a2a0343b1c0ec/typescript/appsync-graphql-dynamodb/index.ts
     (let [schema-template  "
             type items {
-              itemsId: ID!
+              itemId: ID!
               name: String
             }
             type Paginateditems {
@@ -26,11 +25,11 @@
             }
             type Query {
               all(limit: Int, nextToken: String): Paginateditems!
-              getOne(itemsId: ID!): items
+              getOne(itemId: ID!): items
             }
             type Mutation {
               save(name: String!): items
-              delete(itemsId: ID!): items
+              delete(itemId: ID!): items
             }
             type Schema {
               query: Query
@@ -43,7 +42,7 @@
           items-table      (-> (Table$Builder/create stack "tutorial-table")
                                (.tableName "items")
                                (.partitionKey (-> (Attribute/builder)
-                                                  (.name "itemsId")
+                                                  (.name "itemId")
                                                   (.type AttributeType/STRING)
                                                   (.build)))
                                (.billingMode BillingMode/PAY_PER_REQUEST)
@@ -73,7 +72,7 @@
                                       \"version\": \"2017-02-28\",
                                       \"operation\": \"GetItem\",
                                       \"key\": {
-                                        \"itemsId\": $util.dynamodb.toDynamoDBJson($ctx.args.itemsId)
+                                        \"itemId\": $util.dynamodb.toDynamoDBJson($ctx.args.itemId)
                                       }
                                     }")
           (.responseMappingTemplate "$util.toJson($ctx.result)")
@@ -104,7 +103,7 @@
                                       \"version\": \"2017-02-28\",
                                       \"operation\": \"PutItem\",
                                       \"key\": {
-                                        \"itemsId\": { \"S\": \"$util.autoId()\" }
+                                        \"itemId\": { \"S\": \"$util.autoId()\" }
                                       },
                                       \"attributeValues\": {
                                         \"name\": $util.dynamodb.toDynamoDBJson($ctx.args.name)
@@ -123,7 +122,7 @@
                                       \"version\": \"2017-02-28\",
                                       \"operation\": \"DeleteItem\",
                                       \"key\": {
-                                        \"itemsId\": $util.dynamodb.toDynamoDBJson($ctx.args.itemsId)
+                                        \"itemId\": $util.dynamodb.toDynamoDBJson($ctx.args.itemId)
                                       }
                                     }")
           (.responseMappingTemplate "$util.toJson($ctx.result)")
