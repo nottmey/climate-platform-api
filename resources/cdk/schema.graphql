@@ -4,26 +4,9 @@ type Schema {
 }
 
 type Query {
-    helloFromIon: Message
-    all(limit: Int, nextToken: String): PaginatedItems!
-    getOne(itemId: ID!): Item
+    databases: [String!]
 }
 
 type Mutation {
-    save(name: String!): Item
-    delete(itemId: ID!): Item
-}
-
-type PaginatedItems {
-    items: [Item!]!
-    nextToken: String
-}
-
-type Item {
-    itemId: ID!
-    name: String
-}
-
-type Message {
-    message: String!
+    save(name: String!): [String!] # example
 }

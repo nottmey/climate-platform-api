@@ -15,7 +15,7 @@
                           "Application" "climate-platform"})
                   (.build))
         stack (Stack. app "climate-platform-api" props)]
-    (log/info :message "Synthesizing api stack" :options opts)
+    (log/info :message "Synthesizing api stack")
     (as/app-sync stack)
     (.synth app)))
 
