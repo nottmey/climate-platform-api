@@ -1,19 +1,19 @@
 (ns ions.lambdas
-  (:require [clojure.pprint :as pp]
-            [clojure.data.json :as json]))
-
-(defn- write-edn-str ^String [x]
-  (binding [*print-length* nil
-            *print-level*  nil]
-    (with-out-str (pp/pprint x))))
+  (:require [clojure.data.json :as json]
+            [ions.resolvers :as resolvers]))
 
 ; result needs to be string serialized json
 ; default response mapping is applied: https://docs.aws.amazon.com/appsync/latest/devguide/resolver-mapping-template-reference-lambda.html#lambda-mapping-template-bypass-response
 (defn datomic-resolver [{lambda-context :context
                          app-sync-input :input}]
   ; the so called `$context` in https://docs.aws.amazon.com/appsync/latest/devguide/resolver-context-reference.html
-  (let [app-sync-context (json/read-str app-sync-input)]
-    (json/write-str {"message" (write-edn-str app-sync-context)})))
+  (let [app-sync-context (json/read-str app-sync-input)
+        parent-type-name (keyword (get-in app-sync-context ["info" "parentTypeName"]))
+        field-name       (keyword (get-in app-sync-context ["info" "fieldName"]))]
+    (-> {:parent-type-name parent-type-name
+         :field-name       field-name}
+        resolvers/datomic-resolve
+        json/write-str)))
 
 (comment
   ; example
@@ -31,9 +31,9 @@
                                                "identity"  nil,
                                                "source"    nil,
                                                "prev"      nil,
-                                               "info"      {"selectionSetList"    ["message"],
-                                                            "selectionSetGraphQL" "{\n  message\n}",
-                                                            "fieldName"           "helloFromIon",
+                                               "info"      {"selectionSetList"    ["message"], ; not consistent
+                                                            "selectionSetGraphQL" "{\n  message\n}", ; not consistent
+                                                            "fieldName"           "databases",
                                                             "parentTypeName"      "Query",
                                                             "variables"           {}},
                                                "stash"     {},

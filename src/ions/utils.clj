@@ -50,6 +50,12 @@
 (comment
   (with-retry #(throw (ex-info "demo" {::anomalies/category ::anomalies/busy}))))
 
+(defn list-databases []
+  (with-retry #(d/list-databases (get-client) {:timeout 1000 :limit -1})))
+
+(comment
+  (list-databases))
+
 (defn get-connection []
   (with-retry #(d/connect (get-client) {:db-name database-name})))
 
@@ -61,3 +67,4 @@
        :db.install/attribute
        (map #(update % :db/valueType :db/ident))
        (map #(update % :db/cardinality :db/ident))))
+
