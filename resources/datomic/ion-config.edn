@@ -1,4 +1,3 @@
 {:app-name "climate-platform"
- :lambdas  {:hello-world {:fn ions.lambdas/hello-world}
-            :get-schema  {:fn          ions.lambdas/get-schema
-                          :description "demo function for example deployment"}}}
+ :lambdas  {:datomic-resolver {:fn          ions.lambdas/datomic-resolver
+                               :description "Resolves all GraphQL requests to the datomic data source."}}}
