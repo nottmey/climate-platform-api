@@ -3,7 +3,7 @@
             [ions.utils :as utils]
             [clojure.data.json :as json]))
 
-(defn- write-end-str ^String [x]
+(defn- write-edn-str ^String [x]
   (binding [*print-length* nil
             *print-level*  nil]
     (with-out-str (pp/pprint x))))
@@ -11,13 +11,13 @@
 (defn get-schema [_]
   (-> (utils/get-db)
       utils/get-schema
-      write-end-str))
+      write-edn-str))
 
 (comment
   (get-schema nil))
 
-(defn hello-world [_]
-  (json/write-str {"message" "Hello World!"}))
+(defn hello-world [params]
+  (json/write-str {"message" (write-edn-str params)}))
 
 (comment
-  (hello-world nil))
+  (hello-world {:input "Hello" :context {:something "World"}}))

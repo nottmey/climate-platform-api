@@ -43,7 +43,7 @@
                                                       (.build)))
                                  (.serviceRoleArn (.getRoleArn items-table-role))
                                  (.build))
-          ion-arn            "arn:aws:lambda:eu-central-1:118776085668:function:climate-platform-primary-get-schema"
+          ion-arn     "arn:aws:lambda:eu-central-1:118776085668:function:climate-platform-primary-hello-world"
           ion-access-role    (doto
                                (-> (Role$Builder/create stack "ion-access-role")
                                    (.assumedBy (ServicePrincipal. "appsync.amazonaws.com"))
@@ -65,7 +65,7 @@
       (-> (CfnResolver$Builder/create stack "example-ion-tutorial-resolver")
           (.apiId api-id)
           (.typeName "Query")
-          (.fieldName "schema")
+          (.fieldName "helloFromIon")
           (.dataSourceName (.getName ion-data-source))
           (.build)
           (doto (.addDependsOn api-schema)
