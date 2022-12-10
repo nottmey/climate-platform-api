@@ -15,21 +15,21 @@
         (.build))
     ; tutorial https://github.com/aws-samples/aws-cdk-examples/blob/6c7efd82807d60648543393cc70a2a0343b1c0ec/typescript/appsync-graphql-dynamodb/index.ts
     (let [schema-template  "
-            type items {
+            type Item {
               itemId: ID!
               name: String
             }
-            type Paginateditems {
-              items: [items!]!
+            type PaginatedItems {
+              items: [Item!]!
               nextToken: String
             }
             type Query {
-              all(limit: Int, nextToken: String): Paginateditems!
-              getOne(itemId: ID!): items
+              all(limit: Int, nextToken: String): PaginatedItems!
+              getOne(itemId: ID!): Item
             }
             type Mutation {
-              save(name: String!): items
-              delete(itemId: ID!): items
+              save(name: String!): Item
+              delete(itemId: ID!): Item
             }
             type Schema {
               query: Query
