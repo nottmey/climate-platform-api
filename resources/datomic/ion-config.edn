@@ -1,3 +1,4 @@
 {:app-name "climate-platform"
- :lambdas  {:get-schema {:fn          ions.lambdas/get-schema
-                         :description "demo function for example deployment"}}}
+ :lambdas  {:hello-world {:fn ions.lambdas/hello-world}
+            :get-schema  {:fn          ions.lambdas/get-schema
+                          :description "demo function for example deployment"}}}

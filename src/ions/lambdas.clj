@@ -1,6 +1,7 @@
 (ns ions.lambdas
   (:require [clojure.pprint :as pp]
-            [ions.utils :as utils]))
+            [ions.utils :as utils]
+            [clojure.data.json :as json]))
 
 (defn- write-end-str ^String [x]
   (binding [*print-length* nil
@@ -14,3 +15,9 @@
 
 (comment
   (get-schema nil))
+
+(defn hello-world [_]
+  (json/write-str {"message" "Hello World!"}))
+
+(comment
+  (hello-world nil))

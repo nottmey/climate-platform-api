@@ -4,6 +4,8 @@ type Schema {
 }
 
 type Query {
+    schema: String
+    helloFromIon: Message
     all(limit: Int, nextToken: String): PaginatedItems!
     getOne(itemId: ID!): Item
 }
@@ -21,4 +23,8 @@ type PaginatedItems {
 type Item {
     itemId: ID!
     name: String
+}
+
+type Message {
+    message: String!
 }
