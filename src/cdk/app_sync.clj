@@ -15,23 +15,22 @@
         (.apiId api-id)
         (.build))
     ; tutorial https://github.com/aws-samples/aws-cdk-examples/blob/6c7efd82807d60648543393cc70a2a0343b1c0ec/typescript/appsync-graphql-dynamodb/index.ts
-    (let [table-name       "items"
-          schema-template  "
-            type ${tableName} {
-              ${tableName}Id: ID!
+    (let [schema-template  "
+            type items {
+              itemsId: ID!
               name: String
             }
-            type Paginated${tableName} {
-              items: [${tableName}!]!
+            type Paginateditems {
+              items: [items!]!
               nextToken: String
             }
             type Query {
-              all(limit: Int, nextToken: String): Paginated${tableName}!
-              getOne(${tableName}Id: ID!): ${tableName}
+              all(limit: Int, nextToken: String): Paginateditems!
+              getOne(itemsId: ID!): items
             }
             type Mutation {
-              save(name: String!): ${tableName}
-              delete(${tableName}Id: ID!): ${tableName}
+              save(name: String!): items
+              delete(itemsId: ID!): items
             }
             type Schema {
               query: Query
@@ -39,12 +38,12 @@
             }"
           api-schema       (-> (CfnGraphQLSchema$Builder/create stack "climate-platform-api-schema")
                                (.apiId api-id)
-                               (.definition (str/replace schema-template "${tableName}" table-name))
+                               (.definition schema-template)
                                (.build))
           items-table      (-> (Table$Builder/create stack "tutorial-table")
-                               (.tableName table-name)
+                               (.tableName "items")
                                (.partitionKey (-> (Attribute/builder)
-                                                  (.name (str table-name "Id"))
+                                                  (.name "itemsId")
                                                   (.type AttributeType/STRING)
                                                   (.build)))
                                (.billingMode BillingMode/PAY_PER_REQUEST)
@@ -70,13 +69,13 @@
           (.typeName "Query")
           (.fieldName "getOne")
           (.dataSourceName (.getName data-source))
-          (.requestMappingTemplate (str "{
-                                           \"version\": \"2017-02-28\",
-                                           \"operation\": \"GetItem\",
-                                           \"key\": {
-                                             \"" table-name "Id\": $util.dynamodb.toDynamoDBJson($ctx.args." table-name "Id)
-                                           }
-                                         }"))
+          (.requestMappingTemplate "{
+                                      \"version\": \"2017-02-28\",
+                                      \"operation\": \"GetItem\",
+                                      \"key\": {
+                                        \"itemsId\": $util.dynamodb.toDynamoDBJson($ctx.args.itemsId)
+                                      }
+                                    }")
           (.responseMappingTemplate "$util.toJson($ctx.result)")
           (.build)
           (doto (.addDependsOn api-schema)
@@ -86,12 +85,12 @@
           (.typeName "Query")
           (.fieldName "all")
           (.dataSourceName (.getName data-source))
-          (.requestMappingTemplate (str "{
-                                           \"version\": \"2017-02-28\",
-                                           \"operation\": \"Scan\",
-                                           \"limit\": $util.defaultIfNull($ctx.args.limit, 20),
-                                           \"nextToken\": $util.toJson($util.defaultIfNullOrEmpty($ctx.args.nextToken, null))
-                                         }"))
+          (.requestMappingTemplate "{
+                                      \"version\": \"2017-02-28\",
+                                      \"operation\": \"Scan\",
+                                      \"limit\": $util.defaultIfNull($ctx.args.limit, 20),
+                                      \"nextToken\": $util.toJson($util.defaultIfNullOrEmpty($ctx.args.nextToken, null))
+                                    }")
           (.responseMappingTemplate "$util.toJson($ctx.result)")
           (.build)
           (doto (.addDependsOn api-schema)
@@ -101,16 +100,16 @@
           (.typeName "Mutation")
           (.fieldName "save")
           (.dataSourceName (.getName data-source))
-          (.requestMappingTemplate (str "{
-                                           \"version\": \"2017-02-28\",
-                                           \"operation\": \"PutItem\",
-                                           \"key\": {
-                                             \"" table-name "Id\": { \"S\": \"$util.autoId()\" }
-                                           },
-                                           \"attributeValues\": {
-                                             \"name\": $util.dynamodb.toDynamoDBJson($ctx.args.name)
-                                           }
-                                         }"))
+          (.requestMappingTemplate "{
+                                      \"version\": \"2017-02-28\",
+                                      \"operation\": \"PutItem\",
+                                      \"key\": {
+                                        \"itemsId\": { \"S\": \"$util.autoId()\" }
+                                      },
+                                      \"attributeValues\": {
+                                        \"name\": $util.dynamodb.toDynamoDBJson($ctx.args.name)
+                                      }
+                                    }")
           (.responseMappingTemplate "$util.toJson($ctx.result)")
           (.build)
           (doto (.addDependsOn api-schema)
@@ -120,13 +119,13 @@
           (.typeName "Mutation")
           (.fieldName "delete")
           (.dataSourceName (.getName data-source))
-          (.requestMappingTemplate (str "{
-                                           \"version\": \"2017-02-28\",
-                                           \"operation\": \"DeleteItem\",
-                                           \"key\": {
-                                             \"" table-name "Id\": $util.dynamodb.toDynamoDBJson($ctx.args." table-name "Id)
-                                           }
-                                         }"))
+          (.requestMappingTemplate "{
+                                      \"version\": \"2017-02-28\",
+                                      \"operation\": \"DeleteItem\",
+                                      \"key\": {
+                                        \"itemsId\": $util.dynamodb.toDynamoDBJson($ctx.args.itemsId)
+                                      }
+                                    }")
           (.responseMappingTemplate "$util.toJson($ctx.result)")
           (.build)
           (doto (.addDependsOn api-schema)
