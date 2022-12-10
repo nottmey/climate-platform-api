@@ -1,4 +1,5 @@
 (ns cdk.app-sync
+  (:require [clojure.java.io :as io])
   (:import (software.amazon.awscdk RemovalPolicy Stack)
            (software.amazon.awscdk.services.appsync CfnApiKey$Builder CfnDataSource$Builder CfnDataSource$DynamoDBConfigProperty CfnGraphQLApi$Builder CfnGraphQLSchema$Builder CfnResolver$Builder)
            (software.amazon.awscdk.services.dynamodb Attribute AttributeType BillingMode StreamViewType Table$Builder)
@@ -14,30 +15,9 @@
         (.apiId api-id)
         (.build))
     ; tutorial https://github.com/aws-samples/aws-cdk-examples/blob/6c7efd82807d60648543393cc70a2a0343b1c0ec/typescript/appsync-graphql-dynamodb/index.ts
-    (let [schema-template  "
-            type Item {
-              itemId: ID!
-              name: String
-            }
-            type PaginatedItems {
-              items: [Item!]!
-              nextToken: String
-            }
-            type Query {
-              all(limit: Int, nextToken: String): PaginatedItems!
-              getOne(itemId: ID!): Item
-            }
-            type Mutation {
-              save(name: String!): Item
-              delete(itemId: ID!): Item
-            }
-            type Schema {
-              query: Query
-              mutation: Mutation
-            }"
-          api-schema       (-> (CfnGraphQLSchema$Builder/create stack "climate-platform-api-schema")
+    (let [api-schema       (-> (CfnGraphQLSchema$Builder/create stack "climate-platform-api-schema")
                                (.apiId api-id)
-                               (.definition schema-template)
+                               (.definition (slurp (io/resource "cdk/schema.graphql")))
                                (.build))
           items-table      (-> (Table$Builder/create stack "tutorial-table")
                                (.tableName "items")

@@ -1,0 +1,24 @@
+type Schema {
+    query: Query
+    mutation: Mutation
+}
+
+type Query {
+    all(limit: Int, nextToken: String): PaginatedItems!
+    getOne(itemId: ID!): Item
+}
+
+type Mutation {
+    save(name: String!): Item
+    delete(itemId: ID!): Item
+}
+
+type PaginatedItems {
+    items: [Item!]!
+    nextToken: String
+}
+
+type Item {
+    itemId: ID!
+    name: String
+}
