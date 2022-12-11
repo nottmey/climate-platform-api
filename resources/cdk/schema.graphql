@@ -1,4 +1,4 @@
-type Schema {
+schema {
     query: Query
     mutation: Mutation
 }
