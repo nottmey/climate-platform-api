@@ -1,5 +1,6 @@
 (ns ions.lambdas
   (:require [clojure.data.json :as json]
+            [clojure.walk :as walk]
             [ions.resolvers :as resolvers]))
 
 ; result needs to be string serialized json
@@ -9,9 +10,11 @@
   ; the so called `$context` in https://docs.aws.amazon.com/appsync/latest/devguide/resolver-context-reference.html
   (let [app-sync-context (json/read-str app-sync-input)
         parent-type-name (keyword (get-in app-sync-context ["info" "parentTypeName"]))
-        field-name       (keyword (get-in app-sync-context ["info" "fieldName"]))]
+        field-name       (keyword (get-in app-sync-context ["info" "fieldName"]))
+        arguments        (walk/keywordize-keys (get app-sync-context "arguments"))]
     (-> {:parent-type-name parent-type-name
-         :field-name       field-name}
+         :field-name       field-name
+         :arguments        arguments}
         resolvers/datomic-resolve
         json/write-str)))
 
@@ -27,7 +30,7 @@
                                :awsRequestId          "f1d9c589-6335-4d00-9963-b7576a8704fc",
                                :functionName          "climate-platform-primary-hello-world",
                                :remainingTimeInMillis 59997}
-                     :input   (json/write-str {"arguments" {},
+                     :input   (json/write-str {"arguments" {"database" "datomic-docs-tutorial"},
                                                "identity"  nil,
                                                "source"    nil,
                                                "prev"      nil,

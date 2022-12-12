@@ -4,9 +4,17 @@ schema {
 }
 
 type Query {
-    databases: [String!]
+    databases: [ID]
+    get(database: ID!, id: ID!): Entity
+    list(database: ID!, limit: Int, offset: Int): [Entity]
 }
 
 type Mutation {
     save(name: String!): [String!] # example
+}
+
+type Entity {
+    id: ID
+    "Example field to dump some result to, for now."
+    data: String
 }

@@ -7,8 +7,6 @@
 
 (def client-config-path "ions/client-config.edn")
 
-(def database-name "datomic-docs-tutorial")
-
 (def get-client
   (memoize
     #(if-let [r (io/resource client-config-path)]
@@ -56,11 +54,8 @@
 (comment
   (list-databases))
 
-(defn get-connection []
-  (with-retry #(d/connect (get-client) {:db-name database-name})))
-
-(defn get-db []
-  (d/db (get-connection)))
+(defn get-connection [db-name]
+  (with-retry #(d/connect (get-client) {:db-name db-name})))
 
 (defn get-schema [db]
   (->> (d/pull db '{:eid 0 :selector [{:db.install/attribute [*]}]})
