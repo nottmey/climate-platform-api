@@ -47,4 +47,6 @@
                                                  (.build)
                                                  (doto (.addDependsOn api-schema)
                                                        (.addDependsOn datomic-data-source)))))]
-      (configure-datomic-resolver-for :Query :databases))))
+      (configure-datomic-resolver-for :Query :databases)
+      (configure-datomic-resolver-for :Query :get)
+      (configure-datomic-resolver-for :Query :list))))

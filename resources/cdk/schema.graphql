@@ -4,9 +4,9 @@ schema {
 }
 
 type Query {
-    databases: [ID]
+    databases: [ID!]
     get(database: ID!, id: ID!): Entity
-    list(database: ID!, limit: Int, offset: Int): [Entity]
+    list(database: ID!, limit: Int, offset: Int): [Entity!]
 }
 
 type Mutation {
