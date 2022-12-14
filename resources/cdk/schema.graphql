@@ -9,12 +9,14 @@ type Query {
     list(database: ID!, limit: Int, offset: Int): [Entity!]
 }
 
+# example mutation, so it's not empty
 type Mutation {
-    save(name: String!): [String!] # example
+    reset: [Entity!]
 }
 
+# example entity, with fields to dump data into
 type Entity {
-    id: ID
-    "Example field to dump some result to, for now."
+    id: ID!
     data: String
 }
+
