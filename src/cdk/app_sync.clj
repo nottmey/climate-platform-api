@@ -1,5 +1,5 @@
 (ns cdk.app-sync
-  (:require [clojure.java.io :as io])
+  (:require [graphql.schema :as schema])
   (:import (software.amazon.awscdk Stack)
            (software.amazon.awscdk.services.appsync CfnApiKey$Builder CfnDataSource$Builder CfnDataSource$LambdaConfigProperty CfnGraphQLApi$Builder CfnGraphQLSchema$Builder CfnResolver$Builder)
            (software.amazon.awscdk.services.iam Effect PolicyStatement$Builder Role$Builder ServicePrincipal)))
@@ -15,7 +15,7 @@
         (.build))
     (let [api-schema                     (-> (CfnGraphQLSchema$Builder/create stack "climate-platform-api-schema")
                                              (.apiId api-id)
-                                             (.definition (slurp (io/resource "cdk/schema.graphql")))
+                                             (.definition (schema/generate))
                                              (.build))
           datomic-resolver-arn           "arn:aws:lambda:eu-central-1:118776085668:function:climate-platform-primary-datomic-resolver"
           datomic-resolver-access-role   (doto
