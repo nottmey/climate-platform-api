@@ -1,6 +1,6 @@
 ## Deployment
 
-### Ions
+### 1. Ions
 
 Adapted from https://docs.datomic.com/cloud/ions-tutorial/push-and-deploy.html
 
@@ -15,4 +15,10 @@ clojure -A:ion-dev '{:op :deploy :rev $REV :group $GROUP}'
 
 # 4. monitor status with command from deploy result, similar to this:
 clojure -A:ion-dev '{:op :deploy-status :execution-arn $EXECUTION_ARN}'
+```
+
+### 2. App Sync Api
+
+```shell
+cdk deploy
 ```

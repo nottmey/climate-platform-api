@@ -1,5 +1,6 @@
 (ns cdk.app-sync
-  (:require [graphql.schema :as schema])
+  (:require [graphql.schema :as schema]
+            [ions.resolvers :as resolvers])
   (:import (software.amazon.awscdk Stack)
            (software.amazon.awscdk.services.appsync CfnApiKey$Builder CfnDataSource$Builder CfnDataSource$LambdaConfigProperty CfnGraphQLApi$Builder CfnGraphQLSchema$Builder CfnResolver$Builder)
            (software.amazon.awscdk.services.iam Effect PolicyStatement$Builder Role$Builder ServicePrincipal)))
@@ -47,6 +48,5 @@
                                                  (.build)
                                                  (doto (.addDependsOn api-schema)
                                                        (.addDependsOn datomic-data-source)))))]
-      (configure-datomic-resolver-for :Query :databases)
-      (configure-datomic-resolver-for :Query :get)
-      (configure-datomic-resolver-for :Query :list))))
+      (doseq [[type-name field-name] @resolvers/resolvable-paths]
+        (configure-datomic-resolver-for type-name field-name)))))

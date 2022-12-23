@@ -14,9 +14,15 @@ type Mutation {
     reset: [Entity!]
 }
 
-# example entity, with fields to dump data into
 type Entity {
     id: ID!
-    data: String
+    attributes: [Attribute!]
+}
+
+type Attribute {
+    id: ID!
+    name: String!
+    type: String!
+    values: [String!]
 }
 

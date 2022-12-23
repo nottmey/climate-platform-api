@@ -61,5 +61,10 @@
   (->> (d/pull db '{:eid 0 :selector [{:db.install/attribute [*]}]})
        :db.install/attribute
        (map #(update % :db/valueType :db/ident))
-       (map #(update % :db/cardinality :db/ident))))
+       (map #(update % :db/cardinality :db/ident))
+       (map #(vector (:db/ident %) %))
+       (into {})))
+
+(comment
+  (get-schema (d/db (get-connection (first (list-databases))))))
 
