@@ -58,6 +58,7 @@
                    :type           :String
                    :required-type? true}
                   {:name           :values
+                   ; TODO use attribute interface type with different value types
                    :type           :String
                    :required-type? true
                    :list?          true}]}))))
