@@ -9,7 +9,7 @@
 (defn datomic-resolver [{lambda-context :context
                          app-sync-input :input}]
   ; the so called `$context` in https://docs.aws.amazon.com/appsync/latest/devguide/resolver-context-reference.html
-  (cast/event {:msg "ResolverContext" ::json app-sync-input})
+  (.println System/out "Hello")
   (let [app-sync-context (json/read-str app-sync-input)
         parent-type-name (keyword (get-in app-sync-context ["info" "parentTypeName"]))
         field-name       (keyword (get-in app-sync-context ["info" "fieldName"]))
