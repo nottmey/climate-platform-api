@@ -1,6 +1,7 @@
 (ns ions.lambdas
   (:require [clojure.data.json :as json]
             [clojure.walk :as walk]
+            [io.pedestal.log :as log]
             [ions.resolvers :as resolvers]))
 
 ; result needs to be string serialized json
@@ -8,7 +9,7 @@
 (defn datomic-resolver [{lambda-context :context
                          app-sync-input :input}]
   ; the so called `$context` in https://docs.aws.amazon.com/appsync/latest/devguide/resolver-context-reference.html
-  (println app-sync-input)
+  (log/info :message app-sync-input)
   (let [app-sync-context (json/read-str app-sync-input)
         parent-type-name (keyword (get-in app-sync-context ["info" "parentTypeName"]))
         field-name       (keyword (get-in app-sync-context ["info" "fieldName"]))
