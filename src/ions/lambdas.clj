@@ -5,6 +5,7 @@
 
 ; result needs to be string serialized json
 ; default response mapping is applied: https://docs.aws.amazon.com/appsync/latest/devguide/resolver-mapping-template-reference-lambda.html#lambda-mapping-template-bypass-response
+; FYI if you want to add a batch resolver, you need to override the default request/response mapping
 (defn datomic-resolver [{lambda-context :context
                          app-sync-input :input}]
   ; the so called `$context` in https://docs.aws.amazon.com/appsync/latest/devguide/resolver-context-reference.html
