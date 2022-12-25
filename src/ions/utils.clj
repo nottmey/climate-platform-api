@@ -57,6 +57,7 @@
 (defn get-connection [db-name]
   (with-retry #(d/connect (get-client) {:db-name db-name})))
 
+; TODO optimize execution
 (defn get-schema [db]
   (->> (d/pull db '{:eid 0 :selector [{:db.install/attribute [*]}]})
        :db.install/attribute
@@ -66,5 +67,5 @@
        (into {})))
 
 (comment
-  (get-schema (d/db (get-connection (first (list-databases))))))
+  (time (get-schema (d/db (get-connection (first (list-databases)))))))
 

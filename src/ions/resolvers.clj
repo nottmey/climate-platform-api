@@ -1,5 +1,6 @@
 (ns ions.resolvers
   (:require [datomic.client.api :as d]
+            [ions.mappings :as mappings]
             [ions.utils :as utils]))
 
 (defn- extract-type-field-tuple [{:keys [parent-type-name field-name]}]
@@ -26,9 +27,9 @@
 (defresolver datomic-resolve [:Query :get] [{:keys [arguments]}]
   (let [{:keys [database id]} arguments
         db     (d/db (utils/get-connection database))
+        schema (utils/get-schema db)
         result (d/pull db '[*] (parse-long (str id)))]
-    (hash-map "id" (get result :db/id)
-              "data" (str result))))
+    (mappings/map-entity result schema)))
 
 (comment
   (datomic-resolve {:parent-type-name :Query
@@ -36,40 +37,30 @@
                     :arguments        {:database (first (utils/list-databases))
                                        :id       "0"}}))
 
-(defn as-vec [x]
-  (if (sequential? x)
-    x
-    (vector x)))
 
 (defresolver datomic-resolve [:Query :list] [{:keys [arguments]}]
   (let [{:keys [database offset limit]} arguments
-        db     (d/db (utils/get-connection database))
-        offset (max 0 (or offset 0))
-        limit  (min 100 (max 1 (or limit 100)))
-        schema (utils/get-schema db)
-        es     (->> (d/datoms db {:index :eavt})
-                    (map :e)
-                    (distinct)
-                    (drop offset)
-                    (take limit))]
-    (->> (d/q {:query  '[:find (pull ?es [*]) :in $ [?es ...]]
-               :args   [db es]
-               :offset offset
-               :limit  limit})
-         (map first)
-         (map (fn [e]
-                {"id"         (str (get e :db/id))
-                 "attributes" (->> (dissoc e :db/id)
-                                   (map (fn [[k v]]
-                                          {"id"     (str (get-in schema [k :db/id]))
-                                           "name"   (str k)
-                                           "type"   (name (get-in schema [k :db/valueType]))
-                                           "values" (->> (as-vec v)
-                                                         (map str))})))})))))
+        db          (d/db (utils/get-connection database))
+        offset      (max 0 (or offset 0))
+        limit       (min 100 (max 1 (or limit 100)))
+        schema      (utils/get-schema db)
+        db-entities (d/qseq {:query '[:find (pull ?e [*])
+                                      :in $ [?as ...]
+                                      :where [?e ?as]]
+                             :args  [db (keys schema)]})
+        entities    (->> db-entities
+                         (drop offset)
+                         (take limit)
+                         (map first)
+                         (map #(mappings/map-entity % schema)))]
+    {"total" (count db-entities)
+     "slice" {"usedLimit"  limit
+              "usedOffset" offset
+              "entities"   entities}}))
 
 (comment
-  (datomic-resolve {:parent-type-name :Query
-                    :field-name       :list
-                    :arguments        {:database (first (utils/list-databases))
-                                       :limit    100
-                                       :offset   0}}))
+  (time (datomic-resolve {:parent-type-name :Query
+                          :field-name       :list
+                          :arguments        {:database (first (utils/list-databases))
+                                             :limit    10
+                                             :offset   0}})))

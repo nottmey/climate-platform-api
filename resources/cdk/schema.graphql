@@ -4,25 +4,36 @@ schema {
 }
 
 type Query {
-    databases: [ID!]
+    databases: [ID!]!
     get(database: ID!, id: ID!): Entity
-    list(database: ID!, limit: Int, offset: Int): [Entity!]
+    list(database: ID!): EntityList!
 }
 
 # example mutation, so it's not empty
 type Mutation {
-    reset: [Entity!]
+    reset: [Entity!]!
 }
 
 type Entity {
     id: ID!
-    attributes: [Attribute!]
+    attributes: [Attribute!]!
 }
 
 type Attribute {
     id: ID!
     name: String!
     type: String!
-    values: [String!]
+    values: [String!]!
+}
+
+type EntityList {
+    total: Int!
+    slice(limit: Int = 20, offset: Int = 0): EntityListSlice!
+}
+
+type EntityListSlice {
+    usedLimit: Int!
+    usedOffset: Int!
+    entities: [Entity!]!
 }
 

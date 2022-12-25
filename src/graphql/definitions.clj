@@ -42,7 +42,7 @@
   (str (k-name name) ": " (type-ref-definition args-with-type-ref) (when default-value (str " = " default-value))))
 
 (comment
-  (input-value-definition {:name "id" :type :Int :default-value 0.0 :list? true :required-type? true :required-list? true}))
+  (input-value-definition {:name "id" :type :Int :default-value 0 :list? true :required-type? true :required-list? true}))
 
 ; https://spec.graphql.org/June2018/#ArgumentsDefinition
 (defn arguments-definition [{:keys [arguments]}]
