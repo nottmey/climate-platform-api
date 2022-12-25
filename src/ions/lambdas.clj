@@ -1,15 +1,13 @@
 (ns ions.lambdas
   (:require [clojure.data.json :as json]
             [clojure.walk :as walk]
-            [ions.resolvers :as resolvers]
-            [datomic.ion.cast :as cast]))
+            [ions.resolvers :as resolvers]))
 
 ; result needs to be string serialized json
 ; default response mapping is applied: https://docs.aws.amazon.com/appsync/latest/devguide/resolver-mapping-template-reference-lambda.html#lambda-mapping-template-bypass-response
 (defn datomic-resolver [{lambda-context :context
                          app-sync-input :input}]
   ; the so called `$context` in https://docs.aws.amazon.com/appsync/latest/devguide/resolver-context-reference.html
-  (.println System/out "Hello")
   (let [app-sync-context (json/read-str app-sync-input)
         parent-type-name (keyword (get-in app-sync-context ["info" "parentTypeName"]))
         field-name       (keyword (get-in app-sync-context ["info" "fieldName"]))

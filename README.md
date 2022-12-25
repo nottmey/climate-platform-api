@@ -10,7 +10,7 @@ using https://github.com/borkdude/jet
 # 1. make sure git status is clean
 
 # 2. then do:
-deploy_command=$(clojure -A:ion-dev '{:op :push}' | jet --query ':deploy-command println')
+deploy_command=$(clojure -A:ion-dev '{:op :push}' | jet --query ':deploy-command println' | grep -v -x -F 'nil')
 
 # 3. then use deploy command from push result, similar to this:
 status_command=$(eval "$deploy_command" | jet --query ':status-command println')
