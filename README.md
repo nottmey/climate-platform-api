@@ -4,17 +4,19 @@
 
 Adapted from https://docs.datomic.com/cloud/ions-tutorial/push-and-deploy.html
 
+using https://github.com/borkdude/jet
+
 ```shell
 # 1. make sure git status is clean
 
 # 2. then do:
-clojure -A:ion-dev '{:op :push}'
+deploy_command=$(clojure -A:ion-dev '{:op :push}' | jet --query ':deploy-command println')
 
 # 3. then use deploy command from push result, similar to this:
-clojure -A:ion-dev '{:op :deploy :rev $REV :group $GROUP}'
+status_command=$(eval "$deploy_command" | jet --query ':status-command println')
 
 # 4. monitor status with command from deploy result, similar to this:
-clojure -A:ion-dev '{:op :deploy-status :execution-arn $EXECUTION_ARN}'
+eval "$status_command"
 ```
 
 ### 2. App Sync Api
