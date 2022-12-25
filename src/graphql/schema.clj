@@ -2,6 +2,17 @@
   (:require [graphql.definitions :as d]
             [clojure.java.io :as io]))
 
+; AWS App Sync also has scalars build in, but does not support custom ones:
+; https://docs.aws.amazon.com/appsync/latest/devguide/scalars.html
+; AWSEmail      "example@example.com"
+; AWSJSON       "{\"a\":1, \"b\":3, \"string\": 234}"
+; AWSDate       "1970-01-01Z"
+; AWSTime       "12:00:34."
+; AWSDateTime   "1930-01-01T16:00:00-07:00"
+; AWSTimestamp  -123123
+; AWSURL        "https://amazon.com"
+; AWSPhone      "+1 555 764 4377"
+; AWSIPAddress  "127.0.0.1/8"
 (defn generate []
   (let [query-type        :Query
         mutation-type     :Mutation
