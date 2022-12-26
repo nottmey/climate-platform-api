@@ -12,10 +12,12 @@
   (let [app-sync-context (json/read-str app-sync-input)
         parent-type-name (keyword (get-in app-sync-context ["info" "parentTypeName"]))
         field-name       (keyword (get-in app-sync-context ["info" "fieldName"]))
-        arguments        (walk/keywordize-keys (get app-sync-context "arguments"))]
+        arguments        (walk/keywordize-keys (get app-sync-context "arguments"))
+        source           (walk/keywordize-keys (get app-sync-context "source"))]
     (-> {:parent-type-name parent-type-name
          :field-name       field-name
-         :arguments        arguments}
+         :arguments        arguments
+         :source           source}
         resolvers/datomic-resolve
         json/write-str)))
 
@@ -33,12 +35,12 @@
                                :remainingTimeInMillis 59997}
                      :input   (json/write-str {"arguments" {"database" "datomic-docs-tutorial"},
                                                "identity"  nil,
-                                               "source"    nil,
+                                               "source"    {"database" "datomic-docs-tutorial"},
                                                "prev"      nil,
                                                "info"      {"selectionSetList"    ["message"], ; not consistent
                                                             "selectionSetGraphQL" "{\n  message\n}", ; not consistent
-                                                            "fieldName"           "databases",
-                                                            "parentTypeName"      "Query",
+                                                            "fieldName"           "slice",
+                                                            "parentTypeName"      "EntityList",
                                                             "variables"           {}},
                                                "stash"     {},
                                                "request"   {"headers" {"origin" "https://eu-central-1.console.aws.amazon.com",,,}}})}))

@@ -55,7 +55,7 @@
   (list-databases))
 
 (defn get-connection [db-name]
-  (with-retry #(d/connect (get-client) {:db-name db-name})))
+  (with-retry #(d/connect (get-client) {:timeout 1000 :db-name db-name})))
 
 ; TODO optimize execution
 (defn get-schema [db]

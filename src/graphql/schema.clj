@@ -120,7 +120,6 @@
                    :type           int-type
                    :required-type? true}
                   {:name           :slice
-                   ; FIXME not read, maybe explicit resolver needed
                    :arguments      [limit-argument offset-argument]
                    :type           entity-list-slice-type
                    :required-type? true}]})
