@@ -1,7 +1,8 @@
 (ns ions.resolvers
-  (:require [datomic.client.api :as d]
-            [ions.mappings :as mappings]
-            [ions.utils :as utils]))
+  (:require
+    [datomic.client.api :as d]
+    [ions.mappings :as mappings]
+    [ions.utils :as utils]))
 
 (defn- extract-type-field-tuple [{:keys [parent-type-name field-name]}]
   [parent-type-name field-name])
@@ -56,7 +57,7 @@
                     :field-name       :list
                     :arguments        {:database (first (utils/list-databases))}}))
 
-(defresolver datomic-resolve [:EntityList :slice] [{:keys [arguments source]}]
+(defresolver datomic-resolve [:EntityList :slice] [{:keys [arguments debug]}]
   (let [{:keys [limit offset]} arguments
         #_{:keys [database]} #_source
         database    "datomic-docs-tutorial"
@@ -70,7 +71,8 @@
                          (take limit)
                          (map first)
                          (map #(mappings/map-entity % schema)))]
-    {"usedLimit"  limit
+    {"debug"      debug
+     "usedLimit"  limit
      "usedOffset" offset
      "entities"   entities}))
 

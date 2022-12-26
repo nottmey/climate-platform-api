@@ -32,6 +32,7 @@ type EntityList {
 }
 
 type EntityListSlice {
+    debug: AWSJSON
     usedLimit: Int!
     usedOffset: Int!
     entities: [Entity!]!

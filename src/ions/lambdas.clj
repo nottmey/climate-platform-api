@@ -17,7 +17,8 @@
     (-> {:parent-type-name parent-type-name
          :field-name       field-name
          :arguments        arguments
-         :source           source}
+         :source           source
+         :debug            app-sync-input}
         resolvers/datomic-resolve
         json/write-str)))
 

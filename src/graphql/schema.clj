@@ -125,7 +125,9 @@
                    :required-type? true}]})
       (d/object-type-definition
         {:name   entity-list-slice-type
-         :fields [{:name           "usedLimit"
+         :fields [{:name :debug
+                   :type json-type}
+                  {:name           "usedLimit"
                    :type           int-type
                    :required-type? true}
                   {:name           "usedOffset"
