@@ -59,8 +59,11 @@
         offset-argument        {:name          :offset
                                 ; FYI discarded by App Sync
                                 :default-value 0
-                                :type          int-type}]
+                                :type          int-type}
+        context-field          {:name :context
+                                :type json-type}]
     (str
+      "# generated, do not edit manually!\n\n"
       (d/schema-definition
         {:root-ops {:query    query-type
                     :mutation mutation-type}})
@@ -89,7 +92,8 @@
                    :required-list? true}]})
       (d/object-type-definition
         {:name   entity-type
-         :fields [{:name           :id
+         :fields [context-field
+                  {:name           :id
                    :type           id-type
                    :required-type? true}
                   {:name           :attributes
@@ -116,7 +120,8 @@
                    :required-list? true}]})
       (d/object-type-definition
         {:name   entity-list-type
-         :fields [{:name           :total
+         :fields [context-field
+                  {:name           :total
                    :type           int-type
                    :required-type? true}
                   {:name           :slice
@@ -125,8 +130,7 @@
                    :required-type? true}]})
       (d/object-type-definition
         {:name   entity-list-slice-type
-         :fields [{:name :debug
-                   :type json-type}
+         :fields [context-field
                   {:name           "usedLimit"
                    :type           int-type
                    :required-type? true}

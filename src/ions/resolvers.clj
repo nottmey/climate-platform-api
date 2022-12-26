@@ -50,6 +50,7 @@
         schema      (utils/get-schema db)
         db-entities (db-entities db schema)]
     {"total" (count db-entities)
+     ; handing down context args to the field resolver (needed because parameterizable)
      "slice" {"database" database}}))
 
 (comment
@@ -57,10 +58,9 @@
                     :field-name       :list
                     :arguments        {:database (first (utils/list-databases))}}))
 
-(defresolver datomic-resolve [:EntityList :slice] [{:keys [arguments debug]}]
+(defresolver datomic-resolve [:EntityList :slice] [{:keys [arguments parent-value]}]
   (let [{:keys [limit offset]} arguments
-        #_{:keys [database]} #_source
-        database    "datomic-docs-tutorial"
+        database    (get-in parent-value [:slice :database])
         offset      (max 0 (or offset 0))
         limit       (min 100 (max 1 (or limit 100)))
         db          (d/db (utils/get-connection database))
@@ -71,8 +71,7 @@
                          (take limit)
                          (map first)
                          (map #(mappings/map-entity % schema)))]
-    {"debug"      debug
-     "usedLimit"  limit
+    {"usedLimit"  limit
      "usedOffset" offset
      "entities"   entities}))
 
@@ -80,6 +79,6 @@
   (let [database (first (utils/list-databases))]
     (time (datomic-resolve {:parent-type-name :EntityList
                             :field-name       :slice
-                            :source           {:database database}
+                            :parent-value     {:total 60 :slice {:database database}}
                             :arguments        {:limit  10
                                                :offset 0}}))))

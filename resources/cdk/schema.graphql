@@ -1,3 +1,5 @@
+# generated, do not edit manually!
+
 schema {
     query: Query
     mutation: Mutation
@@ -15,6 +17,7 @@ type Mutation {
 }
 
 type Entity {
+    context: AWSJSON
     id: ID!
     attributes: [Attribute!]!
 }
@@ -27,12 +30,13 @@ type Attribute {
 }
 
 type EntityList {
+    context: AWSJSON
     total: Int!
     slice(limit: Int = 20, offset: Int = 0): EntityListSlice!
 }
 
 type EntityListSlice {
-    debug: AWSJSON
+    context: AWSJSON
     usedLimit: Int!
     usedOffset: Int!
     entities: [Entity!]!

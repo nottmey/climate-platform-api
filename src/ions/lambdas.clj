@@ -13,13 +13,15 @@
         parent-type-name (keyword (get-in app-sync-context ["info" "parentTypeName"]))
         field-name       (keyword (get-in app-sync-context ["info" "fieldName"]))
         arguments        (walk/keywordize-keys (get app-sync-context "arguments"))
-        source           (walk/keywordize-keys (get app-sync-context "source"))]
+        parent-value     (walk/keywordize-keys (get app-sync-context "source"))
+        ; TODO only append context in dev mode (e.g. api key or dev identity)
+        assoc-context    (fn [m] (if (map? m) (assoc m :context app-sync-context) m))]
     (-> {:parent-type-name parent-type-name
          :field-name       field-name
          :arguments        arguments
-         :source           source
-         :debug            app-sync-input}
+         :parent-value     parent-value}
         resolvers/datomic-resolve
+        assoc-context
         json/write-str)))
 
 (comment
