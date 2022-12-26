@@ -58,7 +58,8 @@
 
 (defresolver datomic-resolve [:EntityList :slice] [{:keys [arguments source]}]
   (let [{:keys [limit offset]} arguments
-        {:keys [database]} source
+        #_{:keys [database]} #_source
+        database    "datomic-docs-tutorial"
         offset      (max 0 (or offset 0))
         limit       (min 100 (max 1 (or limit 100)))
         db          (d/db (utils/get-connection database))

@@ -35,7 +35,7 @@
                                :remainingTimeInMillis 59997}
                      :input   (json/write-str {"arguments" {"database" "datomic-docs-tutorial"},
                                                "identity"  nil,
-                                               "source"    {"database" "datomic-docs-tutorial"},
+                                               "source"    nil,
                                                "prev"      nil,
                                                "info"      {"selectionSetList"    ["message"], ; not consistent
                                                             "selectionSetGraphQL" "{\n  message\n}", ; not consistent
