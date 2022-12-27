@@ -51,34 +51,43 @@
         db-entities (db-entities db schema)]
     {"total" (count db-entities)
      ; handing down context args to the field resolver (needed because parameterizable)
-     "slice" {"database" database}}))
+     "page"  {"database" database}}))
 
 (comment
   (datomic-resolve {:parent-type-name :Query
                     :field-name       :list
                     :arguments        {:database (first (utils/list-databases))}}))
 
-(defresolver datomic-resolve [:EntityList :slice] [{:keys [arguments parent-value]}]
-  (let [{:keys [limit offset]} arguments
-        database    (get-in parent-value [:slice :database])
-        offset      (max 0 (or offset 0))
-        limit       (min 100 (max 1 (or limit 100)))
+(defresolver datomic-resolve [:EntityList :page] [{:keys [arguments parent-value]}]
+  (let [{:keys [page size]} arguments
+        database    (get-in parent-value [:page :database])
         db          (d/db (utils/get-connection database))
         schema      (utils/get-schema db)
         db-entities (db-entities db schema)
+        total       (count db-entities)
+        size        (min 100 (max 1 (or size 20)))
+        last        (if (pos? total)
+                      (dec (int (Math/ceil (/ total size))))
+                      0)
+        page        (min last (max 0 (or page 0)))
+        offset      (* page size)
         entities    (->> db-entities
                          (drop offset)
-                         (take limit)
+                         (take size)
                          (map first)
                          (map #(mappings/map-entity % schema)))]
-    {"usedLimit"  limit
-     "usedOffset" offset
-     "entities"   entities}))
+    {"info"     {"size"    size
+                 "first"   0
+                 "prev"    (if (pos? page) (dec page) nil)
+                 "current" page
+                 "next"    (if (= page last) nil (inc page))
+                 "last"    last}
+     "entities" entities}))
 
 (comment
   (let [database (first (utils/list-databases))]
     (time (datomic-resolve {:parent-type-name :EntityList
-                            :field-name       :slice
-                            :parent-value     {:total 60 :slice {:database database}}
-                            :arguments        {:limit  10
-                                               :offset 0}}))))
+                            :field-name       :page
+                            :parent-value     {:total 60 :page {:database database}}
+                            :arguments        {:page 200
+                                               :size 1}}))))

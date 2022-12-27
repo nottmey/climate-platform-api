@@ -35,14 +35,23 @@ type Attribute {
 type EntityList {
     context: AWSJSON
     total: Int!
-    slice(limit: Int = 20, offset: Int = 0): EntityListSlice!
+    page(page: Int = 0, size: Int = 20): EntityListPage!
 }
 
 #generated, do not edit manually!
-type EntityListSlice {
+type EntityListPage {
     context: AWSJSON
-    usedLimit: Int!
-    usedOffset: Int!
+    info: PageInfo!
     entities: [Entity!]!
+}
+
+#generated, do not edit manually!
+type PageInfo {
+    size: Int!
+    first: Int!
+    prev: Int
+    current: Int!
+    next: Int
+    last: Int!
 }
 

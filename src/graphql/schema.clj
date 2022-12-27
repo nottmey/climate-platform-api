@@ -40,28 +40,21 @@
 (def ip-address-type :AWSIPAddress)
 
 (defn generate []
-  (let [query-type             :Query
-        mutation-type          :Mutation
-        entity-type            :Entity
-        attribute-type         :Attribute
-        entity-list-type       (keyword (str (name entity-type) "List"))
-        entity-list-slice-type (keyword (str (name entity-list-type) "Slice"))
-        database-argument      {:name           :database
-                                :type           id-type
-                                :required-type? true}
-        id-argument            {:name           :id
-                                :type           id-type
-                                :required-type? true}
-        limit-argument         {:name          :limit
-                                ; FYI discarded by App Sync
-                                :default-value 20
-                                :type          int-type}
-        offset-argument        {:name          :offset
-                                ; FYI discarded by App Sync
-                                :default-value 0
-                                :type          int-type}
-        context-field          {:name :context
-                                :type json-type}]
+  (let [query-type            :Query
+        mutation-type         :Mutation
+        entity-type           :Entity
+        attribute-type        :Attribute
+        entity-list-type      (keyword (str (name entity-type) "List"))
+        entity-list-page-type (keyword (str (name entity-list-type) "Page"))
+        page-info-type        :PageInfo
+        database-argument     {:name           :database
+                               :type           id-type
+                               :required-type? true}
+        id-argument           {:name           :id
+                               :type           id-type
+                               :required-type? true}
+        context-field         {:name :context
+                               :type json-type}]
     (str
       (d/schema-definition
         {:root-ops {:query    query-type
@@ -123,24 +116,46 @@
                   {:name           :total
                    :type           int-type
                    :required-type? true}
-                  {:name           :slice
-                   :arguments      [limit-argument offset-argument]
-                   :type           entity-list-slice-type
+                  {:name           :page
+                   :arguments      [{:name          :page
+                                     ; FYI discarded by App Sync
+                                     :default-value 0
+                                     :type          int-type}
+                                    {:name          :size
+                                     ; FYI discarded by App Sync
+                                     :default-value 20
+                                     :type          int-type}]
+                   :type           entity-list-page-type
                    :required-type? true}]})
       (d/object-type-definition
-        {:name   entity-list-slice-type
+        {:name   entity-list-page-type
          :fields [context-field
-                  {:name           "usedLimit"
-                   :type           int-type
-                   :required-type? true}
-                  {:name           "usedOffset"
-                   :type           int-type
+                  {:name           :info
+                   :type           page-info-type
                    :required-type? true}
                   {:name           :entities
                    :type           entity-type
                    :list?          true
                    :required-type? true
-                   :required-list? true}]}))))
+                   :required-list? true}]})
+      (d/object-type-definition
+        {:name   page-info-type
+         :fields [{:name           :size
+                   :type           int-type
+                   :required-type? true}
+                  {:name           :first
+                   :type           int-type
+                   :required-type? true}
+                  {:name :prev
+                   :type int-type}
+                  {:name           :current
+                   :type           int-type
+                   :required-type? true}
+                  {:name :next
+                   :type int-type}
+                  {:name           :last
+                   :type           int-type
+                   :required-type? true}]}))))
 
 (comment
   (printf (generate))
