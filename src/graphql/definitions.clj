@@ -100,28 +100,50 @@
                                          :subscription :Subscription}})))
 
 ; https://spec.graphql.org/June2018/#ObjectTypeDefinition
-(defn object-type-definition [{:keys [name fields]}]
+(defn object-type-definition [{:keys [name fields interfaces]}]
+  {:pre [(valid-name? name)
+         (or (nil? interfaces)
+             (pos? (count interfaces)))]}
+  (let [fields-def     (field-list-definition {:fields fields})
+        implements-def (when interfaces
+                         (->> interfaces
+                              (map k-name)
+                              (str/join " & ")
+                              (str " implements ")))]
+    (str
+      generated-comment
+      "type " (k-name name) implements-def " {\n" fields-def "}\n\n")))
+
+(comment
+  (printf (object-type-definition {:name       :Query
+                                   :interfaces [:Attribute :Other]
+                                   :fields     [{:name           :databases
+                                                 :type           :ID
+                                                 :list?          true
+                                                 :required-type? true}]}))
+  (printf (object-type-definition {:name   :Query
+                                   :fields [{:name           :get
+                                             :arguments      [{:name :id :type :ID :required-type? true}]
+                                             :type           :ID
+                                             :list?          true
+                                             :required-type? true
+                                             :required-list? true}]})))
+
+; https://spec.graphql.org/June2018/#InterfaceTypeDefinition
+(defn interface-type-definition [{:keys [name fields]}]
   {:pre [(valid-name? name)]}
   (let [fields-def (field-list-definition {:fields fields})]
     (str
       generated-comment
-      "type " (k-name name) " {\n" fields-def "}\n\n")))
+      "interface " (k-name name) " {\n" fields-def "}\n\n")))
 
 (comment
-  (printf (object-type-definition {:name :Query :fields [{:name           :databases
-                                                          :type           :ID
-                                                          :list?          true
-                                                          :required-type? true}]}))
-  (printf (object-type-definition {:name :Query :fields [{:name           :get
-                                                          :arguments      [{:name :id :type :ID :required-type? true}]
-                                                          :type           :ID
-                                                          :list?          true
-                                                          :required-type? true
-                                                          :required-list? true}]})))
+  (printf (interface-type-definition {:name   :Attribute
+                                      :fields [{:name :id
+                                                :type :ID}]})))
 
 ; remember, there are more:
 ; ScalarTypeDefinition
-; InterfaceTypeDefinition
 ; UnionTypeDefinition
 ; EnumTypeDefinition
 ; InputObjectTypeDefinition
