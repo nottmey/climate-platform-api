@@ -12,12 +12,17 @@
   (let [app-sync-context (json/read-str app-sync-input)
         parent-type-name (keyword (get-in app-sync-context ["info" "parentTypeName"]))
         field-name       (keyword (get-in app-sync-context ["info" "fieldName"]))
+        ; TODO make resolvers only calculate requested values
+        selected-paths   (set (get-in app-sync-context ["info" "selectionSetList"]))
         arguments        (walk/keywordize-keys (get app-sync-context "arguments"))
         parent-value     (walk/keywordize-keys (get app-sync-context "source"))
         ; TODO only append context in dev mode (e.g. api key or dev identity)
-        assoc-context    (fn [m] (if (map? m) (assoc m :context app-sync-context) m))]
+        assoc-context    (fn [m]
+                           (if (and (map? m) (contains? selected-paths "context"))
+                             (assoc m :context app-sync-context) m))]
     (-> {:parent-type-name parent-type-name
          :field-name       field-name
+         :selected-paths   selected-paths
          :arguments        arguments
          :parent-value     parent-value}
         resolvers/datomic-resolve
@@ -38,10 +43,11 @@
                                :remainingTimeInMillis 59997}
                      :input   (json/write-str {"arguments" {"database" "datomic-docs-tutorial"},
                                                "identity"  nil,
-                                               "source"    nil,
+                                               "source"    {"total" 60,
+                                                            "slice" {"database" "datomic-docs-tutorial"}},
                                                "prev"      nil,
-                                               "info"      {"selectionSetList"    ["message"], ; not consistent
-                                                            "selectionSetGraphQL" "{\n  message\n}", ; not consistent
+                                               "info"      {"selectionSetList"    ["context" "entities" "entities/id"], ; not consistent
+                                                            "selectionSetGraphQL" "{\n  context\n  entities {\n    id\n  }\n}", ; not consistent
                                                             "fieldName"           "slice",
                                                             "parentTypeName"      "EntityList",
                                                             "variables"           {}},
