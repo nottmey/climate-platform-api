@@ -63,7 +63,6 @@
         context-field          {:name :context
                                 :type json-type}]
     (str
-      "# generated, do not edit manually!\n\n"
       (d/schema-definition
         {:root-ops {:query    query-type
                     :mutation mutation-type}})
@@ -82,7 +81,7 @@
                    :arguments      [database-argument]
                    :type           entity-list-type
                    :required-type? true}]})
-      "# example mutation, so it's not empty\n"
+      ; example mutation, so it's not empty
       (d/object-type-definition
         {:name   mutation-type
          :fields [{:name           :reset

@@ -8,6 +8,8 @@
 
 (def name-regex #"[_A-Za-z][_0-9A-Za-z]*")
 
+(def generated-comment "#generated, do not edit manually!\n")
+
 ; https://spec.graphql.org/June2018/#Name
 (defn valid-name? [k-or-s]
   (and (not (nil? k-or-s))
@@ -88,7 +90,9 @@
          (every? valid-name? (vals root-ops))]}
   (let [fields     (->> root-ops (map (fn [[f t]] {:name f :type t})))
         fields-def (field-list-definition {:fields fields})]
-    (str "schema {\n" fields-def "}\n\n")))
+    (str
+      generated-comment
+      "schema {\n" fields-def "}\n\n")))
 
 (comment
   (printf (schema-definition {:root-ops {:query        :Query
@@ -99,7 +103,9 @@
 (defn object-type-definition [{:keys [name fields]}]
   {:pre [(valid-name? name)]}
   (let [fields-def (field-list-definition {:fields fields})]
-    (str "type " (k-name name) " {\n" fields-def "}\n\n")))
+    (str
+      generated-comment
+      "type " (k-name name) " {\n" fields-def "}\n\n")))
 
 (comment
   (printf (object-type-definition {:name :Query :fields [{:name           :databases

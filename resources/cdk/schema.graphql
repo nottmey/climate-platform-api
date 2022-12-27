@@ -1,27 +1,29 @@
-# generated, do not edit manually!
-
+#generated, do not edit manually!
 schema {
     query: Query
     mutation: Mutation
 }
 
+#generated, do not edit manually!
 type Query {
     databases: [ID!]!
     get(database: ID!, id: ID!): Entity
     list(database: ID!): EntityList!
 }
 
-# example mutation, so it's not empty
+#generated, do not edit manually!
 type Mutation {
     reset: [Entity!]!
 }
 
+#generated, do not edit manually!
 type Entity {
     context: AWSJSON
     id: ID!
     attributes: [Attribute!]!
 }
 
+#generated, do not edit manually!
 type Attribute {
     id: ID!
     name: String!
@@ -29,12 +31,14 @@ type Attribute {
     values: [String!]!
 }
 
+#generated, do not edit manually!
 type EntityList {
     context: AWSJSON
     total: Int!
     slice(limit: Int = 20, offset: Int = 0): EntityListSlice!
 }
 
+#generated, do not edit manually!
 type EntityListSlice {
     context: AWSJSON
     usedLimit: Int!
