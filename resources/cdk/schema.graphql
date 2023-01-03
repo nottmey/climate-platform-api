@@ -24,11 +24,65 @@ type Entity {
 }
 
 #generated, do not edit manually!
-type Attribute {
+interface Attribute {
     id: ID!
     name: String!
-    type: String!
+}
+
+#generated, do not edit manually!
+type StringAttribute implements Attribute {
+    id: ID!
+    name: String!
+    value: String!
+}
+
+#generated, do not edit manually!
+type BooleanAttribute implements Attribute {
+    id: ID!
+    name: String!
+    value: Boolean!
+}
+
+#generated, do not edit manually!
+type ReferenceAttribute implements Attribute {
+    id: ID!
+    name: String!
+    value: Entity!
+}
+
+#generated, do not edit manually!
+type DateTimeAttribute implements Attribute {
+    id: ID!
+    name: String!
+    value: AWSDateTime!
+}
+
+#generated, do not edit manually!
+type MultiStringAttribute implements Attribute {
+    id: ID!
+    name: String!
     values: [String!]!
+}
+
+#generated, do not edit manually!
+type MultiBooleanAttribute implements Attribute {
+    id: ID!
+    name: String!
+    values: [Boolean!]!
+}
+
+#generated, do not edit manually!
+type MultiReferenceAttribute implements Attribute {
+    id: ID!
+    name: String!
+    values: [Entity!]!
+}
+
+#generated, do not edit manually!
+type MultiDateTimeAttribute implements Attribute {
+    id: ID!
+    name: String!
+    values: [AWSDateTime!]!
 }
 
 #generated, do not edit manually!

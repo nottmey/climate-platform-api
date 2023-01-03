@@ -89,5 +89,5 @@
     (time (datomic-resolve {:parent-type-name :EntityList
                             :field-name       :page
                             :parent-value     {:total 60 :page {:database database}}
-                            :arguments        {:page 200
-                                               :size 1}}))))
+                            :arguments        {:page 0
+                                               :size 20}}))))

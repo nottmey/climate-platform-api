@@ -1,2 +1,11 @@
 # Types provided by AWS, declared for checking generated schema.graphql
+# https://docs.aws.amazon.com/appsync/latest/devguide/scalars.html
 scalar AWSJSON
+scalar AWSDate
+scalar AWSTime
+scalar AWSDateTime
+scalar AWSEmail
+scalar AWSTimestamp
+scalar AWSURL
+scalar AWSPhone
+scalar AWSIPAddress
