@@ -91,3 +91,5 @@
                             :parent-value     {:total 60 :page {:database database}}
                             :arguments        {:page 0
                                                :size 20}}))))
+
+; TODO add reference and multi-reference resolver as bulk-resolvers
