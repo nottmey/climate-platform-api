@@ -5,25 +5,29 @@
 
 (defn map-value [attribute db-value schema]
   (let [{:keys [db/valueType db/cardinality]} (get schema attribute)
-        many?     (= cardinality :db.cardinality/many)
-        gql-key   (if many? "values" "value")
-        db->gql   (->> sa/attribute-types
-                       (filter
-                         (fn [{:keys [datomic/type]}]
-                           (contains? type valueType)))
-                       first
-                       :db->gql)
-        gql-value (if many? (map db->gql db-value) (db->gql db-value))]
-    {gql-key gql-value}))
+        many?          (= cardinality :db.cardinality/many)
+        gql-key        (if many? "values" "value")
+        attribute-type (->> sa/attribute-types
+                            (filter
+                              (fn [{:keys [datomic/type]}]
+                                (contains? type valueType)))
+                            first)
+        db->gql        (:db->gql attribute-type)
+        gql-value      (if many? (map db->gql db-value) (db->gql db-value))
+        gql-type-name  (if many?
+                         (:graphql/multi-value-full-name attribute-type)
+                         (:graphql/single-value-full-name attribute-type))]
+    {"__typename" gql-type-name
+     gql-key      gql-value}))
 
 (comment
   (let [db     (d/db (utils/get-connection (first (utils/list-databases))))
         schema (utils/get-schema db)]
     #_(map-value :db/ident :db.part/db schema)
-    #_(map-value :db.install/partition [#:db{:id 0, :ident :db.part/db}
-                                        #:db{:id 3, :ident :db.part/tx}
-                                        #:db{:id 4, :ident :db.part/user}] schema)
-    (map-value :db/doc "some docs" schema)))
+    (map-value :db.install/partition [#:db{:id 0, :ident :db.part/db}
+                                      #:db{:id 3, :ident :db.part/tx}
+                                      #:db{:id 4, :ident :db.part/user}] schema)
+    #_(map-value :db/doc "some docs" schema)))
 
 (defn map-entity [entity schema]
   {"id"         (str (get entity :db/id))

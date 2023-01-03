@@ -11,8 +11,7 @@
       a/attribute-types
       (map
         #(d/object-type-definition
-           {:name       (str (name (:graphql/name %))
-                             (name t/attribute-type))
+           {:name       (:graphql/single-value-full-name %)
             :interfaces [t/attribute-type]
             :fields     (conj
                           attribute-fields
@@ -24,9 +23,7 @@
       a/attribute-types
       (map
         #(d/object-type-definition
-           {:name       (str "Multi"
-                             (name (:graphql/name %))
-                             (name t/attribute-type))
+           {:name       (:graphql/multi-value-full-name %)
             :interfaces [t/attribute-type]
             :fields     (conj
                           attribute-fields
