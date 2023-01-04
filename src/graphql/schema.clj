@@ -11,11 +11,11 @@
       a/attribute-types
       (map
         #(d/object-type-definition
-           {:name       (:graphql/single-value-full-name %)
+           {:name       (:graphql/single-value-type-name %)
             :interfaces [t/attribute-type]
             :fields     (conj
                           attribute-fields
-                          {:name           :value
+                          {:name           (:graphql/single-value-field-name %)
                            :type           (:graphql/type %)
                            :required-type? true})}))
       str/join)
@@ -23,11 +23,11 @@
       a/attribute-types
       (map
         #(d/object-type-definition
-           {:name       (:graphql/multi-value-full-name %)
+           {:name       (:graphql/multi-value-type-name %)
             :interfaces [t/attribute-type]
             :fields     (conj
                           attribute-fields
-                          {:name           :values
+                          {:name           (:graphql/multi-value-field-name %)
                            :type           (:graphql/type %)
                            :list?          true
                            :required-type? true
@@ -54,6 +54,7 @@
                                :required-type? true}
         context-field         {:name :context
                                :type t/json-type}
+        ; TODO add "to string" field, so that the client doesn't need to differentiate types when only displaying data
         attribute-fields      [{:name           :id
                                 :type           t/id-type
                                 :required-type? true}

@@ -17,36 +17,44 @@
 ;#:db.type/bytes
 
 (def attribute-types
-  (->> [{:graphql/name :String
-         :graphql/type :String
-         :datomic/type #{:db.type/symbol
-                         :db.type/string
-                         :db.type/keyword}
-         :db->gql      str}
-        {:graphql/name :Boolean
-         :graphql/type :Boolean
-         :datomic/type #{:db.type/boolean}
-         :db->gql      identity}
-        {:graphql/name :Reference
-         :graphql/type gt/entity-type
-         :datomic/type #{:db.type/ref}
-         :db->gql      (fn [ref] {:id (str (:db/id ref))})}
-        {:graphql/name :DateTime
-         :graphql/type gt/date-time-type
-         :datomic/type #{:db.type/instant}
-         :db->gql      (fn [^Date date]
-                         (.format
-                           DateTimeFormatter/ISO_INSTANT
-                           (.toInstant date)))}]
-       (map #(assoc % :graphql/single-value-full-name
-                      (str (name (:graphql/name %))
-                           (name gt/attribute-type))))
-       (map #(assoc % :graphql/multi-value-full-name
-                      (str "Multi"
-                           (name (:graphql/name %))
-                           (name gt/attribute-type))))))
+  (->> [{:graphql/name                    :String
+         :graphql/type                    :String
+         :graphql/single-value-field-name :string
+         :graphql/multi-value-field-name  :strings
+         :datomic/type                    #{:db.type/symbol
+                                            :db.type/string
+                                            :db.type/keyword}
+         :datomic/->gql                   str}
+        {:graphql/name                    :Boolean
+         :graphql/type                    :Boolean
+         :graphql/single-value-field-name :boolean
+         :graphql/multi-value-field-name  :booleans
+         :datomic/type                    #{:db.type/boolean}
+         :datomic/->gql                   identity}
+        {:graphql/name                    :Reference
+         :graphql/type                    gt/entity-type
+         :graphql/single-value-field-name :ref
+         :graphql/multi-value-field-name  :refs
+         :datomic/type                    #{:db.type/ref}
+         :datomic/->gql                   (fn [ref] {:id (str (:db/id ref))})}
+        {:graphql/name                    :DateTime
+         :graphql/type                    gt/date-time-type
+         :graphql/single-value-field-name :dateTime
+         :graphql/multi-value-field-name  :dateTimes
+         :datomic/type                    #{:db.type/instant}
+         :datomic/->gql                   (fn [^Date date]
+                                            (.format
+                                              DateTimeFormatter/ISO_INSTANT
+                                              (.toInstant date)))}]
+       (map #(assoc % :graphql/single-value-type-name
+                      (keyword (str (name (:graphql/name %))
+                                    (name gt/attribute-type)))))
+       (map #(assoc % :graphql/multi-value-type-name
+                      (keyword (str "Multi"
+                                    (name (:graphql/name %))
+                                    (name gt/attribute-type)))))))
 
 (comment
   (doall attribute-types)
-  ((:db->gql (first (drop 3 attribute-types)))
+  ((:datomic/->gql (first (drop 3 attribute-types)))
    (Date.)))

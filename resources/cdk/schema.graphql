@@ -33,56 +33,56 @@ interface Attribute {
 type StringAttribute implements Attribute {
     id: ID!
     name: String!
-    value: String!
+    string: String!
 }
 
 #generated, do not edit manually!
 type BooleanAttribute implements Attribute {
     id: ID!
     name: String!
-    value: Boolean!
+    boolean: Boolean!
 }
 
 #generated, do not edit manually!
 type ReferenceAttribute implements Attribute {
     id: ID!
     name: String!
-    value: Entity!
+    ref: Entity!
 }
 
 #generated, do not edit manually!
 type DateTimeAttribute implements Attribute {
     id: ID!
     name: String!
-    value: AWSDateTime!
+    dateTime: AWSDateTime!
 }
 
 #generated, do not edit manually!
 type MultiStringAttribute implements Attribute {
     id: ID!
     name: String!
-    values: [String!]!
+    strings: [String!]!
 }
 
 #generated, do not edit manually!
 type MultiBooleanAttribute implements Attribute {
     id: ID!
     name: String!
-    values: [Boolean!]!
+    booleans: [Boolean!]!
 }
 
 #generated, do not edit manually!
 type MultiReferenceAttribute implements Attribute {
     id: ID!
     name: String!
-    values: [Entity!]!
+    refs: [Entity!]!
 }
 
 #generated, do not edit manually!
 type MultiDateTimeAttribute implements Attribute {
     id: ID!
     name: String!
-    values: [AWSDateTime!]!
+    dateTimes: [AWSDateTime!]!
 }
 
 #generated, do not edit manually!

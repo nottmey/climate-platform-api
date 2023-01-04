@@ -4,21 +4,23 @@
             [shared.attributes :as sa]))
 
 (defn map-value [attribute db-value schema]
-  (let [{:keys [db/valueType db/cardinality]} (get schema attribute)
-        many?          (= cardinality :db.cardinality/many)
-        gql-key        (if many? "values" "value")
-        attribute-type (->> sa/attribute-types
-                            (filter
-                              (fn [{:keys [datomic/type]}]
-                                (contains? type valueType)))
-                            first)
-        db->gql        (:db->gql attribute-type)
-        gql-value      (if many? (map db->gql db-value) (db->gql db-value))
-        gql-type-name  (if many?
-                         (:graphql/multi-value-full-name attribute-type)
-                         (:graphql/single-value-full-name attribute-type))]
-    {"__typename" gql-type-name
-     gql-key      gql-value}))
+  (let [{:keys [db/cardinality db/valueType]} (get schema attribute)
+        many?         (= cardinality :db.cardinality/many)
+        type-config   (->> sa/attribute-types
+                           (filter
+                             (fn [{:keys [datomic/type]}]
+                               (contains? type valueType)))
+                           first)
+        {:keys [graphql/multi-value-field-name
+                graphql/single-value-field-name
+                graphql/multi-value-type-name
+                graphql/single-value-type-name
+                datomic/->gql]} type-config
+        gql-type-name (if many? multi-value-type-name single-value-type-name)
+        gql-key       (if many? multi-value-field-name single-value-field-name)
+        gql-value     (if many? (map ->gql db-value) (->gql db-value))]
+    {"__typename"   (name gql-type-name)
+     (name gql-key) gql-value}))
 
 (comment
   (let [db     (d/db (utils/get-connection (first (utils/list-databases))))
