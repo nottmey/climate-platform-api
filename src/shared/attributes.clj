@@ -18,7 +18,7 @@
 
 (def attribute-types
   (->> [{:graphql/name                    :String
-         :graphql/type                    :String
+         :graphql/type                    gt/string-type
          :graphql/single-value-field-name :string
          :graphql/multi-value-field-name  :strings
          :datomic/type                    #{:db.type/symbol
@@ -26,17 +26,17 @@
                                             :db.type/keyword}
          :datomic/->gql                   str}
         {:graphql/name                    :Boolean
-         :graphql/type                    :Boolean
+         :graphql/type                    gt/boolean-type
          :graphql/single-value-field-name :boolean
          :graphql/multi-value-field-name  :booleans
          :datomic/type                    #{:db.type/boolean}
          :datomic/->gql                   identity}
         {:graphql/name                    :Reference
-         :graphql/type                    gt/entity-type
+         :graphql/type                    gt/id-type
          :graphql/single-value-field-name :ref
          :graphql/multi-value-field-name  :refs
          :datomic/type                    #{:db.type/ref}
-         :datomic/->gql                   (fn [ref] {:id (str (:db/id ref))})}
+         :datomic/->gql                   (fn [ref] (str (:db/id ref)))}
         {:graphql/name                    :DateTime
          :graphql/type                    gt/date-time-type
          :graphql/single-value-field-name :dateTime

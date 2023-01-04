@@ -47,7 +47,7 @@ type BooleanAttribute implements Attribute {
 type ReferenceAttribute implements Attribute {
     id: ID!
     name: String!
-    ref: Entity!
+    ref: ID!
 }
 
 #generated, do not edit manually!
@@ -75,7 +75,7 @@ type MultiBooleanAttribute implements Attribute {
 type MultiReferenceAttribute implements Attribute {
     id: ID!
     name: String!
-    refs: [Entity!]!
+    refs: [ID!]!
 }
 
 #generated, do not edit manually!
