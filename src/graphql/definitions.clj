@@ -142,6 +142,19 @@
                                       :fields [{:name :id
                                                 :type :ID}]})))
 
+; https://spec.graphql.org/June2018/#InputObjectTypeDefinition
+(defn input-object-type-definition [{:keys [name fields]}]
+  {:pre [valid-name? name]}
+  (let [fields-def (field-list-definition {:fields fields})]
+    (str
+      generated-comment
+      "input " (k-name name) " {\n" fields-def "}\n\n")))
+
+(comment
+  (printf (input-object-type-definition {:name   :EntityFilter
+                                         :fields [{:name :attribute
+                                                   :type :ID}]})))
+
 ; remember, there are more:
 ; ScalarTypeDefinition
 ; UnionTypeDefinition

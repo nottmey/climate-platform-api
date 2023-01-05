@@ -43,7 +43,8 @@
                                  :required-type? true}]))
 
 (defn generate []
-  (let [entity-list-type      (keyword (str (name t/entity-type) "List"))
+  (let [entity-filter-type    (keyword (str (name t/entity-type) "Filter"))
+        entity-list-type      (keyword (str (name t/entity-type) "List"))
         entity-list-page-type (keyword (str (name entity-list-type) "Page"))
         page-info-type        :PageInfo
         database-argument     {:name           :database
@@ -66,6 +67,12 @@
         {:root-ops {:query    t/query-type
                     :mutation t/mutation-type}})
       ; TODO generate from resolvers (via annotations on resolvers)
+      (d/input-object-type-definition
+        {:name   entity-filter-type
+         :fields [{:name           :attributes
+                   :type           :ID
+                   :list?          true
+                   :required-type? true}]})
       (d/object-type-definition
         {:name   t/query-type
          :fields [{:name           :databases
@@ -77,7 +84,9 @@
                    :arguments [database-argument id-argument]
                    :type      t/entity-type}
                   {:name           :list
-                   :arguments      [database-argument]
+                   :arguments      [database-argument
+                                    {:name :filter
+                                     :type entity-filter-type}]
                    :type           entity-list-type
                    :required-type? true}]})
       ; example mutation, so it's not empty
