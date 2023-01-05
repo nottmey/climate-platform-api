@@ -58,13 +58,13 @@
 (comment
   (let [db     (d/db (utils/get-connection (first (utils/list-databases))))
         schema (utils/get-schema db)
-        es     (time (recently-updated-entities db #_[50] (keys schema)))]
+        es     (time (recently-updated-entities db #_["50"] (keys schema)))]
     (time (doall (pull-entities db es)))))
 
 (defresolver datomic-resolve [:Query :list] [{:keys [arguments]}]
   (let [{:keys [database filter]} arguments
         db (d/db (utils/get-connection database))
-        as (or (:attributes filter)
+        as (or (->> (:attributes filter) (map parse-long) seq)
                (keys (utils/get-schema db)))]
     {"total" (count (recently-updated-entities db as))
      ; handing down context args to the field resolver (needed because parameterizable)
@@ -76,14 +76,14 @@
   (datomic-resolve {:parent-type-name :Query
                     :field-name       :list
                     :arguments        {:database (first (utils/list-databases))
-                                       :filter   {:attributes [50]}}}))
+                                       :filter   {:attributes ["50"]}}}))
 
 (defresolver datomic-resolve [:EntityList :page] [{:keys [arguments parent-value]}]
   (let [{:keys [page size]} arguments
         {{:keys [database t filter]} :page} parent-value
         db       (d/as-of (d/db (utils/get-connection database)) t)
         schema   (utils/get-schema db)
-        as       (or (:attributes filter)
+        as       (or (->> (:attributes filter) (map parse-long) seq)
                      (keys schema))
         entities (recently-updated-entities db as)
         total    (count entities)
@@ -111,8 +111,8 @@
     (time (datomic-resolve {:parent-type-name :EntityList
                             :field-name       :page
                             :parent-value     {:total 5 :page {:database database
-                                                                :t        5
-                                                                :filter   {:attributes [50]}}}
+                                                               :t        5
+                                                               :filter   {:attributes ["50"]}}}
                             :arguments        {:page 0
                                                :size 20}}))))
 
