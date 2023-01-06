@@ -1,9 +1,8 @@
 (ns ions.resolvers
-  (:require
-    [clojure.walk :as walk]
-    [datomic.client.api :as d]
-    [ions.mappings :as mappings]
-    [ions.utils :as utils]))
+  (:require [clojure.walk :as walk]
+            [datomic.access :as da]
+            [datomic.client.api :as d]
+            [ions.mappings :as mappings]))
 
 (defn- extract-type-field-tuple [{:keys [parent-type-name field-name]}]
   [parent-type-name field-name])
@@ -21,22 +20,22 @@
   `(defmethod ~multifn ~dispatch-val ~@fn-tail))
 
 (defresolver datomic-resolve [:Query :databases] [_]
-  (utils/list-databases))
+  (da/list-databases))
 
 (comment
   (datomic-resolve {:parent-type-name :Query :field-name :databases}))
 
 (defresolver datomic-resolve [:Query :get] [{:keys [arguments]}]
   (let [{:keys [database id]} arguments
-        db     (d/db (utils/get-connection database))
-        schema (utils/get-schema db)
+        db     (d/db (da/get-connection database))
+        schema (da/get-schema db)
         result (d/pull db '[*] (parse-long (str id)))]
     (mappings/map-entity result schema)))
 
 (comment
   (datomic-resolve {:parent-type-name :Query
                     :field-name       :get
-                    :arguments        {:database (first (utils/list-databases))
+                    :arguments        {:database (first (da/list-databases))
                                        :id       "0"}}))
 
 (defn recently-updated-entities [db as]
@@ -56,16 +55,16 @@
        (map second)))
 
 (comment
-  (let [db     (d/db (utils/get-connection (first (utils/list-databases))))
-        schema (utils/get-schema db)
+  (let [db     (d/db (da/get-connection (first (da/list-databases))))
+        schema (da/get-schema db)
         es     (time (recently-updated-entities db #_["50"] (keys schema)))]
     (time (doall (pull-entities db es)))))
 
 (defresolver datomic-resolve [:Query :list] [{:keys [arguments]}]
   (let [{:keys [database filter]} arguments
-        db (d/db (utils/get-connection database))
+        db (d/db (da/get-connection database))
         as (or (->> (:attributes filter) (map parse-long) seq)
-               (keys (utils/get-schema db)))]
+               (keys (da/get-schema db)))]
     {"total" (count (recently-updated-entities db as))
      ; handing down context args to the field resolver (needed because parameterizable)
      "page"  {"database" database
@@ -75,14 +74,14 @@
 (comment
   (datomic-resolve {:parent-type-name :Query
                     :field-name       :list
-                    :arguments        {:database (first (utils/list-databases))
+                    :arguments        {:database (first (da/list-databases))
                                        :filter   {:attributes ["50"]}}}))
 
 (defresolver datomic-resolve [:EntityList :page] [{:keys [arguments parent-value]}]
   (let [{:keys [page size]} arguments
         {{:keys [database t filter]} :page} parent-value
-        db       (d/as-of (d/db (utils/get-connection database)) t)
-        schema   (utils/get-schema db)
+        db       (d/as-of (d/db (da/get-connection database)) t)
+        schema   (da/get-schema db)
         as       (or (->> (:attributes filter) (map parse-long) seq)
                      (keys schema))
         entities (recently-updated-entities db as)
@@ -107,7 +106,7 @@
      "entities" entities}))
 
 (comment
-  (let [database (first (utils/list-databases))]
+  (let [database (first (da/list-databases))]
     (time (datomic-resolve {:parent-type-name :EntityList
                             :field-name       :page
                             :parent-value     {:total 5 :page {:database database

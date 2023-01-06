@@ -1,6 +1,6 @@
 (ns ions.mappings
   (:require [datomic.client.api :as d]
-            [ions.utils :as utils]
+            [datomic.access :as da]
             [shared.attributes :as sa]))
 
 (defn map-value [attribute db-value schema]
@@ -23,8 +23,8 @@
      (name gql-key) gql-value}))
 
 (comment
-  (let [db     (d/db (utils/get-connection (first (utils/list-databases))))
-        schema (utils/get-schema db)]
+  (let [db     (d/db (da/get-connection (first (da/list-databases))))
+        schema (da/get-schema db)]
     #_(map-value :db/ident :db.part/db schema)
     (map-value :db.install/partition [#:db{:id 0, :ident :db.part/db}
                                       #:db{:id 3, :ident :db.part/tx}
@@ -42,7 +42,7 @@
                            (map-value a-key a-val schema)))))})
 
 (comment
-  (let [db     (d/db (utils/get-connection (first (utils/list-databases))))
-        schema (utils/get-schema db)
+  (let [db     (d/db (da/get-connection (first (da/list-databases))))
+        schema (da/get-schema db)
         result (d/pull db '[*] 21)]
     (map-entity result schema)))
