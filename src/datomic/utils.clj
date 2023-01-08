@@ -27,9 +27,9 @@
         val
         (if-let [ms (and (-> val ex-data ::anomalies/category retryable-anomaly?)
                          (get retry-wait-ms attempt))]
-          (do
+          (let [regular? (-> val .getMessage (= "Datomic Client Timeout"))]
             (log/info :message (str "exception in attempt #" attempt ", retrying in " ms "ms")
-                      :exception val)
+                      :exception (if regular? nil val))
             (Thread/sleep ms)
             (recur (inc attempt)))
           (throw val))))))
