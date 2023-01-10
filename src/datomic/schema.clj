@@ -1,8 +1,8 @@
 (ns datomic.schema
-  (:require [datomic.client.api :as d]
-            [datomic.access :as a]))
+  (:require [user :as u]
+            [datomic.client.api :as d]))
 
-; todo use transaction function to ensure type is complete
+; TODO use transaction function to ensure type is complete
 (def graphql-attributes
   [{:db/ident       :graphql.type/name
     :db/unique      :db.unique/identity
@@ -45,35 +45,46 @@
     :db/cardinality :db.cardinality/one}])
 
 (comment
-  ; add some data
-  (let [conn (a/get-connection "sandbox")]
-    (d/transact conn {:tx-data
-                      [{:db/id                    "SomeType"
-                        :graphql.type/name        "SomeType"
-                        :graphql.type/deprecated? false}
-                       {:graphql.relation/attribute   :db/ident
-                        :graphql.relation/forward?    true
-                        :graphql.relation/type        "SomeType"
-                        :graphql.relation/deprecated? false
-                        :graphql.relation/field       "testRelationTo"
-                        :graphql.relation/target      "SomeType"}]}))
-  ; find relation for query
-  (let [db (d/db (a/get-connection "sandbox"))]
-    (time (d/q '[:find (pull ?rel [*])
-                 :in $ ?type-name [?field-name ...]
-                 :where
-                 [?type :graphql.type/name ?type-name]
-                 [(tuple ?type ?field-name) ?tup]
-                 [?rel :graphql.relation/type+field ?tup]]
-               db
-               "SomeType"
-               ["testRelationTo"])))
+  (d/transact
+    (u/sandbox-conn)
+    {:tx-data graphql-attributes})
 
-  ; generate all types with attributes
-  (let [db (d/db (a/get-connection "sandbox"))]
-    (time (d/q '[:find ?type-name ?field-name
-                 :where
-                 [?type :graphql.type/name ?type-name]
-                 [?rel :graphql.relation/type ?type]
-                 [?rel :graphql.relation/field ?field-name]]
-               db))))
+  (d/transact
+    (u/sandbox-conn)
+    {:tx-data
+     [{:db/id                    "SomeType"
+       :graphql.type/name        "SomeType"
+       :graphql.type/deprecated? false}
+      {:graphql.relation/attribute   :db/ident
+       :graphql.relation/forward?    true
+       :graphql.relation/type        "SomeType"
+       :graphql.relation/deprecated? false
+       :graphql.relation/field       "testRelationTo"
+       :graphql.relation/target      "SomeType"}]}))
+
+(defn get-all-type-fields [db]
+  (d/q '[:find ?type-name ?field-name
+         :where
+         [?type :graphql.type/name ?type-name]
+         [?rel :graphql.relation/type ?type]
+         [?rel :graphql.relation/field ?field-name]]
+       db))
+
+(comment
+  (let [db (u/sandbox-db)]
+    (time (get-all-type-fields db))))
+
+(defn get-relations [db type-field-tuples]
+  (d/q '[:find (pull ?rel [*])
+         :in $ [[?type-name ?field-name]]
+         :where
+         [?type :graphql.type/name ?type-name]
+         [(tuple ?type ?field-name) ?tup]
+         [?rel :graphql.relation/type+field ?tup]]
+       db
+       type-field-tuples))
+
+(comment
+  (let [db     (u/sandbox-db)
+        tuples (get-all-type-fields db)]
+    (time (get-relations db tuples))))

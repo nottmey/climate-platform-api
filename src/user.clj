@@ -1,16 +1,17 @@
 (ns user
   (:require [datomic.access :as access]
-            [datomic.schema :as schema]
             [datomic.client.api :as d]))
 
 (def sandbox "sandbox")
 
+(defn sandbox-conn []
+  (access/get-connection sandbox))
+
+(defn sandbox-db []
+  (d/db (sandbox-conn)))
+
 (defn create-sandbox []
-  (when
-    (d/create-database (access/get-client) {:db-name sandbox})
-    (let [conn (access/get-connection sandbox)
-          _    (d/q '[:find ?tx :where [?tx :db/txInstant]] (d/db conn))]
-      (d/transact conn {:tx-data schema/graphql-attributes}))))
+  (d/create-database (access/get-client) {:db-name sandbox}))
 
 (comment
   (create-sandbox))
