@@ -49,7 +49,20 @@
     (u/sandbox-conn)
     {:tx-data graphql-attributes}))
 
-(defn add-type-field-tx-data [type-name field-name target-type attribute forward?]
+(defn add-value-field-tx-data [type-name field-name attribute]
+  [{:db/id             type-name
+    :graphql.type/name type-name}
+   {:graphql.relation/attribute  attribute
+    :graphql.relation/type type-name
+    :graphql.relation/field field-name}])
+
+(comment
+  (d/transact
+    (u/sandbox-conn)
+    {:tx-data (add-value-field-tx-data "SomeTypeY" "identX" :db/ident)}))
+
+
+(defn add-ref-field-tx-data [type-name field-name target-type attribute forward?]
   [{:db/id             type-name
     :graphql.type/name type-name}
    {:graphql.relation/attribute attribute
@@ -61,7 +74,7 @@
 (comment
   (d/transact
     (u/sandbox-conn)
-    {:tx-data (add-type-field-tx-data "SomeType" "refToX" "SomeType" :db/ident true)}))
+    {:tx-data (add-ref-field-tx-data "SomeType" "refToX" "SomeType" :db/cardinality true)}))
 
 (defn deprecate-type-tx-data [type-name]
   [{:graphql.type/name        type-name
@@ -75,7 +88,7 @@
 (defn deprecate-type-field-tx-data [type-name field-name]
   [{:db/id             type-name
     :graphql.type/name type-name}
-   {:graphql.relation/type+field [type-name field-name]
+   {:graphql.relation/type+field  [type-name field-name]
     :graphql.relation/deprecated? true}])
 
 (comment
