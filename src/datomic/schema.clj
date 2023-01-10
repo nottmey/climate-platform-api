@@ -47,20 +47,41 @@
 (comment
   (d/transact
     (u/sandbox-conn)
-    {:tx-data graphql-attributes})
+    {:tx-data graphql-attributes}))
 
+(defn add-type-field-tx-data [type-name field-name target-type attribute forward?]
+  [{:db/id             type-name
+    :graphql.type/name type-name}
+   {:graphql.relation/attribute attribute
+    :graphql.relation/forward?  forward?
+    :graphql.relation/type      type-name
+    :graphql.relation/field     field-name
+    :graphql.relation/target    target-type}])
+
+(comment
   (d/transact
     (u/sandbox-conn)
-    {:tx-data
-     [{:db/id                    "SomeType"
-       :graphql.type/name        "SomeType"
-       :graphql.type/deprecated? false}
-      {:graphql.relation/attribute   :db/ident
-       :graphql.relation/forward?    true
-       :graphql.relation/type        "SomeType"
-       :graphql.relation/deprecated? false
-       :graphql.relation/field       "testRelationTo"
-       :graphql.relation/target      "SomeType"}]}))
+    {:tx-data (add-type-field-tx-data "SomeType" "refToX" "SomeType" :db/ident true)}))
+
+(defn deprecate-type-tx-data [type-name]
+  [{:graphql.type/name        type-name
+    :graphql.type/deprecated? true}])
+
+(comment
+  (d/transact
+    (u/sandbox-conn)
+    {:tx-data (deprecate-type-tx-data "SomeType")}))
+
+(defn deprecate-type-field-tx-data [type-name field-name]
+  [{:db/id             type-name
+    :graphql.type/name type-name}
+   {:graphql.relation/type+field [type-name field-name]
+    :graphql.relation/deprecated? true}])
+
+(comment
+  (d/transact
+    (u/sandbox-conn)
+    {:tx-data (deprecate-type-field-tx-data "SomeType" "refToX")}))
 
 (defn get-all-type-fields [db]
   (d/q '[:find ?type-name ?field-name
