@@ -175,18 +175,23 @@
           (gd/object-type-definition
             {:name type
              :fields
-             (for [[field value-type] fields
-                   :let [{:keys [graphql/type]}
-                         (->> a/attribute-types
-                              (filter
-                                (fn [{:keys [datomic/type]}]
-                                  (contains? type value-type)))
-                              first)]]
-               {:name field
-                :type type
-                ; TODO generate list?, if appropriate
-                ; TODO generate required?, if appropriate
-                })}))))))
+             (conj
+               (for [[field value-type] fields
+                     :let [{:keys [graphql/type]}
+                           (->> a/attribute-types
+                                (filter
+                                  (fn [{:keys [datomic/type]}]
+                                    (contains? type value-type)))
+                                first)]]
+                 {:name field
+                  :type type
+                  ; TODO generate list?, if appropriate
+                  ; TODO generate required?, if appropriate
+                  })
+               {:name "id"
+                ; FYI not required, because of temp data (which may not have an ID yet)
+                ; TODO how does app sync recommend handling ID generation when using subscriptions?
+                :type :ID})}))))))
 
 (comment
   (printf (generate))
