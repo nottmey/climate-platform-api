@@ -172,6 +172,8 @@
           ; TODO add query resolvers for each type
           ; TODO generate mutations for each type
           ; TODO add mutation resolvers for each type
+          ; TODO add subscription type
+          ; TODO add subscription annotations
           (gd/object-type-definition
             {:name type
              :fields
