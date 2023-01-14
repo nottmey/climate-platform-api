@@ -113,11 +113,14 @@
     {:tx-data (deprecate-type-field-tx-data "SomeType" "refToX")}))
 
 (defn get-all-type-fields [db]
-  (d/q '[:find ?type-name ?field-name
+  (d/q '[:find ?type-name ?field-name ?value-type-ident
          :where
          [?type :graphql.type/name ?type-name]
          [?rel :graphql.relation/type ?type]
-         [?rel :graphql.relation/field ?field-name]]
+         [?rel :graphql.relation/field ?field-name]
+         [?rel :graphql.relation/attribute ?attr]
+         [?attr :db/valueType ?value-type]
+         [?value-type :db/ident ?value-type-ident]]
        db))
 
 (comment

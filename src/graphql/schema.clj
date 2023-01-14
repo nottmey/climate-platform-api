@@ -175,10 +175,15 @@
           (gd/object-type-definition
             {:name type
              :fields
-             (for [[field] fields]
+             (for [[field value-type] fields
+                   :let [{:keys [graphql/type]}
+                         (->> a/attribute-types
+                              (filter
+                                (fn [{:keys [datomic/type]}]
+                                  (contains? type value-type)))
+                              first)]]
                {:name field
-                ; TODO generate correct type
-                :type :String
+                :type type
                 ; TODO generate list?, if appropriate
                 ; TODO generate required?, if appropriate
                 })}))))))
