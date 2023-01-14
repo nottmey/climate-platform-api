@@ -7,6 +7,8 @@
 
 (def client-config-path "datomic/client-config.edn")
 
+(def dev-env-db-name "development")
+
 (def get-client
   (memoize
     #(if-let [r (io/resource client-config-path)]
@@ -40,6 +42,5 @@
        (into {})))
 
 (comment
-  (let [db-name (first (list-databases))
-        conn (get-connection db-name)]
+  (let [conn (get-connection dev-env-db-name)]
     (time (get-schema (d/db conn)))))
