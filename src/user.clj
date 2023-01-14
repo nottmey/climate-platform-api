@@ -39,7 +39,7 @@
           (every? :db/ident tx-data)]}
    (let [conn           (access/get-connection db-name)
          test-tx-result (d/with (d/with-db conn) {:tx-data tx-data})]
-     (if (> 1 (count (:tx-data test-tx-result)))
+     (if (<= (count (:tx-data test-tx-result)) 1)
        (empty-tx-result conn)
        (d/transact conn {:tx-data tx-data})))))
 
@@ -65,7 +65,7 @@
      (assert (every? has-uniqueness? tx-data))
      (try
        (let [test-tx-result (d/with (d/with-db conn) {:tx-data tx-data})]
-         (if (> 1 (count (:tx-data test-tx-result)))
+         (if (<= (count (:tx-data test-tx-result)) 1)
            (empty-tx-result conn)
            (d/transact conn {:tx-data tx-data})))
        (catch ExceptionInfo e

@@ -1,5 +1,6 @@
 (ns datomic.schema
-  (:require [datomic.client.api :as d]
+  (:require [datomic.access :as access]
+            [datomic.client.api :as d]
             [user :as u]))
 
 ; TODO use transaction function to ensure type is complete
@@ -50,7 +51,9 @@
     :db/doc         (graphql-doc "Whether the forward or backwards reference of this relations reference attribute should be pulled, when requested in the GraphQL API. Default: `true`.")}])
 
 (comment
-  (u/ensure-schema graphql-attributes))
+  (u/ensure-schema
+    graphql-attributes
+    #_access/dev-env-db-name))
 
 (def platform-attributes
   [{:db/ident       :platform/name
@@ -59,7 +62,9 @@
     :db/doc         "Name of any non-user platform entity."}])
 
 (comment
-  (u/ensure-schema platform-attributes))
+  (u/ensure-schema
+    platform-attributes
+    #_access/dev-env-db-name))
 
 (defn add-value-field-tx-data [type-name field-name attribute]
   [{:db/id             type-name
@@ -70,7 +75,8 @@
 
 (comment
   (u/ensure-data
-    (add-value-field-tx-data "SomeTypeY" "ident" :db/ident)))
+    (add-value-field-tx-data "PlanetaryBoundary" "name" :platform/name)
+    #_access/dev-env-db-name))
 
 (defn add-ref-field-tx-data [type-name field-name target-type attribute forward?]
   [{:db/id             type-name
