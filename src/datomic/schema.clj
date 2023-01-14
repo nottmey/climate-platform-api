@@ -52,9 +52,9 @@
 (defn add-value-field-tx-data [type-name field-name attribute]
   [{:db/id             type-name
     :graphql.type/name type-name}
-   {:graphql.relation/attribute  attribute
-    :graphql.relation/type type-name
-    :graphql.relation/field field-name}])
+   {:graphql.relation/attribute attribute
+    :graphql.relation/type      type-name
+    :graphql.relation/field     field-name}])
 
 (comment
   (d/transact
