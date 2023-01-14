@@ -1,6 +1,5 @@
 (ns datomic.schema
-  (:require [datomic.access :as access]
-            [datomic.client.api :as d]
+  (:require [datomic.client.api :as d]
             [user :as u]))
 
 ; TODO use transaction function to ensure type is complete
@@ -102,6 +101,7 @@
     {:tx-data (deprecate-type-tx-data "SomeType")}))
 
 (defn deprecate-type-field-tx-data [type-name field-name]
+  ; FIXME doesn't work like this, always creates new relation entities
   [{:db/id             type-name
     :graphql.type/name type-name}
    {:graphql.relation/type+field  [type-name field-name]
