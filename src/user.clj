@@ -25,12 +25,13 @@
 (comment
   (delete-sandbox))
 
-(defn empty-tx-result [conn]
+(defn empty-tx-result [conn reason]
   (let [db (d/db conn)]
-    {:db-before db
-     :db-after  db
-     :tx-data   []
-     :tempids   {}}))
+    {:db-before    db
+     :db-after     db
+     :tx-data      []
+     :tempids      {}
+     :empty-reason reason}))
 
 (defn ensure-schema
   ([tx-data] (ensure-schema tx-data sandbox-env-db-name))
@@ -40,7 +41,7 @@
    (let [conn           (access/get-connection db-name)
          test-tx-result (d/with (d/with-db conn) {:tx-data tx-data})]
      (if (<= (count (:tx-data test-tx-result)) 1)
-       (empty-tx-result conn)
+       (empty-tx-result conn "empty transaction")
        (d/transact conn {:tx-data tx-data})))))
 
 (defn ensure-data
@@ -66,12 +67,12 @@
      (try
        (let [test-tx-result (d/with (d/with-db conn) {:tx-data tx-data})]
          (if (<= (count (:tx-data test-tx-result)) 1)
-           (empty-tx-result conn)
+           (empty-tx-result conn "empty transaction")
            (d/transact conn {:tx-data tx-data})))
        (catch ExceptionInfo e
          (if (= (:db/error (ex-data e))
                 :db.error/unique-conflict)
-           (empty-tx-result conn)
+           (empty-tx-result conn "conflict")
            (throw e)))))))
 
 (defn get-tx-log
