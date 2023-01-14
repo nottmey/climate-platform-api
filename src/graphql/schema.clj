@@ -1,16 +1,19 @@
 (ns graphql.schema
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
-            [graphql.definitions :as d]
+            [datomic.access :as da]
+            [datomic.client.api :as d]
+            [graphql.definitions :as gd]
             [graphql.types :as t]
-            [shared.attributes :as a]))
+            [shared.attributes :as a]
+            [datomic.schema :as ds]))
 
 (defn generate-attribute-subtypes [attribute-fields]
   (str
     (->>
       a/attribute-types
       (map
-        #(d/object-type-definition
+        #(gd/object-type-definition
            {:name       (:graphql/single-value-type-name %)
             :interfaces [t/attribute-type]
             :fields     (conj
@@ -22,7 +25,7 @@
     (->>
       a/attribute-types
       (map
-        #(d/object-type-definition
+        #(gd/object-type-definition
            {:name       (:graphql/multi-value-type-name %)
             :interfaces [t/attribute-type]
             :fields     (conj
@@ -43,7 +46,12 @@
                                  :required-type? true}]))
 
 (defn generate []
-  (let [entity-filter-type    (keyword (str (name t/entity-type) "Filter"))
+  (let [db-name               da/dev-env-db-name
+        conn                  (da/get-connection db-name)
+        dynamic-type-fields   (ds/get-all-type-fields (d/db conn))
+        dynamic-types         (-> (group-by first dynamic-type-fields)
+                                  (update-vals #(map rest %)))
+        entity-filter-type    (keyword (str (name t/entity-type) "Filter"))
         entity-list-type      (keyword (str (name t/entity-type) "List"))
         entity-list-page-type (keyword (str (name entity-list-type) "Page"))
         page-info-type        :PageInfo
@@ -63,17 +71,17 @@
                                 :type           t/string-type
                                 :required-type? true}]]
     (str
-      (d/schema-definition
+      (gd/schema-definition
         {:root-ops {:query    t/query-type
                     :mutation t/mutation-type}})
       ; TODO generate from resolvers (via annotations on resolvers)
-      (d/input-object-type-definition
+      (gd/input-object-type-definition
         {:name   entity-filter-type
          :fields [{:name           :attributes
                    :type           :ID
                    :list?          true
                    :required-type? true}]})
-      (d/object-type-definition
+      (gd/object-type-definition
         {:name   t/query-type
          :fields [{:name           :databases
                    :type           t/id-type
@@ -90,14 +98,14 @@
                    :type           entity-list-type
                    :required-type? true}]})
       ; example mutation, so it's not empty
-      (d/object-type-definition
+      (gd/object-type-definition
         {:name   t/mutation-type
          :fields [{:name           :reset
                    :type           t/entity-type
                    :list?          true
                    :required-type? true
                    :required-list? true}]})
-      (d/object-type-definition
+      (gd/object-type-definition
         {:name   t/entity-type
          :fields [context-field
                   {:name           :id
@@ -108,11 +116,11 @@
                    :list?          true
                    :required-type? true
                    :required-list? true}]})
-      (d/interface-type-definition
+      (gd/interface-type-definition
         {:name   t/attribute-type
          :fields attribute-fields})
       (generate-attribute-subtypes attribute-fields)
-      (d/object-type-definition
+      (gd/object-type-definition
         {:name   entity-list-type
          :fields [context-field
                   {:name           :total
@@ -129,7 +137,7 @@
                                      :type          t/int-type}]
                    :type           entity-list-page-type
                    :required-type? true}]})
-      (d/object-type-definition
+      (gd/object-type-definition
         {:name   entity-list-page-type
          :fields [context-field
                   {:name           :info
@@ -140,7 +148,7 @@
                    :list?          true
                    :required-type? true
                    :required-list? true}]})
-      (d/object-type-definition
+      (gd/object-type-definition
         {:name   page-info-type
          :fields [{:name           :size
                    :type           t/int-type
@@ -157,7 +165,23 @@
                    :type t/int-type}
                   {:name           :last
                    :type           t/int-type
-                   :required-type? true}]}))))
+                   :required-type? true}]})
+      (str/join
+        (for [[type fields] dynamic-types]
+          ; TODO generate queries for each type
+          ; TODO add query resolvers for each type
+          ; TODO generate mutations for each type
+          ; TODO add mutation resolvers for each type
+          (gd/object-type-definition
+            {:name type
+             :fields
+             (for [[field] fields]
+               {:name field
+                ; TODO generate correct type
+                :type :String
+                ; TODO generate list?, if appropriate
+                ; TODO generate required?, if appropriate
+                })}))))))
 
 (comment
   (printf (generate))
