@@ -67,17 +67,11 @@
   ([type filter-type]
    {:name           (keyword (str "list" (name type)))
     :arguments      (concat
+                      [{:name :page
+                        :type t/page-query-type}]
                       (when filter-type
                         [{:name :filter
-                          :type filter-type}])
-                      [{:name          :page
-                        ; FYI discarded by App Sync
-                        :default-value 0
-                        :type          t/int-type}
-                       {:name          :size
-                        ; FYI discarded by App Sync
-                        :default-value 20
-                        :type          t/int-type}])
+                          :type filter-type}]))
     :type           (list-page-type type)
     :required-type? true}))
 
@@ -138,11 +132,19 @@
                    :type           t/int-type
                    :required-type? true}]})
       ; entity framework & dynamic schema: query inputs
+      (gd/input-object-type-definition
+        {:name   t/page-query-type
+         :fields [{:name          :number
+                   :type          t/int-type
+                   :default-value 0}
+                  {:name          :size
+                   :type          t/int-type
+                   :default-value 20}]})
       ; TODO generate filters for dynamic types
       (gd/input-object-type-definition
         {:name   entity-filter-type
          :fields [{:name           :attributes
-                   :type           :ID
+                   :type           t/id-type
                    :list?          true
                    :required-type? true}]})
       ; entity framework & dynamic schema: query results

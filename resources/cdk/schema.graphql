@@ -77,6 +77,12 @@ type PageInfo {
 }
 
 #generated, do not edit manually!
+input PageQuery {
+    number: Int = 0
+    size: Int = 20
+}
+
+#generated, do not edit manually!
 input EntityFilter {
     attributes: [ID!]
 }
@@ -84,9 +90,9 @@ input EntityFilter {
 #generated, do not edit manually!
 type Query {
     getEntity(id: ID!): Entity
-    listEntity(filter: EntityFilter, page: Int = 0, size: Int = 20): EntityListPage!
+    listEntity(page: PageQuery, filter: EntityFilter): EntityListPage!
     getPlanetaryBoundary(id: ID!): PlanetaryBoundary
-    listPlanetaryBoundary(page: Int = 0, size: Int = 20): PlanetaryBoundaryListPage!
+    listPlanetaryBoundary(page: PageQuery): PlanetaryBoundaryListPage!
 }
 
 #generated, do not edit manually!

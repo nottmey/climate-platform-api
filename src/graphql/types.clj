@@ -43,3 +43,4 @@
 (def entity-type :Entity)
 (def attribute-type :Attribute)
 (def page-info-type :PageInfo)
+(def page-query-type :PageQuery)

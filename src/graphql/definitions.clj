@@ -34,14 +34,22 @@
   (let [list? (or list? required-list?)]
     (str (when list? "[") (k-name type) (when required-type? "!") (when list? "]") (when required-list? "!"))))
 
+(defn default-value-definition [default-value]
+  {:pre [(or (nil? default-value)
+             (int? default-value))]}
+  (when default-value
+    (str " = " default-value)))
+
 ; https://spec.graphql.org/June2018/#InputValueDefinition
 ; add additional default value types if needed
 (defn input-value-definition [{:keys [name default-value type] :as args-with-type-ref}]
   {:pre [(valid-name? name)
          (or (not default-value)
-             (and (= (k-name type) "Int")
-                  (int? default-value)))]}
-  (str (k-name name) ": " (type-ref-definition args-with-type-ref) (when default-value (str " = " default-value))))
+             (= (k-name type) "Int"))]}
+  (str (k-name name)
+       ": "
+       (type-ref-definition args-with-type-ref)
+       (default-value-definition default-value)))
 
 (comment
   (input-value-definition {:name "id" :type :Int :default-value 0 :list? true :required-type? true :required-list? true}))
@@ -59,26 +67,29 @@
   (arguments-definition {:arguments [{:name :id :type :ID} {:name :database :type :String}]}))
 
 ; https://spec.graphql.org/June2018/#FieldDefinition
-(defn field-definition [{:keys [name arguments] :as args-with-type-ref}]
+(defn field-definition [{:keys [name type arguments default-value] :as args-with-type-ref}]
   {:pre [(valid-name? name)
-         (or (nil? arguments) (pos? (count arguments)))]}
+         (or (nil? arguments) (pos? (count arguments)))
+         (or (not default-value) (= (k-name type) "Int"))]}
   (str (k-name name) (when arguments (arguments-definition {:arguments arguments}))
        ": "
-       (type-ref-definition args-with-type-ref)))
+       (type-ref-definition args-with-type-ref)
+       (default-value-definition default-value)))
 
 (comment
   (field-definition {:name :get :type :Result :arguments [{:name :id :type :Int :default-value 1 :required-type? true}
-                                                          {:name :database :type :String}]}))
+                                                          {:name :database :type :String}]})
+
+  (field-definition {:name :size :type :Int :default-value 20}))
 
 ; https://spec.graphql.org/June2018/#FieldsDefinition
 (defn field-list-definition [{:keys [fields]}]
   {:pre [(sequential? fields)
          (pos? (count fields))]}
-  (->>
-    fields
-    (map field-definition)
-    (map #(str tab-spaces % "\n"))
-    (str/join)))
+  (->> fields
+       (map field-definition)
+       (map #(str tab-spaces % "\n"))
+       (str/join)))
 
 (comment
   (printf (field-list-definition {:fields [{:name :query :type :Query}
@@ -153,7 +164,12 @@
 (comment
   (printf (input-object-type-definition {:name   :EntityFilter
                                          :fields [{:name :attribute
-                                                   :type :ID}]})))
+                                                   :type :ID}]}))
+  (printf (input-object-type-definition {:name   :Query
+                                         :fields [{:name          :size
+                                                   :type          :Int
+                                                   :default-value 20}]})))
+
 
 ; remember, there are more:
 ; ScalarTypeDefinition
