@@ -1,18 +1,20 @@
-{:mvn/repos {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}
- :paths     ["src" "resources"]
- :deps      {ch.qos.logback/logback-classic          {:mvn/version "1.2.11"} ; 1.3+ not compatible with slf4j 1.x
-             com.cognitect/anomalies                 {:mvn/version "0.1.12"}
-             com.datomic/client                      {:mvn/version "1.0.126"} ; matches version in ions
-             com.datomic/client-api                  {:mvn/version "1.0.58"} ; matches version in ions
-             com.datomic/client-cloud                {:mvn/version "1.0.120"} ; matches version in ions
-             com.datomic/client-impl-shared          {:mvn/version "1.0.98"} ; matches version in ions
-             com.datomic/ion                         {:mvn/version "1.0.59"} ; matches version in ions
-             io.pedestal/pedestal.log                {:mvn/version "0.5.10"}
-             com.fasterxml.jackson.core/jackson-core {:mvn/version "2.12.3"} ; matches version in ions
-             org.clojure/clojure                     {:mvn/version "1.11.1"}
-             org.clojure/data.json                   {:mvn/version "2.4.0"}
-             org.slf4j/slf4j-api                     {:mvn/version "1.7.32"} ; matches version in ions
-             software.amazon.awscdk/aws-cdk-lib      {:mvn/version "2.53.0"}}
- :aliases   {;; required by https://docs.datomic.com/cloud/operation/howto.html#ion-dev
-             :ion-dev {:extra-deps {com.datomic/ion-dev {:mvn/version "1.0.306"}}
-                       :main-opts  ["-m" "datomic.ion.dev"]}}}
+{:mvn/repos  {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}}
+ :paths      ["src" "resources"]
+ :deps       {ch.qos.logback/logback-classic          {:mvn/version "1.2.11"} ; 1.3+ not compatible with slf4j 1.x
+              com.cognitect/anomalies                 {:mvn/version "0.1.12"}
+              com.datomic/client                      {:mvn/version "1.0.126"} ; matches version in ions
+              com.datomic/client-api                  {:mvn/version "1.0.58"} ; matches version in ions
+              com.datomic/client-cloud                {:mvn/version "1.0.120"} ; matches version in ions
+              com.datomic/client-impl-shared          {:mvn/version "1.0.98"} ; matches version in ions
+              com.datomic/ion                         {:mvn/version "1.0.59"} ; matches version in ions
+              io.pedestal/pedestal.log                {:mvn/version "0.5.10"}
+              com.fasterxml.jackson.core/jackson-core {:mvn/version "2.12.3"} ; matches version in ions
+              org.clojure/clojure                     {:mvn/version "1.11.1"}
+              org.clojure/data.json                   {:mvn/version "2.4.0"}
+              org.slf4j/slf4j-api                     {:mvn/version "1.7.32"} ; matches version in ions
+              software.amazon.awscdk/aws-cdk-lib      {:mvn/version "2.53.0"}}
+ :exclusions [org.springframework.build/aws-maven]
+ :aliases    {;; required by https://docs.datomic.com/cloud/operation/howto.html#ion-dev
+              :ion-dev {:extra-deps {com.datomic/ion-dev {:mvn/version "1.0.306"
+                                                          :exclusions  [org.slf4j/slf4j-simple]}}
+                        :main-opts  ["-m" "datomic.ion.dev"]}}}
