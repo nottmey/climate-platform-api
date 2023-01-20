@@ -5,30 +5,6 @@ schema {
 }
 
 #generated, do not edit manually!
-input EntityFilter {
-    attributes: [ID!]
-}
-
-#generated, do not edit manually!
-type Query {
-    databases: [ID!]!
-    get(database: ID!, id: ID!): Entity
-    list(database: ID!, filter: EntityFilter): EntityList!
-}
-
-#generated, do not edit manually!
-type Mutation {
-    reset: [Entity!]!
-}
-
-#generated, do not edit manually!
-type Entity {
-    context: AWSJSON
-    id: ID!
-    attributes: [Attribute!]!
-}
-
-#generated, do not edit manually!
 interface Attribute {
     id: ID!
     name: String!
@@ -91,20 +67,6 @@ type MultiDateTimeAttribute implements Attribute {
 }
 
 #generated, do not edit manually!
-type EntityList {
-    context: AWSJSON
-    total: Int!
-    page(page: Int = 0, size: Int = 20): EntityListPage!
-}
-
-#generated, do not edit manually!
-type EntityListPage {
-    context: AWSJSON
-    info: PageInfo!
-    entities: [Entity!]!
-}
-
-#generated, do not edit manually!
 type PageInfo {
     size: Int!
     first: Int!
@@ -112,5 +74,51 @@ type PageInfo {
     current: Int!
     next: Int
     last: Int!
+}
+
+#generated, do not edit manually!
+input EntityFilter {
+    attributes: [ID!]
+}
+
+#generated, do not edit manually!
+type Query {
+    getEntity(id: ID!): Entity
+    listEntity(filter: EntityFilter, page: Int = 0, size: Int = 20): EntityListPage!
+    getPlanetaryBoundary(id: ID!): PlanetaryBoundary
+    listPlanetaryBoundary(page: Int = 0, size: Int = 20): PlanetaryBoundaryListPage!
+}
+
+#generated, do not edit manually!
+type Entity {
+    context: AWSJSON
+    id: ID!
+    attributes: [Attribute!]!
+}
+
+#generated, do not edit manually!
+type PlanetaryBoundary {
+    context: AWSJSON
+    id: ID!
+    name: String
+}
+
+#generated, do not edit manually!
+type EntityListPage {
+    context: AWSJSON
+    info: PageInfo!
+    values: [Entity!]!
+}
+
+#generated, do not edit manually!
+type PlanetaryBoundaryListPage {
+    context: AWSJSON
+    info: PageInfo!
+    values: [PlanetaryBoundary!]!
+}
+
+#generated, do not edit manually!
+type Mutation {
+    reset: [Entity!]!
 }
 

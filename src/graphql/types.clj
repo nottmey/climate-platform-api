@@ -42,3 +42,4 @@
 (def mutation-type :Mutation)
 (def entity-type :Entity)
 (def attribute-type :Attribute)
+(def page-info-type :PageInfo)
