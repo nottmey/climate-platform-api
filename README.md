@@ -15,7 +15,7 @@ echo "$push_result"
 deploy_command=$(echo "$push_result" | jet --query ':deploy-command println')
 
 # 3. then use deploy command from push result, similar to this:
-deploy_result=$(eval "$deploy_command")
+deploy_result=$(eval "$deploy_command" | tail -6)
 echo "$deploy_result"
 status_command=$(echo "$deploy_result" | jet --query ':status-command println')
 
