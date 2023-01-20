@@ -1,6 +1,6 @@
 on: push
 
-name: "Deploy"
+name: "Deploy All"
 
 jobs:
   deploy-ions:
