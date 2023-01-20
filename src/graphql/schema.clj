@@ -220,11 +220,11 @@
                       :type           type
                       :required-type? true})
                    (for [[type] dynamic-types]
-                     {:name      (str "update" type)
+                     {:name      (str "replace" type)
                       :arguments [{:name           "id"
                                    :type           t/id-type
                                    :required-type? true}
-                                  {:name           "changes"
+                                  {:name           "value"
                                    :type           (input-type type)
                                    :required-type? true}]
                       :type      type})
