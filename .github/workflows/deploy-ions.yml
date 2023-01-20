@@ -26,6 +26,8 @@ jobs:
         uses: DeLaGuardo/setup-clojure@10.1
         with:
           cli: 'latest'
+      - name: Setup borkdude/jet
+        run: bash <(curl -s https://raw.githubusercontent.com/borkdude/jet/master/install)
       - name: Cache Clojure Dependencies
         uses: actions/cache@v3
         with:
@@ -35,4 +37,7 @@ jobs:
             ~/.deps.clj
           key: cljdeps-${{ hashFiles('deps.edn') }}
           restore-keys: cljdeps-
-      - run: clojure -A:ion-dev '{:op :push}'
+      - name: Push code to AWS CodeDeploy
+        run: push_result=$(clojure -A:ion-dev '{:op :push}')
+      - name: Display push result
+        run: echo "$push_result"
