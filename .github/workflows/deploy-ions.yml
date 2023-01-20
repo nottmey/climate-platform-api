@@ -98,4 +98,4 @@ jobs:
       - name: Setup CDK
         run: npm install -g aws-cdk
       - name: Deploy via CDK
-        run: cdk deploy --strict --ci # TODO --concurrency 8
+        run: cdk deploy --strict --ci --concurrency 8
