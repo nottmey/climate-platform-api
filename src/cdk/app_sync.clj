@@ -48,5 +48,6 @@
                                                  (.build)
                                                  (doto (.addDependsOn api-schema)
                                                        (.addDependsOn datomic-data-source)))))]
+      ;; https://docs.aws.amazon.com/appsync/latest/devguide/utility-helpers-in-util.html
       (doseq [[type-name field-name] @resolvers/resolvable-paths]
         (configure-datomic-resolver-for type-name field-name)))))
