@@ -13,4 +13,6 @@
              org.clojure/data.json                   {:mvn/version "2.4.0"}
              org.slf4j/slf4j-api                     {:mvn/version "1.7.32"} ; matches version in ions
              software.amazon.awscdk/aws-cdk-lib      {:mvn/version "2.53.0"}}
- :aliases   {}}
+ :aliases   {;; required by https://docs.datomic.com/cloud/operation/howto.html#ion-dev
+             :ion-dev {:deps      {com.datomic/ion-dev {:mvn/version "1.0.306"}}
+                       :main-opts ["-m" "datomic.ion.dev"]}}}
