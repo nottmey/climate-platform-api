@@ -178,22 +178,22 @@
             {:name type
              :fields
              (conj
-               (for [[field value-type] fields
-                     :let [{:keys [graphql/type]}
-                           (->> a/attribute-types
-                                (filter
-                                  (fn [{:keys [datomic/type]}]
-                                    (contains? type value-type)))
-                                first)]]
-                 {:name field
-                  :type type
-                  ; TODO generate list?, if appropriate
-                  ; TODO generate required?, if appropriate
-                  })
-               {:name "id"
-                ; FYI not required, because of temp data (which may not have an ID yet)
-                ; TODO how does app sync recommend handling ID generation when using subscriptions?
-                :type :ID})}))))))
+               (for [[field value-type cardinality] fields]
+                 (let [{:keys [graphql/type]} (->> a/attribute-types
+                                                   (filter
+                                                     (fn [{:keys [datomic/type]}]
+                                                       (contains? type value-type)))
+                                                   first)
+                       list? (= cardinality :db.cardinality/many)]
+                   (assert (some? type) (str "There is a GraphQL type configured for value type " value-type "."))
+                   {:name           field
+                    :type           type
+                    :list?          list?
+                    :required-list? list?}))
+               ; TODO use "publish" mutation for sending out data to subscriptions with generated id (in full) and after successful transaction
+               {:name           "id"
+                :type           :ID
+                :required-type? true})}))))))
 
 (comment
   (printf (generate))
