@@ -38,11 +38,10 @@ jobs:
           key: cljdeps-${{ hashFiles('deps.edn') }}
           restore-keys: cljdeps-
       - name: Push code to AWS CodeDeploy
-        run: echo "PUSH_RESULT=$(clojure -A:ion-dev '{:op :push}')" >> $GITHUB_ENV
-      - name: Display push result
-        run: echo "$PUSH_RESULT"
-      - name: Extract deploy command
-        run: echo "DEPLOY_COMMAND=$(echo "$push_result" | jet --query ':deploy-command println' | grep -v -x -F 'nil')" >> $GITHUB_ENV
+        run: |
+          push_result=$(clojure -A:ion-dev '{:op :push}')
+          echo "$push_result"
+          echo "DEPLOY_COMMAND=$(echo "$push_result" | jet --query ':deploy-command println' | grep -v -x -F 'nil')" >> $GITHUB_ENV
       - name: Deploy revision to Datomic via AWS Step Functions
         run: echo "DEPLOY_RESULT=$(eval "$DEPLOY_COMMAND")" >> $GITHUB_ENV
       - name: Display deploy result
