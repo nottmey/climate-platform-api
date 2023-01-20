@@ -28,4 +28,5 @@ jobs:
         with:
           cli: 'latest'
           # TODO caching needed? see example: https://github.com/DeLaGuardo/setup-clojure
+      - run: clojure -e "(+ 1 1)"
       - run: clojure -A:ion-dev '{:op :push}'
