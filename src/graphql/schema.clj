@@ -211,13 +211,23 @@
       (gd/object-type-definition
         {:name   t/mutation-type
          ; TODO add mutation resolvers for each type
-         :fields (for [[type] dynamic-types]
-                   {:name           (str "create" type)
-                    :arguments      [{:name           "value"
-                                      :type           (input-type type)
-                                      :required-type? true}]
-                    :type           type
-                    :required-type? true})}))))
+         :fields (concat
+                   (for [[type] dynamic-types]
+                     {:name           (str "create" type)
+                      :arguments      [{:name           "value"
+                                        :type           (input-type type)
+                                        :required-type? true}]
+                      :type           type
+                      :required-type? true})
+                   (for [[type] dynamic-types]
+                     {:name      (str "update" type)
+                      :arguments [{:name           "id"
+                                   :type           t/id-type
+                                   :required-type? true}
+                                  {:name           "changes"
+                                   :type           (input-type type)
+                                   :required-type? true}]
+                      :type      type}))}))))
 
 (comment
   (printf (generate))
