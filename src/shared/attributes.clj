@@ -1,6 +1,6 @@
 (ns shared.attributes
-  (:require
-    [graphql.types :as gt])
+  (:require [graphql.types :as gt]
+            [clojure.data.json :as json])
   (:import (java.time.format DateTimeFormatter)
            (java.util Date)))
 
@@ -45,7 +45,15 @@
          :datomic/->gql                   (fn [^Date date]
                                             (.format
                                               DateTimeFormatter/ISO_INSTANT
-                                              (.toInstant date)))}]
+                                              (.toInstant date)))}
+        {:graphql/name                    :Tuple
+         ; TODO generate precise type
+         :graphql/type                    gt/json-type
+         :graphql/single-value-field-name :tuple
+         :graphql/multi-value-field-name  :tuples
+         :datomic/type                    #{:db.type/tuple}
+         :datomic/->gql                   (fn [tuple]
+                                            (json/write-str tuple))}]
        (map #(assoc % :graphql/single-value-type-name
                       (keyword (str (name (:graphql/name %))
                                     (name gt/attribute-type)))))

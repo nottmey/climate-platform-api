@@ -19,13 +19,14 @@
         ; TODO only append context in dev mode (e.g. api key or dev identity)
         assoc-context    (fn [m]
                            (if (and (map? m) (contains? selected-paths "context"))
-                             (assoc m :context app-sync-context) m))]
+                             (assoc m :context app-sync-context)
+                             m))]
     (-> {:parent-type-name parent-type-name
          :field-name       field-name
          :selected-paths   selected-paths
          :arguments        arguments
          :parent-value     parent-value}
-        resolvers/datomic-resolve
+        resolvers/resolve-static-type-field
         assoc-context
         json/write-str)))
 
