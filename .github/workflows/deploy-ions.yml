@@ -1,10 +1,10 @@
 on: push
 
-name: "Deploy Ions"
+name: "Deploy"
 
 jobs:
-  deploy:
-    name: "Deploy"
+  deploy-ions:
+    name: "Deploy Ions"
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -59,3 +59,44 @@ jobs:
             sleep 1
           done
           echo "finished: $state"
+  deploy-cdk:
+    name: "Deploy rest via CDK"
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          role-to-assume: arn:aws:iam::118776085668:role/github-actions-cdk-deployment
+          aws-region: eu-central-1
+      - name: Setup Java
+        uses: actions/setup-java@v3.6.0
+        with:
+          distribution: 'corretto'
+          java-version: '8'
+      - name: Setup Clojure
+        uses: DeLaGuardo/setup-clojure@10.1
+        with:
+          cli: 'latest'
+      - name: Cache Clojure Dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+            ~/.deps.clj
+          key: cljdeps-${{ hashFiles('deps.edn') }}
+          restore-keys: cljdeps-
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+      - name: Setup CDK
+        run: npm install -g aws-cdk
+      - name: Deploy via CDK
+        run: cdk deploy --strict --ci # TODO --concurrency 8
