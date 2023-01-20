@@ -38,6 +38,24 @@ jobs:
           key: cljdeps-${{ hashFiles('deps.edn') }}
           restore-keys: cljdeps-
       - name: Push code to AWS CodeDeploy
-        run: push_result=$(clojure -A:ion-dev '{:op :push}')
+        run: echo "PUSH_RESULT=$(clojure -A:ion-dev '{:op :push}')" >> $GITHUB_ENV
       - name: Display push result
-        run: echo "$push_result"
+        run: echo "$PUSH_RESULT"
+      - name: Extract deploy command
+        run: echo "DEPLOY_COMMAND=$(echo "$push_result" | jet --query ':deploy-command println' | grep -v -x -F 'nil')" >> $GITHUB_ENV
+      - name: Deploy revision to Datomic via AWS Step Functions
+        run: echo "DEPLOY_RESULT=$(eval "$DEPLOY_COMMAND")" >> $GITHUB_ENV
+      - name: Display deploy result
+        run: echo "$DEPLOY_RESULT"
+      - name: Extract status command
+        run: echo "STATUS_COMMAND=$(echo "$deploy_result" | jet --query ':status-command println')" >> $GITHUB_ENV
+      - name: Wait until any final status is reached
+        run: |
+          while
+            state=$(eval "$STATUS_COMMAND")
+            echo "$state" | jet --query ':code-deploy-status println' | grep -x -F 'RUNNING'
+          do
+            echo "running: $state"
+            sleep 1
+          done
+          echo "finished: $state"
