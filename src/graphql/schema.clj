@@ -227,6 +227,12 @@
                                   {:name           "changes"
                                    :type           (input-type type)
                                    :required-type? true}]
+                      :type      type})
+                   (for [[type] dynamic-types]
+                     {:name      (str "delete" type)
+                      :arguments [{:name           "id"
+                                   :type           t/id-type
+                                   :required-type? true}]
                       :type      type}))}))))
 
 (comment
