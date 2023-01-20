@@ -15,6 +15,5 @@
              software.amazon.awscdk/aws-cdk-lib      {:mvn/version "2.53.0"}}
  :aliases   {;; required by https://docs.datomic.com/cloud/operation/howto.html#ion-dev
              :ion-dev {:extra-deps {com.datomic/ion-dev {:mvn/version "1.0.306"
-                                                         :exclusions  [org.slf4j/slf4j-simple
-                                                                       org.springframework.build/aws-maven]}}
+                                                         :exclusions  [org.slf4j/slf4j-simple]}}
                        :main-opts  ["-m" "datomic.ion.dev"]}}}
