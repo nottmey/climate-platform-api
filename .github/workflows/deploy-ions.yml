@@ -95,7 +95,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
-          cache: 'npm'
       - name: Setup CDK
         run: npm install -g aws-cdk
       - name: Deploy via CDK
