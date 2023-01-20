@@ -39,6 +39,13 @@ type DateTimeAttribute implements Attribute {
 }
 
 #generated, do not edit manually!
+type TupleAttribute implements Attribute {
+    id: ID!
+    name: String!
+    tuple: AWSJSON!
+}
+
+#generated, do not edit manually!
 type MultiStringAttribute implements Attribute {
     id: ID!
     name: String!
@@ -64,6 +71,13 @@ type MultiDateTimeAttribute implements Attribute {
     id: ID!
     name: String!
     dateTimes: [AWSDateTime!]!
+}
+
+#generated, do not edit manually!
+type MultiTupleAttribute implements Attribute {
+    id: ID!
+    name: String!
+    tuples: [AWSJSON!]!
 }
 
 #generated, do not edit manually!
@@ -124,7 +138,12 @@ type PlanetaryBoundaryListPage {
 }
 
 #generated, do not edit manually!
+input PlanetaryBoundaryInput {
+    name: String
+}
+
+#generated, do not edit manually!
 type Mutation {
-    reset: [Entity!]!
+    createPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary!
 }
 

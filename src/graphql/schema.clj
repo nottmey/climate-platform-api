@@ -88,6 +88,24 @@
                :required-type? true
                :required-list? true}]}))
 
+(defn input-type [type]
+  (str (name type) "Input"))
+
+(defn fields-definitions [fields]
+  (for [[field value-type cardinality] fields]
+    (let [{:keys [graphql/type]} (->> a/attribute-types
+                                      (filter
+                                        (fn [{:keys [datomic/type]}]
+                                          (contains? type value-type)))
+                                      first)
+          list? (= cardinality :db.cardinality/many)]
+      (assert (some? type) (str "There is a GraphQL type configured for value type " value-type "."))
+      {:name           field
+       :type           type
+       :list?          list?
+       :required-list? list?
+       :required-type? list?})))
+
 (defn generate []
   (let [db-name             da/dev-env-db-name
         conn                (da/get-connection db-name)
@@ -179,34 +197,27 @@
                 {:name           "id"
                  :type           :ID
                  :required-type? true}]
-               (for [[field value-type cardinality] fields]
-                 (let [{:keys [graphql/type]} (->> a/attribute-types
-                                                   (filter
-                                                     (fn [{:keys [datomic/type]}]
-                                                       (contains? type value-type)))
-                                                   first)
-                       list? (= cardinality :db.cardinality/many)]
-                   (assert (some? type) (str "There is a GraphQL type configured for value type " value-type "."))
-                   {:name           field
-                    :type           type
-                    :list?          list?
-                    :required-list? list?
-                    :required-type? list?})))})))
+               (fields-definitions fields))})))
       (list-page-definition t/entity-type)
       (str/join
         (for [[type] dynamic-types]
           (list-page-definition type)))
       ; entity framework & dynamic schema: mutation inputs & results
+      (str/join
+        (for [[type fields] dynamic-types]
+          (gd/input-object-type-definition
+            {:name   (input-type type)
+             :fields (fields-definitions fields)})))
       (gd/object-type-definition
         {:name   t/mutation-type
-         ; example mutation, so it's not empty
-         ; TODO generate mutations for each type
          ; TODO add mutation resolvers for each type
-         :fields [{:name           :reset
-                   :type           t/entity-type
-                   :list?          true
-                   :required-type? true
-                   :required-list? true}]}))))
+         :fields (for [[type] dynamic-types]
+                   {:name           (str "create" type)
+                    :arguments      [{:name           "value"
+                                      :type           (input-type type)
+                                      :required-type? true}]
+                    :type           type
+                    :required-type? true})}))))
 
 (comment
   (printf (generate))
