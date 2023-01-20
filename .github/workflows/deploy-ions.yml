@@ -22,11 +22,17 @@ jobs:
         with:
           distribution: 'corretto'
           java-version: '8'
-          cache: 'maven'
       - name: Setup Clojure
         uses: DeLaGuardo/setup-clojure@10.1
         with:
           cli: 'latest'
-          # TODO caching needed? see example: https://github.com/DeLaGuardo/setup-clojure
-      - run: clojure -e "(+ 1 1)"
+      - name: Cache Clojure Dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+            ~/.deps.clj
+          key: cljdeps-${{ hashFiles('deps.edn') }}
+          restore-keys: cljdeps-
       - run: clojure -A:ion-dev '{:op :push}'
