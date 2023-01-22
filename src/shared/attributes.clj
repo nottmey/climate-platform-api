@@ -66,3 +66,13 @@
   (doall attribute-types)
   ((:datomic/->gql (first (drop 3 attribute-types)))
    (Date.)))
+
+(def datomic-value-to-gql-value-fn
+  (->> attribute-types
+       (mapcat
+         (fn [{:keys [datomic/type datomic/->gql]}]
+           (map #(vector % ->gql) type)))
+       (into {})))
+
+(comment
+  ((datomic-value-to-gql-value-fn :db.type/keyword) :db/ident))

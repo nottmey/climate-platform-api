@@ -1,5 +1,6 @@
 (ns datomic.schema
   (:require [datomic.client.api :as d]
+            [shared.attributes :as a]
             [user :as u]))
 
 ; TODO use transaction function to ensure type is complete
@@ -129,7 +130,7 @@
   (let [db (u/sandbox-db)]
     (time (get-all-entity-fields db))))
 
-(defn get-relations [db type-field-tuples]
+(defn get-all-values [db type-field-tuples]
   (d/q '[:find (pull ?rel [*])
          :in $ [[?type-name ?field-name]]
          :where
@@ -139,7 +140,42 @@
        db
        type-field-tuples))
 
+(defn get-specific-values [db type-entity-field-triples]
+  (-> (->> (d/q '[:find ?type-name ?e ?field-name ?vt-ident ?v
+                  :in $ [[?type-name ?e ?field-name]]
+                  :where
+                  [?type :graphql.type/name ?type-name]
+                  [(tuple ?type ?field-name) ?tup]
+                  [?rel :graphql.relation/type+field ?tup]
+                  [?rel :graphql.relation/attribute ?a]
+                  [?a :db/valueType ?vt]
+                  [?vt :db/ident ?vt-ident]
+                  [?e ?a ?v]]
+                db
+                type-entity-field-triples)
+           (group-by first))
+      (update-vals
+        (fn [type-values]
+          (-> (->> type-values
+                   (map rest)
+                   (group-by first))
+              (update-vals
+                (fn [entity-values]
+                  (-> (->> entity-values
+                           (map
+                             (fn [[_ field-name value-type value]]
+                               [field-name ((a/datomic-value-to-gql-value-fn value-type) value)]))
+                           (into {}))
+                      (assoc "id" (first (first entity-values)))))))))))
+
 (comment
-  (let [db     (u/sandbox-db)
-        tuples (get-all-entity-fields db)]
-    (time (get-relations db tuples))))
+  (let [db (u/sandbox-db)]
+    (time (get-specific-values db [["PlanetaryBoundary" 92358976733295 "name"]])))
+
+  (let [db (u/sandbox-db)]
+    (time (get-specific-values db
+                               [["SomeTypeY" 0 "identX"]
+                                ["SomeType" 1 "ident"]
+                                ["SomeTypeY" 2 "identX"]
+                                ["SomeTypeY" 5 "identX"]
+                                ["SomeType" 12 "ident"]]))))

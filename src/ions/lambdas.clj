@@ -12,8 +12,8 @@
   (let [app-sync-context (json/read-str app-sync-input)
         parent-type-name (keyword (get-in app-sync-context ["info" "parentTypeName"]))
         field-name       (keyword (get-in app-sync-context ["info" "fieldName"]))
-        ; TODO make resolvers only calculate requested values
-        selected-paths   (set (get-in app-sync-context ["info" "selectionSetList"]))
+        selected-paths   (-> (set (get-in app-sync-context ["info" "selectionSetList"]))
+                             (disj "context"))
         arguments        (walk/keywordize-keys (get app-sync-context "arguments"))
         parent-value     (walk/keywordize-keys (get app-sync-context "source"))
         ; TODO only append context in dev mode (e.g. api key or dev identity)
