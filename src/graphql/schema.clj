@@ -6,6 +6,7 @@
             [graphql.definitions :as gd]
             [graphql.fields :as f]
             [graphql.types :as t]
+            [graphql.objects :as obj]
             [shared.attributes :as a]
             [shared.operations :as ops]
             [shared.operations.operation :as o]
@@ -48,19 +49,6 @@
                                  :type           t/string-type
                                  :required-type? true}]))
 
-(defn list-page-definition [type]
-  (gd/object-type-definition
-    {:name   (t/list-page-type type)
-     :fields [f/context
-              {:name           :info
-               :type           t/page-info-type
-               :required-type? true}
-              {:name           :values
-               :type           type
-               :list?          true
-               :required-type? true
-               :required-list? true}]}))
-
 (defn gen-entity-fields [fields]
   (for [[field value-type cardinality] fields]
     (let [{:keys [graphql/type]} (->> a/attribute-types
@@ -90,7 +78,7 @@
                                 :type           t/string-type
                                 :required-type? true}]]
     (str
-      ; static (db independent) schema
+      ;; static (db independent) schema
       (gd/schema-definition
         ; TODO add subscription type
         ; TODO add subscription annotations
@@ -135,7 +123,7 @@
                    :type           t/id-type
                    :list?          true
                    :required-type? true}]})
-      ; entity framework & dynamic schema: query results
+      ;; entity framework & dynamic schema: query results
       (gd/object-type-definition
         {:name   t/query-type
          :fields (concat
@@ -159,6 +147,7 @@
                    :required-list? true}]})
       (str/join
         (for [[entity fields] dynamic-entities]
+          ; always generate all dynamic entity types
           (gd/object-type-definition
             {:name entity
              :fields
@@ -168,13 +157,17 @@
                  :type           :ID
                  :required-type? true}]
                (gen-entity-fields fields))})))
-      (list-page-definition t/entity-type)
+      (gd/object-type-definition
+        (obj/list-page t/entity-type))
       (str/join
-        (for [[entity] dynamic-entities]
-          (list-page-definition entity)))
-      ; entity framework & dynamic schema: mutation inputs & results
+        (for [op           ops/all
+              [entity] dynamic-entities
+              object-type (o/gen-graphql-object-types op entity)]
+          (gd/object-type-definition object-type)))
+      ;; entity framework & dynamic schema: mutation inputs & results
       (str/join
         (for [[entity fields] dynamic-entities]
+          ; always generate all dynamic entity input types
           (gd/input-object-type-definition
             {:name   (t/input-type entity)
              :fields (gen-entity-fields fields)})))

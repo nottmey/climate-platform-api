@@ -9,7 +9,8 @@
     (gen-graphql-field [_ entity]
       {:name      (str "delete" entity)
        :arguments [a/id]
-       :type      entity})))
+       :type      entity})
+    (gen-graphql-object-types [_ _])))
 
 (comment
   [(o/get-graphql-parent-type delete-mutation) (:name (o/gen-graphql-field delete-mutation "Entity"))])

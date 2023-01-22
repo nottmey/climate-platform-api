@@ -11,7 +11,8 @@
                          :type           (t/input-type entity)
                          :required-type? true}]
        :type           entity
-       :required-type? true})))
+       :required-type? true})
+    (gen-graphql-object-types [_ _])))
 
 (comment
   [(o/get-graphql-parent-type create-mutation) (:name (o/gen-graphql-field create-mutation "Entity"))])
