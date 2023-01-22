@@ -112,7 +112,7 @@
     (u/sandbox-conn)
     {:tx-data (deprecate-type-field-tx-data "SomeType" "refToX")}))
 
-(defn get-all-type-fields [db]
+(defn get-all-entity-fields [db]
   (d/q '[:find ?type-name ?field-name ?value-type-ident ?cardinality-ident
          :where
          [?type :graphql.type/name ?type-name]
@@ -127,7 +127,7 @@
 
 (comment
   (let [db (u/sandbox-db)]
-    (time (get-all-type-fields db))))
+    (time (get-all-entity-fields db))))
 
 (defn get-relations [db type-field-tuples]
   (d/q '[:find (pull ?rel [*])
@@ -141,5 +141,5 @@
 
 (comment
   (let [db     (u/sandbox-db)
-        tuples (get-all-type-fields db)]
+        tuples (get-all-entity-fields db)]
     (time (get-relations db tuples))))

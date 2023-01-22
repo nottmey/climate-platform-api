@@ -4,8 +4,11 @@
             [datomic.access :as da]
             [datomic.client.api :as d]
             [graphql.definitions :as gd]
+            [graphql.fields :as f]
             [graphql.types :as t]
             [shared.attributes :as a]
+            [shared.operations :as ops]
+            [shared.operations.operation :as o]
             [datomic.schema :as ds]))
 
 (defn generate-attribute-subtypes [attribute-fields]
@@ -45,40 +48,10 @@
                                  :type           t/string-type
                                  :required-type? true}]))
 
-(def id-argument
-  {:name           :id
-   :type           t/id-type
-   :required-type? true})
-
-(def context-field
-  {:name :context
-   :type t/json-type})
-
-(defn get-query [type]
-  {:name      (keyword (str "get" (name type)))
-   :arguments [id-argument]
-   :type      (name type)})
-
-(defn list-page-type [type]
-  (keyword (str (name type) "ListPage")))
-
-(defn list-page-query
-  ([type] (list-page-query type nil))
-  ([type filter-type]
-   {:name           (keyword (str "list" (name type)))
-    :arguments      (concat
-                      [{:name :page
-                        :type t/page-query-type}]
-                      (when filter-type
-                        [{:name :filter
-                          :type filter-type}]))
-    :type           (list-page-type type)
-    :required-type? true}))
-
 (defn list-page-definition [type]
   (gd/object-type-definition
-    {:name   (list-page-type type)
-     :fields [context-field
+    {:name   (t/list-page-type type)
+     :fields [f/context
               {:name           :info
                :type           t/page-info-type
                :required-type? true}
@@ -88,10 +61,7 @@
                :required-type? true
                :required-list? true}]}))
 
-(defn input-type [type]
-  (str (name type) "Input"))
-
-(defn fields-definitions [fields]
+(defn gen-entity-fields [fields]
   (for [[field value-type cardinality] fields]
     (let [{:keys [graphql/type]} (->> a/attribute-types
                                       (filter
@@ -107,18 +77,18 @@
        :required-type? list?})))
 
 (defn generate []
-  (let [db-name             da/dev-env-db-name
-        conn                (da/get-connection db-name)
-        dynamic-type-fields (ds/get-all-type-fields (d/db conn))
-        dynamic-types       (-> (group-by first dynamic-type-fields)
-                                (update-vals #(map rest %)))
-        entity-filter-type  (keyword (str (name t/entity-type) "Filter"))
-        attribute-fields    [{:name           :id
-                              :type           t/id-type
-                              :required-type? true}
-                             {:name           :name
-                              :type           t/string-type
-                              :required-type? true}]]
+  (let [db-name               da/dev-env-db-name
+        conn                  (da/get-connection db-name)
+        dynamic-entity-fields (ds/get-all-entity-fields (d/db conn))
+        dynamic-entities      (-> (group-by first dynamic-entity-fields)
+                                  (update-vals #(map rest %)))
+        entity-filter-type    (keyword (str (name t/entity-type) "Filter"))
+        attribute-fields      [{:name           :id
+                                :type           t/id-type
+                                :required-type? true}
+                               {:name           :name
+                                :type           t/string-type
+                                :required-type? true}]]
     (str
       ; static (db independent) schema
       (gd/schema-definition
@@ -170,15 +140,15 @@
         {:name   t/query-type
          :fields (concat
                    ; TODO add query resolvers for each type (and fix entity resolvers)
-                   [(get-query t/entity-type)
-                    (list-page-query t/entity-type entity-filter-type)]
-                   (for [[type] dynamic-types]
-                     (get-query type))
-                   (for [[type] dynamic-types]
-                     (list-page-query type)))})
+                   [(f/get-query t/entity-type)
+                    (f/list-page-query t/entity-type entity-filter-type)]
+                   (for [op ops/all
+                         :when (= (o/get-graphql-parent-type op) t/query-type)
+                         [entity] dynamic-entities]
+                     (o/gen-graphql-field op entity)))})
       (gd/object-type-definition
         {:name   t/entity-type
-         :fields [context-field
+         :fields [f/context
                   {:name           :id
                    :type           t/id-type
                    :required-type? true}
@@ -188,53 +158,54 @@
                    :required-type? true
                    :required-list? true}]})
       (str/join
-        (for [[type fields] dynamic-types]
+        (for [[entity fields] dynamic-entities]
           (gd/object-type-definition
-            {:name type
+            {:name entity
              :fields
              (concat
-               [context-field
+               [f/context
                 {:name           "id"
                  :type           :ID
                  :required-type? true}]
-               (fields-definitions fields))})))
+               (gen-entity-fields fields))})))
       (list-page-definition t/entity-type)
       (str/join
-        (for [[type] dynamic-types]
-          (list-page-definition type)))
+        (for [[entity] dynamic-entities]
+          (list-page-definition entity)))
       ; entity framework & dynamic schema: mutation inputs & results
       (str/join
-        (for [[type fields] dynamic-types]
+        (for [[entity fields] dynamic-entities]
           (gd/input-object-type-definition
-            {:name   (input-type type)
-             :fields (fields-definitions fields)})))
+            {:name   (t/input-type entity)
+             :fields (gen-entity-fields fields)})))
       (gd/object-type-definition
         {:name   t/mutation-type
          ; TODO add mutation resolvers for each type
          :fields (concat
-                   (for [[type] dynamic-types]
-                     {:name           (str "create" type)
+                   (for [[entity] dynamic-entities]
+                     {:name           (str "create" entity)
                       :arguments      [{:name           "value"
-                                        :type           (input-type type)
+                                        :type           (t/input-type entity)
                                         :required-type? true}]
-                      :type           type
+                      :type           entity
                       :required-type? true})
-                   (for [[type] dynamic-types]
-                     {:name      (str "replace" type)
+                   (for [[entity] dynamic-entities]
+                     {:name      (str "replace" entity)
                       :arguments [{:name           "id"
                                    :type           t/id-type
                                    :required-type? true}
                                   {:name           "value"
-                                   :type           (input-type type)
+                                   :type           (t/input-type entity)
                                    :required-type? true}]
-                      :type      type})
-                   (for [[type] dynamic-types]
-                     {:name      (str "delete" type)
+                      :type      entity})
+                   (for [[entity] dynamic-entities]
+                     {:name      (str "delete" entity)
                       :arguments [{:name           "id"
                                    :type           t/id-type
                                    :required-type? true}]
-                      :type      type}))}))))
+                      :type      entity}))}))))
 
 (comment
+  (generate)
   (printf (generate))
   (spit (io/resource "cdk/schema.graphql") (generate)))

@@ -145,6 +145,7 @@ input PlanetaryBoundaryInput {
 #generated, do not edit manually!
 type Mutation {
     createPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary!
-    updatePlanetaryBoundary(id: ID!, changes: PlanetaryBoundaryInput!): PlanetaryBoundary
+    replacePlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary
+    deletePlanetaryBoundary(id: ID!): PlanetaryBoundary
 }
 

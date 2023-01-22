@@ -44,3 +44,9 @@
 (def attribute-type :Attribute)
 (def page-info-type :PageInfo)
 (def page-query-type :PageQuery)
+
+(defn list-page-type [entity]
+  (keyword (str (name entity) "ListPage")))
+
+(defn input-type [entity]
+  (str (name entity) "Input"))
