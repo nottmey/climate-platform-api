@@ -76,7 +76,8 @@
                                 :required-type? true}
                                {:name           :name
                                 :type           t/string-type
-                                :required-type? true}]]
+                                :required-type? true}]
+        all-ops               (ops/all)]
     (str
       ;; static (db independent) schema
       (gd/schema-definition
@@ -127,10 +128,9 @@
       (gd/object-type-definition
         {:name   t/query-type
          :fields (concat
-                   ; TODO add query resolvers for each type (and fix entity resolvers)
                    [(f/get-query t/entity-type)
                     (f/list-page-query t/entity-type entity-filter-type)]
-                   (for [op ops/all
+                   (for [op all-ops
                          :when (= (o/get-graphql-parent-type op) t/query-type)
                          [entity] dynamic-entities]
                      (o/gen-graphql-field op entity)))})
@@ -160,7 +160,7 @@
       (gd/object-type-definition
         (obj/list-page t/entity-type))
       (str/join
-        (for [op           ops/all
+        (for [op           all-ops
               [entity] dynamic-entities
               object-type (o/gen-graphql-object-types op entity)]
           (gd/object-type-definition object-type)))
@@ -173,9 +173,8 @@
              :fields (gen-entity-fields fields)})))
       (gd/object-type-definition
         {:name   t/mutation-type
-         ; TODO add mutation resolvers for each type
          :fields (concat
-                   (for [op ops/all
+                   (for [op all-ops
                          :when (= (o/get-graphql-parent-type op) t/mutation-type)
                          [entity] dynamic-entities]
                      (o/gen-graphql-field op entity)))}))))

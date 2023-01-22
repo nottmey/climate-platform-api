@@ -1,7 +1,9 @@
 (ns ions.resolvers
   (:require [datomic.access :as da]
             [datomic.client.api :as d]
-            [ions.mappings :as mappings]))
+            [ions.mappings :as mappings]
+            [shared.operations :as ops]
+            [shared.operations.operation :as o]))
 
 (defn- extract-type-field-tuple [{:keys [parent-type-name field-name]}]
   [parent-type-name field-name])
@@ -12,6 +14,13 @@
   (seq @resolvable-paths))
 
 (defmulti resolve-static-type-field extract-type-field-tuple)
+
+(defn select-and-use-correct-resolver [{:keys [parent-type-name field-name] :as args}]
+  (if-let [op (->> (ops/all)
+                   (filter #(= (name (o/get-graphql-parent-type %)) parent-type-name))
+                   (filter #(o/resolves-graphql-field? % field-name)))]
+    (o/resolve-field-data op args)
+    (resolve-static-type-field args)))
 
 (defmacro defresolver [multifn dispatch-val & fn-tail]
   (swap! resolvable-paths conj dispatch-val)

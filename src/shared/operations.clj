@@ -5,8 +5,12 @@
             [shared.operations.replace :refer [replace-mutation]]
             [shared.operations.delete :refer [delete-mutation]]))
 
-(def all [get-query
-          list-query
-          create-mutation
-          replace-mutation
-          delete-mutation])
+(defn all []
+  [(get-query)
+   (list-query)
+   (create-mutation)
+   (replace-mutation)
+   (delete-mutation)])
+
+(comment
+  (time (all)))

@@ -26,7 +26,7 @@
          :selected-paths   selected-paths
          :arguments        arguments
          :parent-value     parent-value}
-        resolvers/resolve-static-type-field
+        resolvers/select-and-use-correct-resolver
         assoc-context
         json/write-str)))
 

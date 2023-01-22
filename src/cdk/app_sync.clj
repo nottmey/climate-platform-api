@@ -1,16 +1,24 @@
 (ns cdk.app-sync
-  (:require [graphql.schema :as schema]
-            [ions.resolvers :as resolvers])
+  (:require [datomic.access :as da]
+            [datomic.client.api :as d]
+            [datomic.schema :as ds]
+            [graphql.schema :as schema]
+            [ions.resolvers :as resolvers]
+            [shared.operations :as ops]
+            [shared.operations.operation :as o])
   (:import (software.amazon.awscdk Stack)
            (software.amazon.awscdk.services.appsync CfnApiKey$Builder CfnDataSource$Builder CfnDataSource$LambdaConfigProperty CfnGraphQLApi$Builder CfnGraphQLSchema$Builder CfnResolver$Builder)
            (software.amazon.awscdk.services.iam Effect PolicyStatement$Builder Role$Builder ServicePrincipal)))
 
 (defn app-sync [^Stack stack]
-  (let [api    (-> (CfnGraphQLApi$Builder/create stack "climate-platform-api")
-                   (.name "climate-platform-api")
-                   (.authenticationType "API_KEY")
-                   (.build))
-        api-id (-> api (.getAttrApiId))]
+  (let [db-name               da/dev-env-db-name
+        conn                  (da/get-connection db-name)
+        dynamic-entity-fields (ds/get-all-entity-fields (d/db conn))
+        api                   (-> (CfnGraphQLApi$Builder/create stack "climate-platform-api")
+                                  (.name "climate-platform-api")
+                                  (.authenticationType "API_KEY")
+                                  (.build))
+        api-id                (-> api (.getAttrApiId))]
     (-> (CfnApiKey$Builder/create stack "climate-platform-api-key")
         (.apiId api-id)
         (.build))
@@ -50,4 +58,8 @@
                                                        (.addDependsOn datomic-data-source)))))]
       ;; https://docs.aws.amazon.com/appsync/latest/devguide/utility-helpers-in-util.html
       (doseq [[type-name field-name] @resolvers/resolvable-paths]
+        (configure-datomic-resolver-for type-name field-name))
+      (doseq [op (ops/all)
+              [type-name] dynamic-entity-fields
+              :let [field-name (:name (o/gen-graphql-field op type-name))]]
         (configure-datomic-resolver-for type-name field-name)))))
