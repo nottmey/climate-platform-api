@@ -60,6 +60,7 @@
       (doseq [[type-name field-name] @resolvers/resolvable-paths]
         (configure-datomic-resolver-for type-name field-name))
       (doseq [op (ops/all)
-              [type-name] dynamic-entity-fields
-              :let [field-name (:name (o/gen-graphql-field op type-name))]]
+              [entity] dynamic-entity-fields
+              :let [type-name  (o/get-graphql-parent-type op)
+                    field-name (:name (o/gen-graphql-field op entity))]]
         (configure-datomic-resolver-for type-name field-name)))))
