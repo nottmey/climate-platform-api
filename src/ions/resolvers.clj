@@ -18,7 +18,8 @@
 (defn select-and-use-correct-resolver [{:keys [parent-type-name field-name] :as args}]
   (if-let [op (->> (ops/all)
                    (filter #(= (name (o/get-graphql-parent-type %)) parent-type-name))
-                   (filter #(o/resolves-graphql-field? % field-name)))]
+                   (filter #(o/resolves-graphql-field? % field-name))
+                   first)]
     (o/resolve-field-data op args)
     (resolve-static-type-field args)))
 
