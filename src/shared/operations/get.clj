@@ -6,7 +6,7 @@
 (def get-query
   (reify o/Operation
     (get-graphql-parent-type [_] t/query-type)
-    (gen-graphql-field [_ type] (f/get-query type))))
+    (gen-graphql-field [_ entity] (f/get-query entity))))
 
 (comment
   [(o/get-graphql-parent-type get-query) (:name (o/gen-graphql-field get-query "Entity"))])

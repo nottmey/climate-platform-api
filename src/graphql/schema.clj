@@ -182,28 +182,10 @@
         {:name   t/mutation-type
          ; TODO add mutation resolvers for each type
          :fields (concat
-                   (for [[entity] dynamic-entities]
-                     {:name           (str "create" entity)
-                      :arguments      [{:name           "value"
-                                        :type           (t/input-type entity)
-                                        :required-type? true}]
-                      :type           entity
-                      :required-type? true})
-                   (for [[entity] dynamic-entities]
-                     {:name      (str "replace" entity)
-                      :arguments [{:name           "id"
-                                   :type           t/id-type
-                                   :required-type? true}
-                                  {:name           "value"
-                                   :type           (t/input-type entity)
-                                   :required-type? true}]
-                      :type      entity})
-                   (for [[entity] dynamic-entities]
-                     {:name      (str "delete" entity)
-                      :arguments [{:name           "id"
-                                   :type           t/id-type
-                                   :required-type? true}]
-                      :type      entity}))}))))
+                   (for [op ops/all
+                         :when (= (o/get-graphql-parent-type op) t/mutation-type)
+                         [entity] dynamic-entities]
+                     (o/gen-graphql-field op entity)))}))))
 
 (comment
   (generate)

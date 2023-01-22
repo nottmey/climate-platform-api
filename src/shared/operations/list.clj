@@ -6,7 +6,7 @@
 (def list-query
   (reify o/Operation
     (get-graphql-parent-type [_] t/query-type)
-    (gen-graphql-field [_ type] (f/list-page-query type))))
+    (gen-graphql-field [_ entity] (f/list-page-query entity))))
 
 (comment
   [(o/get-graphql-parent-type list-query) (:name (o/gen-graphql-field list-query "Entity"))])
