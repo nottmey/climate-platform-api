@@ -175,5 +175,3 @@
 ; ScalarTypeDefinition
 ; UnionTypeDefinition
 ; EnumTypeDefinition
-; InputObjectTypeDefinition
-
