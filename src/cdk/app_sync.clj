@@ -1,19 +1,21 @@
 (ns cdk.app-sync
-  (:require [datomic.access :as da]
-            [datomic.client.api :as d]
-            [datomic.schema :as ds]
-            [graphql.schema :as schema]
-            [ions.resolvers :as resolvers]
-            [shared.operations :as ops]
-            [shared.operations.operation :as o])
-  (:import (software.amazon.awscdk Stack)
-           (software.amazon.awscdk.services.appsync CfnApiKey$Builder CfnDataSource$Builder CfnDataSource$LambdaConfigProperty CfnGraphQLApi$Builder CfnGraphQLSchema$Builder CfnResolver$Builder)
-           (software.amazon.awscdk.services.iam Effect PolicyStatement$Builder Role$Builder ServicePrincipal)))
+  (:require
+    [datomic.access :as da]
+    [datomic.client.api :as d]
+    [datomic.schema :as ds]
+    [graphql.schema :as schema]
+    [ions.resolvers :as resolvers]
+    [shared.operations :as ops]
+    [shared.operations.operation :as o])
+  (:import
+    (software.amazon.awscdk Stack)
+    (software.amazon.awscdk.services.appsync CfnApiKey$Builder CfnDataSource$Builder CfnDataSource$LambdaConfigProperty CfnGraphQLApi$Builder CfnGraphQLSchema$Builder CfnResolver$Builder)
+    (software.amazon.awscdk.services.iam Effect PolicyStatement$Builder Role$Builder ServicePrincipal)))
 
 (defn app-sync [^Stack stack]
   (let [db-name               da/dev-env-db-name
         conn                  (da/get-connection db-name)
-        dynamic-entity-fields (ds/get-all-entity-fields (d/db conn))
+        dynamic-graphql-types (ds/get-graphql-types (d/db conn))
         api                   (-> (CfnGraphQLApi$Builder/create stack "climate-platform-api")
                                   (.name "climate-platform-api")
                                   (.authenticationType "API_KEY")
@@ -57,10 +59,10 @@
                                                  (doto (.addDependsOn api-schema)
                                                        (.addDependsOn datomic-data-source)))))]
       ;; https://docs.aws.amazon.com/appsync/latest/devguide/utility-helpers-in-util.html
-      (doseq [[type-name field-name] @resolvers/resolvable-paths]
-        (configure-datomic-resolver-for type-name field-name))
-      (doseq [op (ops/all)
-              [entity] dynamic-entity-fields
-              :let [type-name  (o/get-graphql-parent-type op)
-                    field-name (:name (o/gen-graphql-field op entity))]]
-        (configure-datomic-resolver-for type-name field-name)))))
+      (doseq [[parent-type-name field-name] @resolvers/resolvable-paths]
+        (configure-datomic-resolver-for parent-type-name field-name))
+      (doseq [op           (ops/all)
+              graphql-type dynamic-graphql-types
+              :let [parent-type-name (o/get-graphql-parent-type op)
+                    field-name       (:name (o/gen-graphql-field op graphql-type))]]
+        (configure-datomic-resolver-for parent-type-name field-name)))))

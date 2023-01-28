@@ -1,8 +1,10 @@
 (ns shared.attributes
-  (:require [graphql.types :as gt]
-            [clojure.data.json :as json])
-  (:import (java.time.format DateTimeFormatter)
-           (java.util Date)))
+  (:require
+    [graphql.types :as gt]
+    [clojure.data.json :as json])
+  (:import
+    (java.time.format DateTimeFormatter)
+    (java.util Date)))
 
 ; TODO also use definition for mapping values
 ; TODO also map these values:
@@ -64,15 +66,25 @@
 
 (comment
   (doall attribute-types)
+
   ((:datomic/->gql (first (drop 3 attribute-types)))
    (Date.)))
 
-(def datomic-value-to-gql-value-fn
+(def ^:private datomic-type->gql-fn
   (->> attribute-types
        (mapcat
          (fn [{:keys [datomic/type datomic/->gql]}]
            (map #(vector % ->gql) type)))
        (into {})))
 
+(defn ->gql-value [datomic-value datomic-type datomic-cardinality]
+  (let [->gql (get datomic-type->gql-fn datomic-type)]
+    (if (= datomic-cardinality :db.cardinality/many)
+      (do
+        (assert (sequential? datomic-value)
+                (str "Value for :db.cardinality/many attribute " datomic-type " must be sequential."))
+        (map ->gql datomic-value))
+      (->gql datomic-value))))
+
 (comment
-  ((datomic-value-to-gql-value-fn :db.type/keyword) :db/ident))
+  (->gql-value :db/ident :db.type/keyword :db.cardinality/one))

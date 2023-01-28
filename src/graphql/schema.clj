@@ -1,16 +1,17 @@
 (ns graphql.schema
-  (:require [clojure.java.io :as io]
-            [clojure.string :as str]
-            [datomic.access :as da]
-            [datomic.client.api :as d]
-            [graphql.definitions :as gd]
-            [graphql.fields :as f]
-            [graphql.types :as t]
-            [graphql.objects :as obj]
-            [shared.attributes :as a]
-            [shared.operations :as ops]
-            [shared.operations.operation :as o]
-            [datomic.schema :as ds]))
+  (:require
+    [clojure.java.io :as io]
+    [clojure.string :as str]
+    [datomic.access :as da]
+    [datomic.client.api :as d]
+    [graphql.definitions :as gd]
+    [graphql.fields :as f]
+    [graphql.types :as t]
+    [graphql.objects :as obj]
+    [shared.attributes :as a]
+    [shared.operations :as ops]
+    [shared.operations.operation :as o]
+    [datomic.schema :as ds]))
 
 (defn generate-attribute-subtypes [attribute-fields]
   (str
@@ -50,14 +51,17 @@
                                  :required-type? true}]))
 
 (defn gen-entity-fields [fields]
-  (for [[field value-type cardinality] fields]
-    (let [{:keys [graphql/type]} (->> a/attribute-types
+  (for [{:keys [graphql.relation/field
+                graphql.relation/attribute]} fields]
+    (let [{:keys [db/valueType
+                  db/cardinality]} attribute
+          {:keys [graphql/type]} (->> a/attribute-types
                                       (filter
                                         (fn [{:keys [datomic/type]}]
-                                          (contains? type value-type)))
+                                          (contains? type (:db/ident valueType))))
                                       first)
-          list? (= cardinality :db.cardinality/many)]
-      (assert (some? type) (str "There is a GraphQL type configured for value type " value-type "."))
+          list? (= (:db/ident cardinality) :db.cardinality/many)]
+      (assert (some? type) (str "There is a GraphQL type configured for value type " valueType "."))
       {:name           field
        :type           type
        :list?          list?
@@ -65,19 +69,17 @@
        :required-type? list?})))
 
 (defn generate []
-  (let [db-name               da/dev-env-db-name
-        conn                  (da/get-connection db-name)
-        dynamic-entity-fields (ds/get-all-entity-fields (d/db conn))
-        dynamic-entities      (-> (group-by first dynamic-entity-fields)
-                                  (update-vals #(map rest %)))
-        entity-filter-type    (keyword (str (name t/entity-type) "Filter"))
-        attribute-fields      [{:name           :id
-                                :type           t/id-type
-                                :required-type? true}
-                               {:name           :name
-                                :type           t/string-type
-                                :required-type? true}]
-        all-ops               (ops/all)]
+  (let [db-name              da/dev-env-db-name
+        conn                 (da/get-connection db-name)
+        dynamic-schema-types (:types (ds/get-graphql-schema (d/db conn)))
+        entity-filter-type   (keyword (str (name t/entity-type) "Filter"))
+        attribute-fields     [{:name           :id
+                               :type           t/id-type
+                               :required-type? true}
+                              {:name           :name
+                               :type           t/string-type
+                               :required-type? true}]
+        all-ops              (ops/all)]
     (str
       ;; static (db independent) schema
       (gd/schema-definition
@@ -130,9 +132,9 @@
          :fields (concat
                    [(f/get-query t/entity-type)
                     (f/list-page-query t/entity-type entity-filter-type)]
-                   (for [op all-ops
+                   (for [op     all-ops
                          :when (= (o/get-graphql-parent-type op) t/query-type)
-                         [entity] dynamic-entities]
+                         entity (keys dynamic-schema-types)]
                      (o/gen-graphql-field op entity)))})
       (gd/object-type-definition
         {:name   t/entity-type
@@ -146,37 +148,36 @@
                    :required-type? true
                    :required-list? true}]})
       (str/join
-        (for [[entity fields] dynamic-entities]
+        (for [[entity fields] dynamic-schema-types]
           ; always generate all dynamic entity types
           (gd/object-type-definition
-            {:name entity
-             :fields
-             (concat
-               [f/context
-                {:name           "id"
-                 :type           :ID
-                 :required-type? true}]
-               (gen-entity-fields fields))})))
+            {:name   entity
+             :fields (concat
+                       [f/context
+                        {:name           "id"
+                         :type           :ID
+                         :required-type? true}]
+                       (gen-entity-fields (vals fields)))})))
       (gd/object-type-definition
         (obj/list-page t/entity-type))
       (str/join
-        (for [op           all-ops
-              [entity] dynamic-entities
+        (for [op          all-ops
+              entity      (keys dynamic-schema-types)
               object-type (o/gen-graphql-object-types op entity)]
           (gd/object-type-definition object-type)))
       ;; entity framework & dynamic schema: mutation inputs & results
       (str/join
-        (for [[entity fields] dynamic-entities]
+        (for [[entity fields] dynamic-schema-types]
           ; always generate all dynamic entity input types
           (gd/input-object-type-definition
             {:name   (t/input-type entity)
-             :fields (gen-entity-fields fields)})))
+             :fields (gen-entity-fields (vals fields))})))
       (gd/object-type-definition
         {:name   t/mutation-type
          :fields (concat
-                   (for [op all-ops
+                   (for [op     all-ops
                          :when (= (o/get-graphql-parent-type op) t/mutation-type)
-                         [entity] dynamic-entities]
+                         entity (keys dynamic-schema-types)]
                      (o/gen-graphql-field op entity)))}))))
 
 (comment

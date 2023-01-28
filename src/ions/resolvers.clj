@@ -1,9 +1,11 @@
 (ns ions.resolvers
-  (:require [datomic.access :as da]
-            [datomic.client.api :as d]
-            [ions.mappings :as mappings]
-            [shared.operations :as ops]
-            [shared.operations.operation :as o]))
+  (:require
+    [datomic.access :as da]
+    [datomic.client.api :as d]
+    [ions.mappings :as mappings]
+    [ions.utils :as utils]
+    [shared.operations :as ops]
+    [shared.operations.operation :as o]))
 
 (defn- extract-type-field-tuple [{:keys [parent-type-name field-name]}]
   [parent-type-name field-name])
@@ -20,7 +22,8 @@
                    (filter #(= (name (o/get-graphql-parent-type %)) parent-type-name))
                    (filter #(o/resolves-graphql-field? % field-name))
                    first)]
-    (o/resolve-field-data op args)
+    (let [conn (da/get-connection da/dev-env-db-name)]
+      (o/resolve-field-data op conn args))
     (resolve-static-type-field args)))
 
 (defmacro defresolver [multifn dispatch-val & fn-tail]
@@ -63,30 +66,18 @@
 
 (defresolver resolve-static-type-field [:Query :listEntity] [{:keys [arguments]}]
   (let [{:keys [page filter]} arguments
-        {:keys [number size]} page
-        db          (d/db (da/get-connection da/dev-env-db-name))
-        schema      (da/get-schema db)
-        as          (or (->> (:attributes filter) (map parse-long) seq)
-                        (keys schema))
-        entities    (recently-updated-entities db as)
-        total       (count entities)
-        size        (min 100 (max 1 (or size 20)))
-        last        (if (pos? total)
-                      (dec (int (Math/ceil (/ total size))))
-                      0)
-        page-number (min last (max 0 (or number 0)))
-        offset      (* page-number size)
-        entities    (->> entities
-                         (drop offset)
-                         (take size)
-                         (pull-entities db)
-                         (map #(mappings/map-entity % schema)))]
-    {"info"   {"size"    size
-               "first"   0
-               "prev"    (if (pos? page-number) (dec page-number) nil)
-               "current" page-number
-               "next"    (if (= page-number last) nil (inc page-number))
-               "last"    last}
+        db        (d/db (da/get-connection da/dev-env-db-name))
+        schema    (da/get-schema db)
+        as        (or (->> (:attributes filter) (map parse-long) seq)
+                      (keys schema))
+        entities  (recently-updated-entities db as)
+        page-info (utils/page-info page (count entities))
+        entities  (->> entities
+                       (drop (get page-info "offset"))
+                       (take (get page-info "size"))
+                       (pull-entities db)
+                       (map #(mappings/map-entity % schema)))]
+    {"info"   page-info
      "values" entities}))
 
 (comment

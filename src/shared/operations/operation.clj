@@ -8,4 +8,4 @@
   (gen-graphql-field [this entity] "Generates GraphQL field data for a given entity type.")
   (gen-graphql-object-types [this entity] "Generates all operation individual object types. Returns `nil`, if there are none.")
   (resolves-graphql-field? [this field] "Returns whether a specific (entity) field belongs to this operation.")
-  (resolve-field-data [this resolver-args] "Resolves entity field data for specific field matched by `resolves-graphql-field?`."))
+  (resolve-field-data [this conn resolver-args] "Resolves entity field data for specific field matched by `resolves-graphql-field?`."))

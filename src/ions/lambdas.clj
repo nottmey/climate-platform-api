@@ -1,7 +1,8 @@
 (ns ions.lambdas
-  (:require [clojure.data.json :as json]
-            [clojure.walk :as walk]
-            [ions.resolvers :as resolvers]))
+  (:require
+    [clojure.data.json :as json]
+    [clojure.walk :as walk]
+    [ions.resolvers :as resolvers]))
 
 ; result needs to be string serialized json
 ; default response mapping is applied: https://docs.aws.amazon.com/appsync/latest/devguide/resolver-mapping-template-reference-lambda.html#lambda-mapping-template-bypass-response

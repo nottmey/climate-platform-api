@@ -1,7 +1,8 @@
 (ns ions.mappings
-  (:require [datomic.client.api :as d]
-            [datomic.access :as da]
-            [shared.attributes :as sa]))
+  (:require
+    [datomic.client.api :as d]
+    [datomic.access :as da]
+    [shared.attributes :as sa]))
 
 (defn map-value [attribute db-value schema]
   (let [{:keys [db/cardinality db/valueType]} (get schema attribute)

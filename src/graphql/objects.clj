@@ -1,6 +1,7 @@
 (ns graphql.objects
-  (:require [graphql.fields :as f]
-            [graphql.types :as t]))
+  (:require
+    [graphql.fields :as f]
+    [graphql.types :as t]))
 
 (defn list-page [entity]
   {:name   (t/list-page-type entity)

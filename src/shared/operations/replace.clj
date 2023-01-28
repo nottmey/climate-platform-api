@@ -10,16 +10,16 @@
 (defn replace-mutation []
   ;; TODO implement resolver
   (reify o/Operation
-    (get-graphql-parent-type [_] t/mutation-type)
-    (gen-graphql-field [_ entity]
+    (o/get-graphql-parent-type [_] t/mutation-type)
+    (o/gen-graphql-field [_ entity]
       {:name      (str prefix (name entity))
        :arguments [a/id
                    {:name           "value"
                     :type           (t/input-type entity)
                     :required-type? true}]
        :type      entity})
-    (gen-graphql-object-types [_ _])
-    (resolves-graphql-field? [_ field]
+    (o/gen-graphql-object-types [_ _])
+    (o/resolves-graphql-field? [_ field]
       (s/starts-with? field prefix))))
 
 (comment

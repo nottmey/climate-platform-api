@@ -1,8 +1,10 @@
 (ns user
-  (:require [clojure.set :as set]
-            [datomic.access :as access]
-            [datomic.client.api :as d])
-  (:import (clojure.lang ExceptionInfo)))
+  (:require
+    [clojure.set :as set]
+    [datomic.access :as access]
+    [datomic.client.api :as d])
+  (:import
+    (clojure.lang ExceptionInfo)))
 
 (def sandbox-env-db-name "sandbox")
 

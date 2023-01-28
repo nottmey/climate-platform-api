@@ -1,7 +1,8 @@
 (ns datomic.schema
-  (:require [datomic.client.api :as d]
-            [shared.attributes :as a]
-            [user :as u]))
+  (:require
+    [datomic.client.api :as d]
+    [shared.attributes :as a]
+    [user :as u]))
 
 ; TODO use transaction function to ensure type is complete
 
@@ -113,69 +114,103 @@
     (u/sandbox-conn)
     {:tx-data (deprecate-type-field-tx-data "SomeType" "refToX")}))
 
-(defn get-all-entity-fields [db]
-  (d/q '[:find ?type-name ?field-name ?value-type-ident ?cardinality-ident
-         :where
-         [?type :graphql.type/name ?type-name]
-         [?rel :graphql.relation/type ?type]
-         [?rel :graphql.relation/field ?field-name]
-         [?rel :graphql.relation/attribute ?attr]
-         [?attr :db/valueType ?value-type]
-         [?value-type :db/ident ?value-type-ident]
-         [?attr :db/cardinality ?cardinality]
-         [?cardinality :db/ident ?cardinality-ident]]
-       db))
+(defn get-graphql-schema [db]
+  (let [base (->> (d/q '[:find (pull ?rel [:graphql.relation/field
+                                           :graphql.relation/forward?
+                                           :graphql.relation/deprecated?
+                                           {:graphql.relation/target [:graphql.type/name
+                                                                      :graphql.type/deprecated?]}
+                                           {:graphql.relation/attribute [:db/ident
+                                                                         {:db/valueType [:db/ident]}
+                                                                         {:db/cardinality [:db/ident]}]}
+                                           {:graphql.relation/type [:graphql.type/name
+                                                                    :graphql.type/deprecated?]}])
+                         :in $
+                         :where
+                         [?rel :graphql.relation/type]
+                         [?rel :graphql.relation/attribute]
+                         [?rel :graphql.relation/field]]
+                       db)
+                  (map first))]
+    {:list       base
+     :types      (-> (group-by #(get-in % [:graphql.relation/type :graphql.type/name]) base)
+                     (update-vals #(-> (group-by (fn [{:keys [graphql.relation/field]}] field) %)
+                                       (update-vals (fn [relations]
+                                                      (assert (= (count relations) 1)
+                                                              (str "There must only be one relation per Type-field tuple. " relations))
+                                                      (first relations))))))
+     :attributes (-> (group-by #(get-in % [:graphql.relation/attribute :db/ident]) base)
+                     (update-vals #(group-by (fn [{:keys [graphql.relation/type]}] (:graphql.type/name type)) %)))}))
 
 (comment
   (let [db (u/sandbox-db)]
-    (time (get-all-entity-fields db))))
+    (time (get-graphql-schema db))))
 
-(defn get-all-values [db type-field-tuples]
-  (d/q '[:find (pull ?rel [*])
-         :in $ [[?type-name ?field-name]]
-         :where
-         [?type :graphql.type/name ?type-name]
-         [(tuple ?type ?field-name) ?tup]
-         [?rel :graphql.relation/type+field ?tup]]
-       db
-       type-field-tuples))
-
-(defn get-specific-values [db type-entity-field-triples]
-  (-> (->> (d/q '[:find ?type-name ?e ?field-name ?vt-ident ?v
-                  :in $ [[?type-name ?e ?field-name]]
-                  :where
-                  [?type :graphql.type/name ?type-name]
-                  [(tuple ?type ?field-name) ?tup]
-                  [?rel :graphql.relation/type+field ?tup]
-                  [?rel :graphql.relation/attribute ?a]
-                  [?a :db/valueType ?vt]
-                  [?vt :db/ident ?vt-ident]
-                  [?e ?a ?v]]
-                db
-                type-entity-field-triples)
-           (group-by first))
-      (update-vals
-        (fn [type-values]
-          (-> (->> type-values
-                   (map rest)
-                   (group-by first))
-              (update-vals
-                (fn [entity-values]
-                  (-> (->> entity-values
-                           (map
-                             (fn [[_ field-name value-type value]]
-                               [field-name ((a/datomic-value-to-gql-value-fn value-type) value)]))
-                           (into {}))
-                      (assoc "id" (first (first entity-values)))))))))))
+(defn get-graphql-types [db]
+  (-> (get-graphql-schema db)
+      :types
+      keys))
 
 (comment
   (let [db (u/sandbox-db)]
-    (time (get-specific-values db [["PlanetaryBoundary" 92358976733295 "name"]])))
+    (time (get-graphql-types db))))
+
+(defn get-entities-sorted [db type-name]
+  (->> (d/q '[:find (min ?t) ?e
+              :in $ ?type-name
+              :where
+              [?type :graphql.type/name ?type-name]
+              [?rel :graphql.relation/type ?type]
+              [?rel :graphql.relation/attribute ?a]
+              [?e ?a _ ?t]]
+            db
+            type-name)
+       (sort-by first)
+       (map last)))
+
+(comment
+  (let [db (u/sandbox-db)]
+    (time (get-entities-sorted db "PlanetaryBoundary"))))
+
+(defn gen-pull-pattern [gql-type gql-fields schema]
+  ; TODO nested selections
+  (-> (->> gql-fields
+           (map #(get-in schema [:types gql-type % :graphql.relation/attribute :db/ident]))
+           distinct)
+      (conj :db/id)))
+
+(defn pull-entities [db pattern entities]
+  (->> (d/q '[:find (pull ?e pattern)
+              :in $ [?e ...] pattern]
+            db
+            entities
+            pattern)
+       (map first)))
+
+(comment
+  (let [db (u/sandbox-db)]
+    (time (pull-entities db [:db/id :platform/name] [92358976733295 87960930222192])))
 
   (let [db (u/sandbox-db)]
-    (time (get-specific-values db
-                               [["SomeTypeY" 0 "identX"]
-                                ["SomeType" 1 "ident"]
-                                ["SomeTypeY" 2 "identX"]
-                                ["SomeTypeY" 5 "identX"]
-                                ["SomeType" 12 "ident"]]))))
+    (time (pull-entities db '[*] [123]))))
+
+(defn reverse-pull-pattern [gql-type gql-fields schema pulled-entities]
+  ; TODO reverse nested values
+  (map
+    #(-> (->>
+           %
+           (mapcat
+             (fn [[key value]]
+               (->> (get-in schema [:attributes key gql-type])
+                    (filter (fn [{:keys [graphql.relation/field]}]
+                              (contains? gql-fields field)))
+                    (map (fn [{:keys [graphql.relation/field
+                                      graphql.relation/attribute]}]
+                           [field
+                            (a/->gql-value
+                              value
+                              (:db/ident (:db/valueType attribute))
+                              (:db/ident (:db/cardinality attribute)))])))))
+           (into {}))
+         (assoc "id" (str (:db/id %))))
+    pulled-entities))

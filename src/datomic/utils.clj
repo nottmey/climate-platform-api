@@ -1,6 +1,7 @@
 (ns datomic.utils
-  (:require [cognitect.anomalies :as anomalies]
-            [io.pedestal.log :as log]))
+  (:require
+    [cognitect.anomalies :as anomalies]
+    [io.pedestal.log :as log]))
 
 (def retryable-anomaly?
   #{::anomalies/busy

@@ -1,38 +1,44 @@
 (ns shared.operations.get
   (:require
+    [shared.operations.operation :as o]
     [clojure.string :as s]
     [datomic.schema :as ds]
     [datomic.client.api :as d]
     [graphql.fields :as f]
     [graphql.types :as t]
-    [shared.operations.operation :as o]
     [user :as u]))
 
 (def prefix "get")
 
 (defn get-query []
   (reify o/Operation
-    (get-graphql-parent-type [_] t/query-type)
-    (gen-graphql-field [_ entity]
+    (o/get-graphql-parent-type [_] t/query-type)
+    (o/gen-graphql-field [_ entity]
       (f/get-query entity))
-    (gen-graphql-object-types [_ _])
-    (resolves-graphql-field? [_ field]
+    (o/gen-graphql-object-types [_ _])
+    (o/resolves-graphql-field? [_ field]
       (s/starts-with? field prefix))
-    (resolve-field-data [_ {:keys [field-name arguments selected-paths]}]
+    (o/resolve-field-data [_ conn {:keys [field-name arguments selected-paths]}]
       (let [{:keys [id]} arguments
             entity-id  (parse-long id)
             gql-type   (s/replace field-name prefix "")
-            gql-fields (filter #(not (s/includes? % "/")) selected-paths)
-            db         (d/db (u/sandbox-conn))
-            triples    (->> gql-fields (map #(vector gql-type entity-id %)))]
-        (get-in
-          (ds/get-specific-values db triples)
-          [gql-type entity-id])))))
+            gql-fields (set (filter #(not (s/includes? % "/")) selected-paths))
+            db         (d/db conn)
+            schema     (ds/get-graphql-schema db)
+            pattern    (ds/gen-pull-pattern gql-type gql-fields schema)
+            entity     (->> [entity-id]
+                            (ds/pull-entities db pattern)
+                            (ds/reverse-pull-pattern gql-type gql-fields schema)
+                            first)]
+        ; when entity has values, else it's not there (id is not checked, so pull has same input than output length)
+        (when (> (count entity) 1)
+          entity)))))
 
 (comment
-  (time (o/resolve-field-data (get-query) {:field-name     "getPlanetaryBoundary"
-                                           :arguments      {:id "87960930222192"}
-                                           :selected-paths #{"name"}}))
+  (let [conn (u/sandbox-conn)]
+    (time (o/resolve-field-data (get-query) conn {:field-name     "getPlanetaryBoundary"
+                                                  :arguments      {:id "87960930222192"}
+                                                  :selected-paths #{"name"}})))
   (d/transact (u/sandbox-conn) {:tx-data [{:platform/name "Hello World!"}]})
 
   [(o/get-graphql-parent-type (get-query))

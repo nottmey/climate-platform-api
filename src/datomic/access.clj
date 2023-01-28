@@ -1,9 +1,10 @@
 (ns datomic.access
-  (:require [clojure.edn :as edn]
-            [clojure.java.io :as io]
-            [datomic.client.api :as d]
-            [datomic.utils :as u]
-            [io.pedestal.log :as log]))
+  (:require
+    [clojure.edn :as edn]
+    [clojure.java.io :as io]
+    [datomic.client.api :as d]
+    [datomic.utils :as u]
+    [io.pedestal.log :as log]))
 
 (def client-config-path "datomic/client-config.edn")
 
