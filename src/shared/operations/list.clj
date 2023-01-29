@@ -41,7 +41,8 @@
 (comment
   (let [conn (u/sandbox-conn)]
     (time (o/resolve-field-data (list-query) conn {:field-name     "listPlanetaryBoundary"
-                                                   :selected-paths #{"name" "nameX"}})))
+                                                   :arguments      {:page {:number 2 :size 10}}
+                                                   :selected-paths #{"name"}})))
 
   [(o/get-graphql-parent-type (list-query))
    (:name (o/gen-graphql-field (list-query) "Entity"))])

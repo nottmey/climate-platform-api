@@ -19,20 +19,12 @@
     (o/resolves-graphql-field? [_ field]
       (s/starts-with? field prefix))
     (o/resolve-field-data [_ conn {:keys [field-name arguments selected-paths]}]
-      (let [{:keys [id]} arguments
-            entity-id  (parse-long id)
-            gql-type   (s/replace field-name prefix "")
-            gql-fields (set (filter #(not (s/includes? % "/")) selected-paths))
-            db         (d/db conn)
-            schema     (ds/get-graphql-schema db)
-            pattern    (ds/gen-pull-pattern gql-type gql-fields schema)
-            entity     (->> [entity-id]
-                            (ds/pull-entities db pattern)
-                            (ds/reverse-pull-pattern gql-type gql-fields schema)
-                            first)]
-        ; when entity has values, else it's not there (id is not checked, so pull has same input than output length)
-        (when (> (count entity) 1)
-          entity)))))
+      (let [gql-type  (s/replace field-name prefix "")
+            {:keys [id]} arguments
+            entity-id (parse-long id)
+            db        (d/db conn)
+            schema    (ds/get-graphql-schema db)]
+        (ds/pull-and-resolve-entity entity-id db gql-type selected-paths schema)))))
 
 (comment
   (let [conn (u/sandbox-conn)]

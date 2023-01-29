@@ -1,5 +1,6 @@
 (ns datomic.schema
   (:require
+    [clojure.string :as s]
     [datomic.client.api :as d]
     [shared.attributes :as a]
     [user :as u]))
@@ -155,6 +156,27 @@
   (let [db (u/sandbox-db)]
     (time (get-graphql-types db))))
 
+(defn resolve-input-fields [input-obj gql-type schema]
+  ; TODO nested values
+  (->> input-obj
+       (map
+         (fn [[field value]]
+           (let [rel (get-in schema [:types gql-type field])
+                 {:keys [graphql.relation/attribute]} rel]
+             [(:db/ident attribute) value])))
+       (reduce
+         (fn [m [attr value]]
+           (if (contains? m attr)
+             ; TODO describe cause more in detail (fields + value, not attr)
+             (throw (ex-info (str "InputDataConflict: " attr " already set by other input field.") {}))
+             (assoc m attr value)))
+         {})))
+
+(comment
+  (let [db     (u/sandbox-db)
+        schema (get-graphql-schema db)]
+    (time (resolve-input-fields {"name" "Hello"} "PlanetaryBoundary" schema))))
+
 (defn get-entities-sorted [db type-name]
   (->> (d/q '[:find (min ?t) ?e
               :in $ ?type-name
@@ -180,16 +202,16 @@
       (conj :db/id)))
 
 (defn pull-entities [db pattern entities]
-  (->> (d/q '[:find (pull ?e pattern)
-              :in $ [?e ...] pattern]
-            db
-            entities
-            pattern)
-       (map first)))
+  (->> (map-indexed vector entities)
+       (d/q '[:find ?idx (pull ?e pattern)
+              :in $ pattern [[?idx ?e]]
+              :where [?e]] db pattern)
+       (sort-by first)
+       (map second)))
 
 (comment
   (let [db (u/sandbox-db)]
-    (time (pull-entities db [:db/id :platform/name] [92358976733295 87960930222192])))
+    (time (pull-entities db [:db/id :platform/name] [92358976733295 123 87960930222192])))
 
   (let [db (u/sandbox-db)]
     (time (pull-entities db '[*] [123]))))
@@ -215,23 +237,11 @@
          (assoc "id" (str (:db/id %))))
     pulled-entities))
 
-(defn resolve-input-fields [input-obj gql-type schema]
-  ; TODO nested values
-  (->> input-obj
-       (map
-         (fn [[field value]]
-           (let [rel (get-in schema [:types gql-type field])
-                 {:keys [graphql.relation/attribute]} rel]
-             [(:db/ident attribute) value])))
-       (reduce
-         (fn [m [attr value]]
-           (if (contains? m attr)
-             ; TODO describe cause more in detail (fields + value, not attr)
-             (throw (ex-info (str "InputDataConflict: " attr " already set by other input field.") {}))
-             (assoc m attr value)))
-         {})))
-
-(comment
-  (let [db     (u/sandbox-db)
-        schema (get-graphql-schema db)]
-    (time (resolve-input-fields {"name" "Hello"} "PlanetaryBoundary" schema))))
+(defn pull-and-resolve-entity [entity-id db gql-type selected-paths schema]
+  ; TODO nested fields
+  (let [gql-fields (set (filter #(not (s/includes? % "/")) selected-paths))
+        pattern    (gen-pull-pattern gql-type gql-fields schema)]
+    (->> [entity-id]
+         (pull-entities db pattern)
+         (reverse-pull-pattern gql-type gql-fields schema)
+         first)))

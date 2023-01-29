@@ -11,7 +11,6 @@
 (def prefix "create")
 
 (defn create-mutation []
-  ;; TODO implement resolver
   (reify o/Operation
     (o/get-graphql-parent-type [_] t/mutation-type)
     (o/gen-graphql-field [_ entity]
@@ -26,7 +25,6 @@
       (s/starts-with? field prefix))
     (o/resolve-field-data [_ conn {:keys [field-name arguments selected-paths]}]
       (let [gql-type   (s/replace field-name prefix "")
-            gql-fields (set (filter #(not (s/includes? % "/")) selected-paths))
             {:keys [value]} arguments
             input      (walk/stringify-keys value)
             schema     (ds/get-graphql-schema (d/db conn))
@@ -34,13 +32,8 @@
             input-data (-> (ds/resolve-input-fields input gql-type schema)
                            (assoc :db/id temp-id))
             {:keys [db-after tempids]} (d/transact conn {:tx-data [input-data]})
-            entity-id  (get tempids temp-id)
-            pattern    (ds/gen-pull-pattern gql-type gql-fields schema)
-            entity     (->> [entity-id]
-                            (ds/pull-entities db-after pattern)
-                            (ds/reverse-pull-pattern gql-type gql-fields schema)
-                            first)]
-        entity))))
+            entity-id  (get tempids temp-id)]
+        (ds/pull-and-resolve-entity entity-id db-after gql-type selected-paths schema)))))
 
 (comment
   (let [conn (u/sandbox-conn)]
