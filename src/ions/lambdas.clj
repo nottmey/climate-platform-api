@@ -13,15 +13,15 @@
   (let [app-sync-context (json/read-str app-sync-input)
         parent-type-name (keyword (get-in app-sync-context ["info" "parentTypeName"]))
         field-name       (keyword (get-in app-sync-context ["info" "fieldName"]))
-        selected-paths   (-> (set (get-in app-sync-context ["info" "selectionSetList"]))
-                             (disj "context"))
-        arguments        (walk/keywordize-keys (get app-sync-context "arguments"))
-        parent-value     (walk/keywordize-keys (get app-sync-context "source"))
+        selection-set    (set (get-in app-sync-context ["info" "selectionSetList"]))
         ; TODO only append context in dev mode (e.g. api key or dev identity)
         assoc-context    (fn [m]
-                           (if (and (map? m) (contains? selected-paths "context"))
+                           (if (and (map? m) (contains? selection-set "context"))
                              (assoc m :context app-sync-context)
-                             m))]
+                             m))
+        selected-paths   (disj selection-set "context")
+        arguments        (walk/keywordize-keys (get app-sync-context "arguments"))
+        parent-value     (walk/keywordize-keys (get app-sync-context "source"))]
     (-> {:parent-type-name parent-type-name
          :field-name       field-name
          :selected-paths   selected-paths

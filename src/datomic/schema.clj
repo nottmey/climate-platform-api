@@ -214,3 +214,24 @@
            (into {}))
          (assoc "id" (str (:db/id %))))
     pulled-entities))
+
+(defn resolve-input-fields [input-obj gql-type schema]
+  ; TODO nested values
+  (->> input-obj
+       (map
+         (fn [[field value]]
+           (let [rel (get-in schema [:types gql-type field])
+                 {:keys [graphql.relation/attribute]} rel]
+             [(:db/ident attribute) value])))
+       (reduce
+         (fn [m [attr value]]
+           (if (contains? m attr)
+             ; TODO describe cause more in detail (fields + value, not attr)
+             (throw (ex-info (str "InputDataConflict: " attr " already set by other input field.") {}))
+             (assoc m attr value)))
+         {})))
+
+(comment
+  (let [db     (u/sandbox-db)
+        schema (get-graphql-schema db)]
+    (time (resolve-input-fields {"name" "Hello"} "PlanetaryBoundary" schema))))
