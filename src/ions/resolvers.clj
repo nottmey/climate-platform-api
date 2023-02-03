@@ -1,5 +1,6 @@
 (ns ions.resolvers
   (:require
+    [clojure.string :as s]
     [datomic.access :as da]
     [datomic.client.api :as d]
     [ions.mappings :as mappings]
@@ -20,7 +21,8 @@
 (defn select-and-use-correct-resolver [{:keys [parent-type-name field-name] :as args}]
   (if-let [op (->> (ops/all)
                    (filter #(= (o/get-graphql-parent-type %) parent-type-name))
-                   (filter #(o/resolves-graphql-field? % field-name))
+                   (filter #(and (not (s/includes? (name field-name) "Entity"))
+                                 (o/resolves-graphql-field? % field-name)))
                    first)]
     (let [conn (da/get-connection da/dev-env-db-name)]
       (o/resolve-field-data op conn args))
@@ -29,6 +31,10 @@
 (comment
   (let [args {:parent-type-name :Query
               :field-name       :listPlanetaryBoundary}]
+    (time (select-and-use-correct-resolver args)))
+
+  (let [args {:parent-type-name :Query
+              :field-name       :listEntity}]
     (time (select-and-use-correct-resolver args))))
 
 (defmacro defresolver [multifn dispatch-val & fn-tail]
