@@ -19,8 +19,8 @@
                     :required-type? true}]
        :type      entity})
     (o/gen-graphql-object-types [_ _])
-    (o/resolves-graphql-field? [_ field]
-      (s/starts-with? (name field) prefix))))
+    (o/resolves-graphql-field? [_ field-name]
+      (s/starts-with? (name field-name) prefix))))
 
 (comment
   [(o/get-graphql-parent-type (replace-mutation))

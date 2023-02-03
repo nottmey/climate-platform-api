@@ -19,10 +19,10 @@
       (f/list-page-query entity))
     (o/gen-graphql-object-types [_ entity]
       [(obj/list-page entity)])
-    (o/resolves-graphql-field? [_ field]
-      (s/starts-with? (name field) prefix))
+    (o/resolves-graphql-field? [_ field-name]
+      (s/starts-with? (name field-name) prefix))
     (o/resolve-field-data [_ conn {:keys [field-name selected-paths arguments]}]
-      (let [gql-type   (s/replace field-name prefix "")
+      (let [gql-type   (s/replace (name field-name) prefix "")
             gql-fields (set (filter #(not (s/includes? % "/")) selected-paths))
             {:keys [page]} arguments
             db         (d/db conn)
@@ -40,7 +40,7 @@
 
 (comment
   (let [conn (u/sandbox-conn)]
-    (time (o/resolve-field-data (list-query) conn {:field-name     "listPlanetaryBoundary"
+    (time (o/resolve-field-data (list-query) conn {:field-name     :listPlanetaryBoundary
                                                    :arguments      {:page {:number 2 :size 10}}
                                                    :selected-paths #{"name"}})))
 

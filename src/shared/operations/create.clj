@@ -21,10 +21,10 @@
        :type           entity
        :required-type? true})
     (o/gen-graphql-object-types [_ _])
-    (o/resolves-graphql-field? [_ field]
-      (s/starts-with? (name field) prefix))
+    (o/resolves-graphql-field? [_ field-name]
+      (s/starts-with? (name field-name) prefix))
     (o/resolve-field-data [_ conn {:keys [field-name arguments selected-paths]}]
-      (let [gql-type   (s/replace field-name prefix "")
+      (let [gql-type   (s/replace (name field-name) prefix "")
             {:keys [value]} arguments
             input      (walk/stringify-keys value)
             schema     (ds/get-graphql-schema (d/db conn))
@@ -40,7 +40,7 @@
     (time (o/resolve-field-data
             (create-mutation)
             conn
-            {:field-name     "createPlanetaryBoundary"
+            {:field-name     :createPlanetaryBoundary
              :arguments      {:value {:name "some planetary boundary"}}
              :selected-paths #{"name"}})))
 

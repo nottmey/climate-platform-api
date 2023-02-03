@@ -35,6 +35,11 @@
 
   (let [args {:parent-type-name :Query
               :field-name       :listEntity}]
+    (time (select-and-use-correct-resolver args)))
+
+  (let [args {:parent-type-name :Mutation
+              :field-name       :createPlanetaryBoundary
+              :arguments        {:value {:name "Climate Change"}}}]
     (time (select-and-use-correct-resolver args))))
 
 (defmacro defresolver [multifn dispatch-val & fn-tail]
