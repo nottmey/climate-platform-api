@@ -17,7 +17,7 @@
       (f/get-query entity))
     (o/gen-graphql-object-types [_ _])
     (o/resolves-graphql-field? [_ field]
-      (s/starts-with? field prefix))
+      (s/starts-with? (name field) prefix))
     (o/resolve-field-data [_ conn {:keys [field-name arguments selected-paths]}]
       (let [gql-type  (s/replace field-name prefix "")
             {:keys [id]} arguments

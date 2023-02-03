@@ -20,7 +20,7 @@
        :type      entity})
     (o/gen-graphql-object-types [_ _])
     (o/resolves-graphql-field? [_ field]
-      (s/starts-with? field prefix))))
+      (s/starts-with? (name field) prefix))))
 
 (comment
   [(o/get-graphql-parent-type (replace-mutation))

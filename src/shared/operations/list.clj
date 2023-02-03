@@ -20,7 +20,7 @@
     (o/gen-graphql-object-types [_ entity]
       [(obj/list-page entity)])
     (o/resolves-graphql-field? [_ field]
-      (s/starts-with? field prefix))
+      (s/starts-with? (name field) prefix))
     (o/resolve-field-data [_ conn {:keys [field-name selected-paths arguments]}]
       (let [gql-type   (s/replace field-name prefix "")
             gql-fields (set (filter #(not (s/includes? % "/")) selected-paths))
