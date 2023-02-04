@@ -6,49 +6,49 @@
     [ions.mappings :as mappings]
     [ions.utils :as utils]
     [shared.operations :as ops]
-    [shared.operations.operation :as o]))
-
-(defn- extract-type-field-tuple [{:keys [parent-type-name field-name]}]
-  [parent-type-name field-name])
+    [shared.operations.operation :as o]
+    [tests :as t]))
 
 (def resolvable-paths (atom #{}))
 
 (comment
   (seq @resolvable-paths))
 
-(defmulti resolve-static-type-field extract-type-field-tuple)
+(defmulti resolve-static-type-field
+  (fn [_conn {:keys [parent-type-name field-name]}]
+    [parent-type-name field-name]))
 
-(defn select-and-use-correct-resolver [{:keys [parent-type-name field-name] :as args}]
+(defn select-and-use-correct-resolver [{:keys [parent-type-name field-name] :as args} conn]
   (if-let [op (->> (ops/all)
                    (filter #(= (o/get-graphql-parent-type %) parent-type-name))
                    (filter #(and (not (s/includes? (name field-name) "Entity"))
                                  (o/resolves-graphql-field? % field-name)))
                    first)]
-    (let [conn (da/get-connection da/dev-env-db-name)]
-      (o/resolve-field-data op conn args))
-    (resolve-static-type-field args)))
+    (o/resolve-field-data op conn args)
+    (resolve-static-type-field conn args)))
 
 (comment
   (let [args {:parent-type-name :Query
               :field-name       :listPlanetaryBoundary}]
-    (time (select-and-use-correct-resolver args)))
+    (select-and-use-correct-resolver args (t/temp-conn)))
 
   (let [args {:parent-type-name :Query
               :field-name       :listEntity}]
-    (time (select-and-use-correct-resolver args)))
+    (select-and-use-correct-resolver args (t/temp-conn)))
 
   (let [args {:parent-type-name :Mutation
               :field-name       :createPlanetaryBoundary
-              :arguments        {:value {:name "Climate Change"}}}]
-    (time (select-and-use-correct-resolver args))))
+              :arguments        {:value {:name "Climate Change"}}
+              :selected-paths   #{"id" "name"}}]
+    (select-and-use-correct-resolver args (t/temp-conn))))
 
 (defmacro defresolver [multifn dispatch-val & fn-tail]
   (swap! resolvable-paths conj dispatch-val)
   `(defmethod ~multifn ~dispatch-val ~@fn-tail))
 
-(defresolver resolve-static-type-field [:Query :getEntity] [{:keys [arguments]}]
+(defresolver resolve-static-type-field [:Query :getEntity] [conn {:keys [arguments]}]
   (let [{:keys [id]} arguments
-        db     (d/db (da/get-connection da/dev-env-db-name))
+        db     (d/db conn)
         schema (da/get-schema db)
         result (d/pull db '[*] (parse-long (str id)))]
     (mappings/map-entity result schema)))
@@ -80,9 +80,9 @@
         es     (time (recently-updated-entities db #_["50"] (keys schema)))]
     (time (doall (pull-entities db es)))))
 
-(defresolver resolve-static-type-field [:Query :listEntity] [{:keys [arguments]}]
+(defresolver resolve-static-type-field [:Query :listEntity] [conn {:keys [arguments]}]
   (let [{:keys [page filter]} arguments
-        db        (d/db (da/get-connection da/dev-env-db-name))
+        db        (d/db conn)
         schema    (da/get-schema db)
         as        (or (->> (:attributes filter) (map parse-long) seq)
                       (keys schema))

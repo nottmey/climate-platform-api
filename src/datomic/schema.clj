@@ -1,119 +1,11 @@
 (ns datomic.schema
   (:require
+    [clojure.test :refer [deftest is]]
     [clojure.string :as s]
     [datomic.client.api :as d]
     [shared.attributes :as a]
+    [tests :as t]
     [user :as u]))
-
-; TODO use transaction function to ensure type is complete
-
-(defn graphql-doc [text]
-  (str "Stored GraphQL Schema: " text))
-
-(def graphql-attributes
-  [{:db/ident       :graphql.type/name
-    :db/unique      :db.unique/identity
-    :db/valueType   :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db/doc         (graphql-doc "Name of this GraphQL type.")}
-   {:db/ident       :graphql.type/deprecated?
-    :db/valueType   :db.type/boolean
-    :db/cardinality :db.cardinality/one
-    :db/doc         (graphql-doc "Whether this GraphQL type is deprecated or not. Default: `false`.")}
-   {:db/ident       :graphql.relation/deprecated?
-    :db/valueType   :db.type/boolean
-    :db/cardinality :db.cardinality/one
-    :db/doc         (graphql-doc "Whether the GraphQL field of this GraphQL-field-to-Datomic-attribute relation is deprecated or not. Default: `false`.")}
-   {:db/ident       :graphql.relation/type
-    :db/valueType   :db.type/ref
-    :db/cardinality :db.cardinality/one
-    :db/doc         (graphql-doc "GraphQL type in which the GraphQL field of this GraphQL-field-to-Datomic-attribute relation is contained.")}
-   {:db/ident       :graphql.relation/field
-    :db/valueType   :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db/doc         (graphql-doc "Field name of this GraphQL-field-to-Datomic-attribute relation.")}
-   {:db/ident       :graphql.relation/type+field
-    :db/unique      :db.unique/identity
-    :db/valueType   :db.type/tuple
-    :db/tupleAttrs  [:graphql.relation/type
-                     :graphql.relation/field]
-    :db/cardinality :db.cardinality/one
-    :db/doc         (graphql-doc "Unique automatically managed GraphQL-type-and-field-name tuple of this GraphQL-field-to-Datomic-attribute relation.")}
-   {:db/ident       :graphql.relation/target
-    :db/valueType   :db.type/ref
-    :db/cardinality :db.cardinality/one
-    :db/doc         (graphql-doc "GraphQL type which is targeted by this GraphQL-field-to-Datomic-attribute relation, iff it is a reference to another entity.")}
-   {:db/ident       :graphql.relation/attribute
-    :db/valueType   :db.type/ref
-    :db/cardinality :db.cardinality/one
-    :db/doc         (graphql-doc "Datomic attribute which is pulled, when this relations type and field is requested in the GraphQL API.")}
-   {:db/ident       :graphql.relation/forward?
-    :db/valueType   :db.type/boolean
-    :db/cardinality :db.cardinality/one
-    :db/doc         (graphql-doc "Whether the forward or backwards reference of this relations reference attribute should be pulled, when requested in the GraphQL API. Default: `true`.")}])
-
-(comment
-  (u/ensure-schema
-    graphql-attributes
-    #_access/dev-env-db-name))
-
-(def platform-attributes
-  [{:db/ident       :platform/name
-    :db/valueType   :db.type/string
-    :db/cardinality :db.cardinality/one
-    :db/doc         "Name of any non-user platform entity."}])
-
-(comment
-  (u/ensure-schema
-    platform-attributes
-    #_access/dev-env-db-name))
-
-(defn add-value-field-tx-data [type-name field-name attribute]
-  [{:db/id             type-name
-    :graphql.type/name type-name}
-   {:graphql.relation/attribute attribute
-    :graphql.relation/type      type-name
-    :graphql.relation/field     field-name}])
-
-(comment
-  (u/ensure-data
-    (add-value-field-tx-data "PlanetaryBoundary" "name" :platform/name)
-    #_access/dev-env-db-name))
-
-(defn add-ref-field-tx-data [type-name field-name target-type attribute forward?]
-  [{:db/id             type-name
-    :graphql.type/name type-name}
-   {:graphql.relation/attribute attribute
-    :graphql.relation/forward?  forward?
-    :graphql.relation/type      type-name
-    :graphql.relation/field     field-name
-    :graphql.relation/target    target-type}])
-
-(comment
-  (d/transact
-    (u/sandbox-conn)
-    {:tx-data (add-ref-field-tx-data "SomeType" "refToX" "SomeType" :db/cardinality true)}))
-
-(defn deprecate-type-tx-data [type-name]
-  [{:graphql.type/name        type-name
-    :graphql.type/deprecated? true}])
-
-(comment
-  (d/transact
-    (u/sandbox-conn)
-    {:tx-data (deprecate-type-tx-data "SomeType")}))
-
-(defn deprecate-type-field-tx-data [type-name field-name]
-  ; FIXME doesn't work like this, always creates new relation entities
-  [{:db/id             type-name
-    :graphql.type/name type-name}
-   {:graphql.relation/type+field  [type-name field-name]
-    :graphql.relation/deprecated? true}])
-
-(comment
-  (d/transact
-    (u/sandbox-conn)
-    {:tx-data (deprecate-type-field-tx-data "SomeType" "refToX")}))
 
 (defn get-graphql-schema [db]
   (let [base (->> (d/q '[:find (pull ?rel [:graphql.relation/field
@@ -196,10 +88,15 @@
 
 (defn gen-pull-pattern [gql-type gql-fields schema]
   ; TODO nested selections
-  (-> (->> gql-fields
+  (-> (->> (disj gql-fields "id")
            (map #(get-in schema [:types gql-type % :graphql.relation/attribute :db/ident]))
            distinct)
       (conj :db/id)))
+
+(deftest gen-pull-pattern-test
+  (let [schema  (get-graphql-schema (d/db (t/temp-conn)))
+        pattern (gen-pull-pattern t/rel-type #{"id" t/rel-field} schema)]
+    (is (= pattern [:db/id t/rel-attribute]))))
 
 (defn pull-entities [db pattern entities]
   (->> (map-indexed vector entities)
@@ -237,11 +134,25 @@
          (assoc "id" (str (:db/id %))))
     pulled-entities))
 
-(defn pull-and-resolve-entity [entity-id db gql-type selected-paths schema]
+(defn pull-and-resolve-entity [entity-long-id db gql-type selected-paths schema]
   ; TODO nested fields
   (let [gql-fields (set (filter #(not (s/includes? % "/")) selected-paths))
         pattern    (gen-pull-pattern gql-type gql-fields schema)]
-    (->> [entity-id]
+    (->> [entity-long-id]
          (pull-entities db pattern)
          (reverse-pull-pattern gql-type gql-fields schema)
          first)))
+
+(deftest pull-and-resolve-entity-test
+  (let [conn           (t/temp-conn)
+        added-data     (d/transact conn {:tx-data [{:db/id          "entity id"
+                                                    t/rel-attribute t/rel-sample-value}]})
+        entity-long-id (get-in added-data [:tempids "entity id"])
+        db             (d/db conn)
+        selected-paths #{"id" t/rel-field}
+        schema         (get-graphql-schema db)
+        pulled-entity  (pull-and-resolve-entity entity-long-id db t/rel-type selected-paths schema)]
+    (is (= pulled-entity
+           {"id"        (str entity-long-id)
+            t/rel-field t/rel-sample-value}))))
+
