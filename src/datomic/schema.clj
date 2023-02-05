@@ -59,7 +59,7 @@
        (reduce
         (fn [m [attr value]]
           (if (contains? m attr)
-             ; TODO describe cause more in detail (fields + value, not attr)
+            ; TODO describe cause more in detail (fields + value, not attr)
             (throw (ex-info (str "InputDataConflict: " attr " already set by other input field.") {}))
             (assoc m attr value)))
         {})))

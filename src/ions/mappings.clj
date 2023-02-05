@@ -28,11 +28,11 @@
   (let [db     (d/db (da/get-connection da/dev-env-db-name))
         schema (da/get-schema db)]
     #_(map-value :db/ident :db.part/db schema)
-    #_(map-value :db.install/partition [#:db{:id 0,
+    #_(map-value :db.install/partition [#:db{:id    0
                                              :ident :db.part/db}
-                                        #:db{:id 3,
+                                        #:db{:id    3
                                              :ident :db.part/tx}
-                                        #:db{:id 4,
+                                        #:db{:id    4
                                              :ident :db.part/user}] schema)
     #_(map-value :db/doc "some docs" schema)
     (map-value :graphql.relation/type+field [87960930222163 "name"] schema)))

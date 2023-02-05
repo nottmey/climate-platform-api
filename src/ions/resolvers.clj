@@ -19,7 +19,8 @@
     [parent-type-name field-name]))
 
 (defn select-and-use-correct-resolver [{:keys [parent-type-name field-name]
-                                        :as args} conn]
+                                        :as   args}
+                                       conn]
   (if-let [op (->> (ops/all)
                    (filter #(= (o/get-graphql-parent-type %) parent-type-name))
                    (filter #(and (not (s/includes? (name field-name) "Entity"))
@@ -102,5 +103,5 @@
                                     :field-name       :listEntity
                                     :arguments        {:filter {:attributes ["50" "77"]}
                                                        :page   {:number 0
-                                                                :size 20}}})))
+                                                                :size   20}}})))
 

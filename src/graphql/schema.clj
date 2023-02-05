@@ -81,11 +81,11 @@
                                :required-type? true}]
         all-ops              (ops/all)]
     (str
-      ;; static (db independent) schema
+     ;; static (db independent) schema
      (gd/schema-definition
-        ; TODO add subscription type
-        ; TODO add subscription annotations
-        ; TODO use "publish" mutation for sending out data to subscriptions with generated id (in full) and after successful transaction
+      ; TODO add subscription type
+      ; TODO add subscription annotations
+      ; TODO use "publish" mutation for sending out data to subscriptions with generated id (in full) and after successful transaction
       {:root-ops {:query    t/query-type
                   :mutation t/mutation-type}})
      (gd/interface-type-definition
@@ -110,7 +110,7 @@
                 {:name           :last
                  :type           t/int-type
                  :required-type? true}]})
-      ; entity framework & dynamic schema: query inputs
+     ; entity framework & dynamic schema: query inputs
      (gd/input-object-type-definition
       {:name   t/page-query-type
        :fields [{:name          :number
@@ -119,14 +119,14 @@
                 {:name          :size
                  :type          t/int-type
                  :default-value 20}]})
-      ; TODO generate filters for dynamic types
+     ; TODO generate filters for dynamic types
      (gd/input-object-type-definition
       {:name   entity-filter-type
        :fields [{:name           :attributes
                  :type           t/id-type
                  :list?          true
                  :required-type? true}]})
-      ;; entity framework & dynamic schema: query results
+     ;; entity framework & dynamic schema: query results
      (gd/object-type-definition
       {:name   t/query-type
        :fields (concat
@@ -149,7 +149,7 @@
                  :required-list? true}]})
      (str/join
       (for [[entity fields] dynamic-schema-types]
-          ; always generate all dynamic entity types
+        ; always generate all dynamic entity types
         (gd/object-type-definition
          {:name   entity
           :fields (concat
@@ -165,10 +165,10 @@
             entity      (keys dynamic-schema-types)
             object-type (o/gen-graphql-object-types op entity)]
         (gd/object-type-definition object-type)))
-      ;; entity framework & dynamic schema: mutation inputs & results
+     ;; entity framework & dynamic schema: mutation inputs & results
      (str/join
       (for [[entity fields] dynamic-schema-types]
-          ; always generate all dynamic entity input types
+        ; always generate all dynamic entity input types
         (gd/input-object-type-definition
          {:name   (t/input-type entity)
           :fields (gen-entity-fields (vals fields))})))

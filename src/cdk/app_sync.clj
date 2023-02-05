@@ -40,10 +40,9 @@
                                              (.definition (schema/generate))
                                              (.build))
           datomic-resolver-arn           "arn:aws:lambda:eu-central-1:118776085668:function:climate-platform-primary-datomic-resolver"
-          datomic-resolver-access-role   (doto
-                                          (-> (Role$Builder/create stack "datomic-resolver-access-role")
-                                              (.assumedBy (ServicePrincipal. "appsync.amazonaws.com"))
-                                              (.build))
+          datomic-resolver-access-role   (doto (-> (Role$Builder/create stack "datomic-resolver-access-role")
+                                                   (.assumedBy (ServicePrincipal. "appsync.amazonaws.com"))
+                                                   (.build))
                                            (.addToPolicy (-> (PolicyStatement$Builder/create)
                                                              (.effect Effect/ALLOW)
                                                              (.actions ["lambda:InvokeFunction"])
