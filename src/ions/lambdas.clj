@@ -135,4 +135,15 @@
                                     "current" 0
                                     "next"    nil
                                     "last"    0}
-                          "values" [created-entity]})))))
+                          "values" [created-entity]})))
+
+    (let [deleted-entity
+          (json/read-str
+            (datomic-resolver
+              {:testing-conn conn
+               :input        (json/write-str
+                               {"info"      {"parentTypeName"   "Mutation"
+                                             "fieldName"        (str "delete" t/rel-type)
+                                             "selectionSetList" ["id" t/rel-field]}
+                                "arguments" {"id" entity-id}})}))]
+      (is (= deleted-entity created-entity)))))
