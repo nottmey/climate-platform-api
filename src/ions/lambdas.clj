@@ -127,8 +127,8 @@
                                {"info"      {"parentTypeName"   "Query"
                                              "fieldName"        (str "list" t/rel-type)
                                              "selectionSetList" ["values/id" (str "values/" t/rel-field)]}
-                                "arguments" {}})}))]
-      (is (= entity-list {"info"   {"size"    20
+                                "arguments" {"page" {"size" 10}}})}))]
+      (is (= entity-list {"info"   {"size"    10
                                     "offset"  0
                                     "first"   0
                                     "prev"    nil
