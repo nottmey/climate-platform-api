@@ -124,10 +124,9 @@
             (datomic-resolver
               {:testing-conn conn
                :input        (json/write-str
-                               {"info"      {"parentTypeName" "Query"
-                                             "fieldName"      (str "list" t/rel-type)
-                                             ; TODO test selectionSetList of list*
-                                             }
+                               {"info"      {"parentTypeName"   "Query"
+                                             "fieldName"        (str "list" t/rel-type)
+                                             "selectionSetList" ["values/id" (str "values/" t/rel-field)]}
                                 "arguments" {}})}))]
       (is (= entity-list {"info"   {"size"    20
                                     "offset"  0
@@ -136,4 +135,4 @@
                                     "current" 0
                                     "next"    nil
                                     "last"    0}
-                          "values" [(dissoc created-entity "name")]})))))
+                          "values" [created-entity]})))))

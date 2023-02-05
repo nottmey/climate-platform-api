@@ -23,7 +23,11 @@
       (s/starts-with? (name field-name) prefix))
     (o/resolve-field-data [_ conn {:keys [field-name selected-paths arguments]}]
       (let [gql-type   (s/replace (name field-name) prefix "")
-            gql-fields (set (filter #(not (s/includes? % "/")) selected-paths))
+            gql-fields (->> selected-paths
+                            (filter #(s/starts-with? % "values/"))
+                            (map #(s/replace % #"^values/" ""))
+                            (filter #(not (s/includes? % "/")))
+                            set)
             {:keys [page]} arguments
             db         (d/db conn)
             entities   (ds/get-entities-sorted db gql-type)
