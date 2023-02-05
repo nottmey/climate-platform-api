@@ -1,12 +1,12 @@
 (ns shared.operations.get
   (:require
-    [shared.operations.operation :as o]
-    [clojure.string :as s]
-    [datomic.schema :as ds]
-    [datomic.client.api :as d]
-    [graphql.fields :as f]
-    [graphql.types :as t]
-    [user :as u]))
+   [clojure.string :as s]
+   [datomic.client.api :as d]
+   [datomic.schema :as ds]
+   [graphql.fields :as f]
+   [graphql.types :as t]
+   [shared.operations.operation :as o]
+   [user :as u]))
 
 (def prefix "get")
 

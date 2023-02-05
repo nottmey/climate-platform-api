@@ -1,14 +1,14 @@
 (ns shared.operations.list
   (:require
-    [datomic.client.api :as d]
-    [datomic.schema :as ds]
-    [user :as u]
-    [clojure.string :as s]
-    [graphql.fields :as f]
-    [graphql.objects :as obj]
-    [graphql.types :as t]
-    [ions.utils :as utils]
-    [shared.operations.operation :as o]))
+   [clojure.string :as s]
+   [datomic.client.api :as d]
+   [datomic.schema :as ds]
+   [graphql.fields :as f]
+   [graphql.objects :as obj]
+   [graphql.types :as t]
+   [ions.utils :as utils]
+   [shared.operations.operation :as o]
+   [user :as u]))
 
 (def prefix "list")
 
@@ -45,7 +45,8 @@
 (comment
   (let [conn (u/sandbox-conn)]
     (time (o/resolve-field-data (list-query) conn {:field-name     :listPlanetaryBoundary
-                                                   :arguments      {:page {:number 2 :size 10}}
+                                                   :arguments      {:page {:number 2
+                                                                           :size 10}}
                                                    :selected-paths #{"name"}})))
 
   [(o/get-graphql-parent-type (list-query))

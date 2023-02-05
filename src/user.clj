@@ -1,10 +1,10 @@
 (ns user
   (:require
-    [clojure.set :as set]
-    [datomic.access :as access]
-    [datomic.client.api :as d])
+   [clojure.set :as set]
+   [datomic.access :as access]
+   [datomic.client.api :as d])
   (:import
-    (clojure.lang ExceptionInfo)))
+   (clojure.lang ExceptionInfo)))
 
 (def sandbox-env-db-name "sandbox")
 
@@ -96,9 +96,9 @@
      (->> (d/tx-range conn {:start start})
           (map :data)
           (map #(map
-                  (fn [[e a v add? tx]]
-                    [(identify e) (identify a) (identify v) add? tx])
-                  %))))))
+                 (fn [[e a v add? tx]]
+                   [(identify e) (identify a) (identify v) add? tx])
+                 %))))))
 
 (comment
   (get-tx-log 1 #_access/dev-env-db-name))

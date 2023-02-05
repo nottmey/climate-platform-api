@@ -1,7 +1,7 @@
 (ns datomic.attributes
   (:require
-    [datomic.client.api :as d]
-    [user :as u]))
+   [datomic.client.api :as d]
+   [user :as u]))
 
 ; TODO use transaction function to ensure type is complete
 
@@ -52,8 +52,8 @@
 
 (comment
   (u/ensure-schema
-    graphql-attributes
-    #_access/dev-env-db-name))
+   graphql-attributes
+   #_access/dev-env-db-name))
 
 (def platform-attributes
   [{:db/ident       :platform/name
@@ -63,8 +63,8 @@
 
 (comment
   (u/ensure-schema
-    platform-attributes
-    #_access/dev-env-db-name))
+   platform-attributes
+   #_access/dev-env-db-name))
 
 (defn add-value-field-tx-data [type-name field-name attribute]
   [{:db/id             type-name
@@ -75,8 +75,8 @@
 
 (comment
   (u/ensure-data
-    (add-value-field-tx-data "PlanetaryBoundary" "name" :platform/name)
-    #_access/dev-env-db-name))
+   (add-value-field-tx-data "PlanetaryBoundary" "name" :platform/name)
+   #_access/dev-env-db-name))
 
 (defn add-ref-field-tx-data [type-name field-name target-type attribute forward?]
   [{:db/id             type-name
@@ -89,8 +89,8 @@
 
 (comment
   (d/transact
-    (u/sandbox-conn)
-    {:tx-data (add-ref-field-tx-data "SomeType" "refToX" "SomeType" :db/cardinality true)}))
+   (u/sandbox-conn)
+   {:tx-data (add-ref-field-tx-data "SomeType" "refToX" "SomeType" :db/cardinality true)}))
 
 (defn deprecate-type-tx-data [type-name]
   [{:graphql.type/name        type-name
@@ -98,8 +98,8 @@
 
 (comment
   (d/transact
-    (u/sandbox-conn)
-    {:tx-data (deprecate-type-tx-data "SomeType")}))
+   (u/sandbox-conn)
+   {:tx-data (deprecate-type-tx-data "SomeType")}))
 
 (defn deprecate-type-field-tx-data [type-name field-name]
   ; FIXME doesn't work like this, always creates new relation entities
@@ -110,5 +110,5 @@
 
 (comment
   (d/transact
-    (u/sandbox-conn)
-    {:tx-data (deprecate-type-field-tx-data "SomeType" "refToX")}))
+   (u/sandbox-conn)
+   {:tx-data (deprecate-type-field-tx-data "SomeType" "refToX")}))

@@ -1,0 +1,5 @@
+;; cljfmt configuration - https://github.com/weavejester/cljfmt
+;; check with `clojure -Sdeps '{:deps {cljfmt {:mvn/version "0.9.2"}}}' -m cljfmt.main check`
+;; run with `clojure -Sdeps '{:deps {cljfmt {:mvn/version "0.9.2"}}}' -m cljfmt.main fix`
+{:split-keypairs-over-multiple-lines? true
+ :sort-ns-references?                 true}

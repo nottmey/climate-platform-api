@@ -1,13 +1,13 @@
 (ns ions.resolvers
   (:require
-    [clojure.string :as s]
-    [datomic.access :as da]
-    [datomic.client.api :as d]
-    [ions.mappings :as mappings]
-    [ions.utils :as utils]
-    [shared.operations :as ops]
-    [shared.operations.operation :as o]
-    [tests :as t]))
+   [clojure.string :as s]
+   [datomic.access :as da]
+   [datomic.client.api :as d]
+   [ions.mappings :as mappings]
+   [ions.utils :as utils]
+   [shared.operations :as ops]
+   [shared.operations.operation :as o]
+   [tests :as t]))
 
 (def resolvable-paths (atom #{}))
 
@@ -18,7 +18,8 @@
   (fn [_conn {:keys [parent-type-name field-name]}]
     [parent-type-name field-name]))
 
-(defn select-and-use-correct-resolver [{:keys [parent-type-name field-name] :as args} conn]
+(defn select-and-use-correct-resolver [{:keys [parent-type-name field-name]
+                                        :as args} conn]
   (if-let [op (->> (ops/all)
                    (filter #(= (o/get-graphql-parent-type %) parent-type-name))
                    (filter #(and (not (s/includes? (name field-name) "Entity"))
@@ -100,5 +101,6 @@
   (time (resolve-static-type-field {:parent-type-name :Query
                                     :field-name       :listEntity
                                     :arguments        {:filter {:attributes ["50" "77"]}
-                                                       :page   {:number 0 :size 20}}})))
+                                                       :page   {:number 0
+                                                                :size 20}}})))
 

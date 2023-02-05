@@ -1,12 +1,12 @@
 (ns shared.operations.delete
   (:require
-    [user :as u]
-    [datomic.client.api :as d]
-    [datomic.schema :as ds]
-    [clojure.string :as s]
-    [graphql.arguments :as a]
-    [graphql.types :as t]
-    [shared.operations.operation :as o]))
+   [clojure.string :as s]
+   [datomic.client.api :as d]
+   [datomic.schema :as ds]
+   [graphql.arguments :as a]
+   [graphql.types :as t]
+   [shared.operations.operation :as o]
+   [user :as u]))
 
 (def prefix "delete")
 
@@ -34,11 +34,11 @@
 (comment
   (let [conn (u/sandbox-conn)]
     (time (o/resolve-field-data
-            (delete-mutation)
-            conn
-            {:field-name     :deletePlanetaryBoundary
-             :arguments      {:id "101155069755524"}
-             :selected-paths #{"name"}})))
+           (delete-mutation)
+           conn
+           {:field-name     :deletePlanetaryBoundary
+            :arguments      {:id "101155069755524"}
+            :selected-paths #{"name"}})))
 
   [(o/get-graphql-parent-type (delete-mutation))
    (:name (o/gen-graphql-field (delete-mutation) "Entity"))])

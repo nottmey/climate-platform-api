@@ -1,9 +1,13 @@
 (ns cdk.stack
   (:require
-    [cdk.app-sync :as as]
-    [io.pedestal.log :as log])
+   [cdk.app-sync :as as]
+   [io.pedestal.log :as log])
   (:import
-    (software.amazon.awscdk App Environment Stack StackProps)))
+   (software.amazon.awscdk
+    App
+    Environment
+    Stack
+    StackProps)))
 
 (defn synth [opts]
   (let [app   (App.)

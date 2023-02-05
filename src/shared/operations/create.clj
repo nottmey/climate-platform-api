@@ -1,12 +1,12 @@
 (ns shared.operations.create
   (:require
-    [clojure.walk :as walk]
-    [datomic.client.api :as d]
-    [datomic.schema :as ds]
-    [user :as u]
-    [clojure.string :as s]
-    [graphql.types :as t]
-    [shared.operations.operation :as o]))
+   [clojure.string :as s]
+   [clojure.walk :as walk]
+   [datomic.client.api :as d]
+   [datomic.schema :as ds]
+   [graphql.types :as t]
+   [shared.operations.operation :as o]
+   [user :as u]))
 
 (def prefix "create")
 
@@ -38,11 +38,11 @@
 (comment
   (let [conn (u/sandbox-conn)]
     (time (o/resolve-field-data
-            (create-mutation)
-            conn
-            {:field-name     :createPlanetaryBoundary
-             :arguments      {:value {:name "some planetary boundary"}}
-             :selected-paths #{"name"}})))
+           (create-mutation)
+           conn
+           {:field-name     :createPlanetaryBoundary
+            :arguments      {:value {:name "some planetary boundary"}}
+            :selected-paths #{"name"}})))
 
   [(o/get-graphql-parent-type (create-mutation))
    (:name (o/gen-graphql-field (create-mutation) "Entity"))])

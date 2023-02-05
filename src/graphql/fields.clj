@@ -16,10 +16,10 @@
   ([entity filter-type]
    {:name           (keyword (str "list" (name entity)))
     :arguments      (concat
-                      [{:name :page
-                        :type t/page-query-type}]
-                      (when filter-type
-                        [{:name :filter
-                          :type filter-type}]))
+                     [{:name :page
+                       :type t/page-query-type}]
+                     (when filter-type
+                       [{:name :filter
+                         :type filter-type}]))
     :type           (t/list-page-type entity)
     :required-type? true}))

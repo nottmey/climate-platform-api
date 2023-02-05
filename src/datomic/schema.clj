@@ -1,11 +1,11 @@
 (ns datomic.schema
   (:require
-    [clojure.test :refer [deftest is]]
-    [clojure.string :as s]
-    [datomic.client.api :as d]
-    [shared.attributes :as a]
-    [tests :as t]
-    [user :as u]))
+   [clojure.string :as s]
+   [clojure.test :refer [deftest is]]
+   [datomic.client.api :as d]
+   [shared.attributes :as a]
+   [tests :as t]
+   [user :as u]))
 
 (defn get-graphql-schema [db]
   (let [base (->> (d/q '[:find (pull ?rel [:graphql.relation/field
@@ -52,17 +52,17 @@
   ; TODO nested values
   (->> input-obj
        (map
-         (fn [[field value]]
-           (let [rel (get-in schema [:types gql-type field])
-                 {:keys [graphql.relation/attribute]} rel]
-             [(:db/ident attribute) value])))
+        (fn [[field value]]
+          (let [rel (get-in schema [:types gql-type field])
+                {:keys [graphql.relation/attribute]} rel]
+            [(:db/ident attribute) value])))
        (reduce
-         (fn [m [attr value]]
-           (if (contains? m attr)
+        (fn [m [attr value]]
+          (if (contains? m attr)
              ; TODO describe cause more in detail (fields + value, not attr)
-             (throw (ex-info (str "InputDataConflict: " attr " already set by other input field.") {}))
-             (assoc m attr value)))
-         {})))
+            (throw (ex-info (str "InputDataConflict: " attr " already set by other input field.") {}))
+            (assoc m attr value)))
+        {})))
 
 (comment
   (let [db     (u/sandbox-db)
@@ -116,23 +116,23 @@
 (defn reverse-pull-pattern [gql-type gql-fields schema pulled-entities]
   ; TODO reverse nested values
   (map
-    #(-> (->>
-           %
-           (mapcat
-             (fn [[key value]]
-               (->> (get-in schema [:attributes key gql-type])
-                    (filter (fn [{:keys [graphql.relation/field]}]
-                              (contains? gql-fields field)))
-                    (map (fn [{:keys [graphql.relation/field
-                                      graphql.relation/attribute]}]
-                           [field
-                            (a/->gql-value
-                              value
-                              (:db/ident (:db/valueType attribute))
-                              (:db/ident (:db/cardinality attribute)))])))))
-           (into {}))
-         (assoc "id" (str (:db/id %))))
-    pulled-entities))
+   #(-> (->>
+         %
+         (mapcat
+          (fn [[key value]]
+            (->> (get-in schema [:attributes key gql-type])
+                 (filter (fn [{:keys [graphql.relation/field]}]
+                           (contains? gql-fields field)))
+                 (map (fn [{:keys [graphql.relation/field
+                                   graphql.relation/attribute]}]
+                        [field
+                         (a/->gql-value
+                          value
+                          (:db/ident (:db/valueType attribute))
+                          (:db/ident (:db/cardinality attribute)))])))))
+         (into {}))
+        (assoc "id" (str (:db/id %))))
+   pulled-entities))
 
 (defn pull-and-resolve-entity [entity-long-id db gql-type selected-paths schema]
   ; TODO nested fields

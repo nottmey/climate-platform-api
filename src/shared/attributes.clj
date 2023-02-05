@@ -1,10 +1,10 @@
 (ns shared.attributes
   (:require
-    [graphql.types :as gt]
-    [clojure.data.json :as json])
+   [clojure.data.json :as json]
+   [graphql.types :as gt])
   (:import
-    (java.time.format DateTimeFormatter)
-    (java.util Date)))
+   (java.time.format DateTimeFormatter)
+   (java.util Date)))
 
 ; TODO also use definition for mapping values
 ; TODO also map these values:
@@ -46,8 +46,8 @@
          :datomic/type                    #{:db.type/instant}
          :datomic/->gql                   (fn [^Date date]
                                             (.format
-                                              DateTimeFormatter/ISO_INSTANT
-                                              (.toInstant date)))}
+                                             DateTimeFormatter/ISO_INSTANT
+                                             (.toInstant date)))}
         {:graphql/name                    :Tuple
          ; TODO generate precise type
          :graphql/type                    gt/json-type
@@ -57,12 +57,12 @@
          :datomic/->gql                   (fn [tuple]
                                             (json/write-str tuple))}]
        (map #(assoc % :graphql/single-value-type-name
-                      (keyword (str (name (:graphql/name %))
-                                    (name gt/attribute-type)))))
+                    (keyword (str (name (:graphql/name %))
+                                  (name gt/attribute-type)))))
        (map #(assoc % :graphql/multi-value-type-name
-                      (keyword (str "Multi"
-                                    (name (:graphql/name %))
-                                    (name gt/attribute-type)))))))
+                    (keyword (str "Multi"
+                                  (name (:graphql/name %))
+                                  (name gt/attribute-type)))))))
 
 (comment
   (doall attribute-types)
@@ -73,8 +73,8 @@
 (def ^:private datomic-type->gql-fn
   (->> attribute-types
        (mapcat
-         (fn [{:keys [datomic/type datomic/->gql]}]
-           (map #(vector % ->gql) type)))
+        (fn [{:keys [datomic/type datomic/->gql]}]
+          (map #(vector % ->gql) type)))
        (into {})))
 
 (defn ->gql-value [datomic-value datomic-type datomic-cardinality]

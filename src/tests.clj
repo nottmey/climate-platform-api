@@ -1,9 +1,9 @@
 (ns tests
   (:require
-    [clojure.test :refer [*testing-vars*]]
-    [clojure.pprint :as pp]
-    [datomic.client.api :as d]
-    [datomic.attributes :as da]))
+   [clojure.pprint :as pp]
+   [clojure.test :refer [*testing-vars*]]
+   [datomic.attributes :as da]
+   [datomic.client.api :as d]))
 
 (defn test-mode? []
   (boolean (seq *testing-vars*)))

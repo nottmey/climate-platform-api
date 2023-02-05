@@ -1,16 +1,27 @@
 (ns cdk.app-sync
   (:require
-    [datomic.access :as da]
-    [datomic.client.api :as d]
-    [datomic.schema :as ds]
-    [graphql.schema :as schema]
-    [ions.resolvers :as resolvers]
-    [shared.operations :as ops]
-    [shared.operations.operation :as o])
+   [datomic.access :as da]
+   [datomic.client.api :as d]
+   [datomic.schema :as ds]
+   [graphql.schema :as schema]
+   [ions.resolvers :as resolvers]
+   [shared.operations :as ops]
+   [shared.operations.operation :as o])
   (:import
-    (software.amazon.awscdk Stack)
-    (software.amazon.awscdk.services.appsync CfnApiKey$Builder CfnDataSource$Builder CfnDataSource$LambdaConfigProperty CfnGraphQLApi$Builder CfnGraphQLSchema$Builder CfnResolver$Builder)
-    (software.amazon.awscdk.services.iam Effect PolicyStatement$Builder Role$Builder ServicePrincipal)))
+   (software.amazon.awscdk
+    Stack)
+   (software.amazon.awscdk.services.appsync
+    CfnApiKey$Builder
+    CfnDataSource$Builder
+    CfnDataSource$LambdaConfigProperty
+    CfnGraphQLApi$Builder
+    CfnGraphQLSchema$Builder
+    CfnResolver$Builder)
+   (software.amazon.awscdk.services.iam
+    Effect
+    PolicyStatement$Builder
+    Role$Builder
+    ServicePrincipal)))
 
 (defn app-sync [^Stack stack]
   (let [db-name               da/dev-env-db-name
@@ -30,9 +41,9 @@
                                              (.build))
           datomic-resolver-arn           "arn:aws:lambda:eu-central-1:118776085668:function:climate-platform-primary-datomic-resolver"
           datomic-resolver-access-role   (doto
-                                           (-> (Role$Builder/create stack "datomic-resolver-access-role")
-                                               (.assumedBy (ServicePrincipal. "appsync.amazonaws.com"))
-                                               (.build))
+                                          (-> (Role$Builder/create stack "datomic-resolver-access-role")
+                                              (.assumedBy (ServicePrincipal. "appsync.amazonaws.com"))
+                                              (.build))
                                            (.addToPolicy (-> (PolicyStatement$Builder/create)
                                                              (.effect Effect/ALLOW)
                                                              (.actions ["lambda:InvokeFunction"])
@@ -57,7 +68,7 @@
                                                  (.dataSourceName (.getName datomic-data-source))
                                                  (.build)
                                                  (doto (.addDependsOn api-schema)
-                                                       (.addDependsOn datomic-data-source)))))]
+                                                   (.addDependsOn datomic-data-source)))))]
       ;; https://docs.aws.amazon.com/appsync/latest/devguide/utility-helpers-in-util.html
       (doseq [[parent-type-name field-name] @resolvers/resolvable-paths]
         (configure-datomic-resolver-for parent-type-name field-name))

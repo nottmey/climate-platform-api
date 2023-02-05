@@ -1,9 +1,9 @@
 (ns shared.operations.replace
   (:require
-    [clojure.string :as s]
-    [graphql.arguments :as a]
-    [graphql.types :as t]
-    [shared.operations.operation :as o]))
+   [clojure.string :as s]
+   [graphql.arguments :as a]
+   [graphql.types :as t]
+   [shared.operations.operation :as o]))
 
 (def prefix "replace")
 
