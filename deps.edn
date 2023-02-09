@@ -19,6 +19,7 @@
                                                          :exclusions  [org.slf4j/slf4j-simple]}}
                        :main-opts  ["-m" "datomic.ion.dev"]}
              :repl    {:extra-deps {com.datomic/dev-local {:mvn/version "1.0.243"}}}
-             :test    {:extra-deps {com.datomic/dev-local {:mvn/version "1.0.243"}
-                                    lambdaisland/kaocha   {:mvn/version "1.71.1119"}}
+             :test    {:extra-deps {com.datomic/dev-local         {:mvn/version "1.0.243"}
+                                    lambdaisland/kaocha           {:mvn/version "1.71.1119"}
+                                    lambdaisland/kaocha-cloverage {:mvn/version "1.1.89"}}
                        :main-opts  ["-m" "kaocha.runner"]}}}

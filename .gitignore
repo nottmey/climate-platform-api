@@ -9,3 +9,6 @@
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+
+# Builds & coverage reports
+target

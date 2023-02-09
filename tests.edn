@@ -1,3 +1,8 @@
-#kaocha/v1 #meta-merge [{:tests [{:id          :unit
-                                  :ns-patterns [""]
-                                  :test-paths  ["src"]}]}]
+#kaocha/v1 #meta-merge [{:plugins        [:kaocha.plugin/cloverage]
+                         :cloverage/opts {:codecov?         true
+                                          :ns-exclude-regex ["user"
+                                                             "tests"
+                                                             "cdk.*"]}
+                         :tests          [{:id          :unit
+                                           :ns-patterns [""]
+                                           :test-paths  ["src"]}]}]
