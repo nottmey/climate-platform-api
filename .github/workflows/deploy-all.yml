@@ -31,7 +31,13 @@ jobs:
         with:
           servers: '[{"id": "cognitect-dev-tools", "username": "${{ secrets.DEV_TOOLS_USERNAME }}", "password": "${{ secrets.DEV_TOOLS_PASSWORD }}"}]'
       - name: Run tests
-        run: bin/kaocha
+        run: bin/kaocha --plugin cloverage
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./target/coverage/codecov.json
+          fail_ci_if_error: true
   deploy-ions:
     name: "Deploy Ions"
     needs: test-code
