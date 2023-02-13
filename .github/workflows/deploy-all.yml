@@ -10,10 +10,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Setup Java
-        uses: actions/setup-java@v3.6.0
+        uses: actions/setup-java@v3
         with:
-          distribution: 'corretto'
-          java-version: '8'
+          distribution: 'temurin' # preinstalled
+          java-version-file: ./.java-version
       - name: Setup Clojure
         uses: DeLaGuardo/setup-clojure@10.1
         with:
@@ -56,10 +56,10 @@ jobs:
           role-to-assume: arn:aws:iam::118776085668:role/github-actions-ions-deployment
           aws-region: eu-central-1
       - name: Setup Java
-        uses: actions/setup-java@v3.6.0
+        uses: actions/setup-java@v3
         with:
-          distribution: 'corretto'
-          java-version: '8'
+          distribution: 'temurin' # preinstalled
+          java-version-file: ./.java-version
       - name: Setup Clojure
         uses: DeLaGuardo/setup-clojure@10.1
         with:
@@ -111,10 +111,10 @@ jobs:
           role-to-assume: arn:aws:iam::118776085668:role/github-actions-cdk-deployment
           aws-region: eu-central-1
       - name: Setup Java
-        uses: actions/setup-java@v3.6.0
+        uses: actions/setup-java@v3
         with:
-          distribution: 'corretto'
-          java-version: '8'
+          distribution: 'temurin' # preinstalled
+          java-version-file: ./.java-version
       - name: Setup Clojure
         uses: DeLaGuardo/setup-clojure@10.1
         with:
