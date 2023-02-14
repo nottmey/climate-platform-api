@@ -45,6 +45,9 @@
 (deftest with-retry-test
   (let [retries (atom {})]
     (with-redefs [sleep (fn [ms attempt] (swap! retries assoc attempt ms))]
+      (is (= "something" (with-retry #(str "something"))))
+      (is (= {} @retries))
+
       (is (thrown? Exception (with-retry #(throw (Exception.)))))
       (is (= {} @retries))
 
