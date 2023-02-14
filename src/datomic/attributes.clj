@@ -78,6 +78,7 @@
    (add-value-field-tx-data "PlanetaryBoundary" "name" :platform/name)
    #_access/dev-env-db-name))
 
+; TODO test and use
 (defn add-ref-field-tx-data [type-name field-name target-type attribute forward?]
   [{:db/id             type-name
     :graphql.type/name type-name}
@@ -92,6 +93,7 @@
    (u/sandbox-conn)
    {:tx-data (add-ref-field-tx-data "SomeType" "refToX" "SomeType" :db/cardinality true)}))
 
+; TODO test
 (defn deprecate-type-tx-data [type-name]
   [{:graphql.type/name        type-name
     :graphql.type/deprecated? true}])
@@ -101,6 +103,7 @@
    (u/sandbox-conn)
    {:tx-data (deprecate-type-tx-data "SomeType")}))
 
+; TODO test and use
 (defn deprecate-type-field-tx-data [type-name field-name]
   ; FIXME doesn't work like this, always creates new relation entities
   [{:db/id             type-name
