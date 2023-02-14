@@ -3,19 +3,19 @@
    [clojure.string :as s]
    [datomic.client.api :as d]
    [datomic.schema :as ds]
-   [graphql.arguments :as a]
-   [graphql.types :as t]
+   [graphql.arguments :as arguments]
+   [graphql.types :as types]
    [shared.operations.operation :as o]
    [user :as u]))
 
 (def prefix "delete")
 
-(defn delete-mutation []
+(defn mutation []
   (reify o/Operation
-    (o/get-graphql-parent-type [_] t/mutation-type)
+    (o/get-graphql-parent-type [_] types/mutation-type)
     (o/gen-graphql-field [_ entity]
       {:name      (str prefix (name entity))
-       :arguments [a/id]
+       :arguments [arguments/id]
        :type      entity})
     (o/gen-graphql-object-types [_ _])
     (o/resolves-graphql-field? [_ field-name]
@@ -34,11 +34,11 @@
 (comment
   (let [conn (u/sandbox-conn)]
     (time (o/resolve-field-data
-           (delete-mutation)
+           (mutation)
            conn
            {:field-name     :deletePlanetaryBoundary
             :arguments      {:id "101155069755524"}
             :selected-paths #{"name"}})))
 
-  [(o/get-graphql-parent-type (delete-mutation))
-   (:name (o/gen-graphql-field (delete-mutation) "Entity"))])
+  [(o/get-graphql-parent-type (mutation))
+   (:name (o/gen-graphql-field (mutation) "Entity"))])

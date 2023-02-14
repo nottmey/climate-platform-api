@@ -4,19 +4,19 @@
    [clojure.walk :as walk]
    [datomic.client.api :as d]
    [datomic.schema :as ds]
-   [graphql.types :as t]
+   [graphql.types :as types]
    [shared.operations.operation :as o]
    [user :as u]))
 
 (def prefix "create")
 
-(defn create-mutation []
+(defn mutation []
   (reify o/Operation
-    (o/get-graphql-parent-type [_] t/mutation-type)
+    (o/get-graphql-parent-type [_] types/mutation-type)
     (o/gen-graphql-field [_ entity]
       {:name           (str prefix (name entity))
        :arguments      [{:name           "value"
-                         :type           (t/input-type entity)
+                         :type           (types/input-type entity)
                          :required-type? true}]
        :type           entity
        :required-type? true})
@@ -38,11 +38,11 @@
 (comment
   (let [conn (u/sandbox-conn)]
     (time (o/resolve-field-data
-           (create-mutation)
+           (mutation)
            conn
            {:field-name     :createPlanetaryBoundary
             :arguments      {:value {:name "some planetary boundary"}}
             :selected-paths #{"name"}})))
 
-  [(o/get-graphql-parent-type (create-mutation))
-   (:name (o/gen-graphql-field (create-mutation) "Entity"))])
+  [(o/get-graphql-parent-type (mutation))
+   (:name (o/gen-graphql-field (mutation) "Entity"))])

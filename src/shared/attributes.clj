@@ -1,7 +1,7 @@
 (ns shared.attributes
   (:require
    [clojure.data.json :as json]
-   [graphql.types :as gt])
+   [graphql.types :as types])
   (:import
    (java.time.format DateTimeFormatter)
    (java.util Date)))
@@ -20,7 +20,7 @@
 
 (def attribute-types
   (->> [{:graphql/name                    :String
-         :graphql/type                    gt/string-type
+         :graphql/type                    types/string-type
          :graphql/single-value-field-name :string
          :graphql/multi-value-field-name  :strings
          :datomic/type                    #{:db.type/symbol
@@ -28,19 +28,19 @@
                                             :db.type/keyword}
          :datomic/->gql                   str}
         {:graphql/name                    :Boolean
-         :graphql/type                    gt/boolean-type
+         :graphql/type                    types/boolean-type
          :graphql/single-value-field-name :boolean
          :graphql/multi-value-field-name  :booleans
          :datomic/type                    #{:db.type/boolean}
          :datomic/->gql                   identity}
         {:graphql/name                    :Reference
-         :graphql/type                    gt/id-type
+         :graphql/type                    types/id-type
          :graphql/single-value-field-name :ref
          :graphql/multi-value-field-name  :refs
          :datomic/type                    #{:db.type/ref}
          :datomic/->gql                   (fn [ref] (str (:db/id ref)))}
         {:graphql/name                    :DateTime
-         :graphql/type                    gt/date-time-type
+         :graphql/type                    types/date-time-type
          :graphql/single-value-field-name :dateTime
          :graphql/multi-value-field-name  :dateTimes
          :datomic/type                    #{:db.type/instant}
@@ -50,7 +50,7 @@
                                              (.toInstant date)))}
         {:graphql/name                    :Tuple
          ; TODO generate precise type
-         :graphql/type                    gt/json-type
+         :graphql/type                    types/json-type
          :graphql/single-value-field-name :tuple
          :graphql/multi-value-field-name  :tuples
          :datomic/type                    #{:db.type/tuple}
@@ -58,11 +58,11 @@
                                             (json/write-str tuple))}]
        (map #(assoc % :graphql/single-value-type-name
                     (keyword (str (name (:graphql/name %))
-                                  (name gt/attribute-type)))))
+                                  (name types/attribute-type)))))
        (map #(assoc % :graphql/multi-value-type-name
                     (keyword (str "Multi"
                                   (name (:graphql/name %))
-                                  (name gt/attribute-type)))))))
+                                  (name types/attribute-type)))))))
 
 (comment
   (doall attribute-types)

@@ -3,18 +3,18 @@
    [clojure.string :as s]
    [datomic.client.api :as d]
    [datomic.schema :as ds]
-   [graphql.fields :as f]
-   [graphql.types :as t]
+   [graphql.fields :as fields]
+   [graphql.types :as types]
    [shared.operations.operation :as o]
    [user :as u]))
 
 (def prefix "get")
 
-(defn get-query []
+(defn query []
   (reify o/Operation
-    (o/get-graphql-parent-type [_] t/query-type)
+    (o/get-graphql-parent-type [_] types/query-type)
     (o/gen-graphql-field [_ entity]
-      (f/get-query entity))
+      (fields/get-query entity))
     (o/gen-graphql-object-types [_ _])
     (o/resolves-graphql-field? [_ field-name]
       (s/starts-with? (name field-name) prefix))
@@ -28,12 +28,12 @@
 
 (comment
   (let [conn (u/sandbox-conn)]
-    (time (o/resolve-field-data (get-query) conn {:field-name     :getPlanetaryBoundary
-                                                  :arguments      {:id "87960930222192"}
-                                                  :selected-paths #{"name"}})))
+    (time (o/resolve-field-data (query) conn {:field-name     :getPlanetaryBoundary
+                                              :arguments      {:id "87960930222192"}
+                                              :selected-paths #{"name"}})))
   (d/transact (u/sandbox-conn) {:tx-data [{:platform/name "Hello World!"}]})
 
-  [(o/get-graphql-parent-type (get-query))
-   (:name (o/gen-graphql-field (get-query) "Entity"))
-   (o/gen-graphql-object-types (get-query) "Entity")
-   (o/resolves-graphql-field? (get-query) "getPlanetaryBoundary")])
+  [(o/get-graphql-parent-type (query))
+   (:name (o/gen-graphql-field (query) "Entity"))
+   (o/gen-graphql-object-types (query) "Entity")
+   (o/resolves-graphql-field? (query) "getPlanetaryBoundary")])

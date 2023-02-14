@@ -1,17 +1,17 @@
 (ns shared.operations
   (:require
-   [shared.operations.create :refer [create-mutation]]
-   [shared.operations.delete :refer [delete-mutation]]
-   [shared.operations.get :refer [get-query]]
-   [shared.operations.list :refer [list-query]]
-   [shared.operations.replace :refer [replace-mutation]]))
+   [shared.operations.create :as create]
+   [shared.operations.delete :as delete]
+   [shared.operations.get :as get]
+   [shared.operations.list :as list]
+   [shared.operations.replace :as replace]))
 
 (defn all []
-  [(get-query)
-   (list-query)
-   (create-mutation)
-   (replace-mutation)
-   (delete-mutation)])
+  [(get/query)
+   (list/query)
+   (create/mutation)
+   (replace/mutation)
+   (delete/mutation)])
 
 (comment
   (time (all)))

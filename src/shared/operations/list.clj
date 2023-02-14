@@ -3,22 +3,22 @@
    [clojure.string :as s]
    [datomic.client.api :as d]
    [datomic.schema :as ds]
-   [graphql.fields :as f]
-   [graphql.objects :as obj]
-   [graphql.types :as t]
+   [graphql.fields :as fields]
+   [graphql.objects :as objects]
+   [graphql.types :as types]
    [ions.utils :as utils]
    [shared.operations.operation :as o]
    [user :as u]))
 
 (def prefix "list")
 
-(defn list-query []
+(defn query []
   (reify o/Operation
-    (o/get-graphql-parent-type [_] t/query-type)
+    (o/get-graphql-parent-type [_] types/query-type)
     (o/gen-graphql-field [_ entity]
-      (f/list-page-query entity))
+      (fields/list-page-query entity))
     (o/gen-graphql-object-types [_ entity]
-      [(obj/list-page entity)])
+      [(objects/list-page entity)])
     (o/resolves-graphql-field? [_ field-name]
       (s/starts-with? (name field-name) prefix))
     (o/resolve-field-data [_ conn {:keys [field-name selected-paths arguments]}]
@@ -44,10 +44,10 @@
 
 (comment
   (let [conn (u/sandbox-conn)]
-    (time (o/resolve-field-data (list-query) conn {:field-name     :listPlanetaryBoundary
-                                                   :arguments      {:page {:number 2
-                                                                           :size   10}}
-                                                   :selected-paths #{"name"}})))
+    (time (o/resolve-field-data (query) conn {:field-name     :listPlanetaryBoundary
+                                              :arguments      {:page {:number 2
+                                                                      :size   10}}
+                                              :selected-paths #{"name"}})))
 
-  [(o/get-graphql-parent-type (list-query))
-   (:name (o/gen-graphql-field (list-query) "Entity"))])
+  [(o/get-graphql-parent-type (query))
+   (:name (o/gen-graphql-field (query) "Entity"))])

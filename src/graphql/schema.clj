@@ -2,16 +2,17 @@
   (:require
    [clojure.java.io :as io]
    [clojure.string :as str]
-   [datomic.access :as da]
+   [clojure.test :refer [deftest is]]
    [datomic.client.api :as d]
    [datomic.schema :as ds]
    [graphql.definitions :as gd]
-   [graphql.fields :as f]
+   [graphql.fields :as fields]
    [graphql.objects :as obj]
-   [graphql.types :as t]
+   [graphql.types :as types]
    [shared.attributes :as a]
    [shared.operations :as ops]
-   [shared.operations.operation :as o]))
+   [shared.operations.operation :as o]
+   [tests :as t]))
 
 (defn generate-attribute-subtypes [attribute-fields]
   (str
@@ -20,7 +21,7 @@
     (map
      #(gd/object-type-definition
        {:name       (:graphql/single-value-type-name %)
-        :interfaces [t/attribute-type]
+        :interfaces [types/attribute-type]
         :fields     (conj
                      attribute-fields
                      {:name           (:graphql/single-value-field-name %)
@@ -32,7 +33,7 @@
     (map
      #(gd/object-type-definition
        {:name       (:graphql/multi-value-type-name %)
-        :interfaces [t/attribute-type]
+        :interfaces [types/attribute-type]
         :fields     (conj
                      attribute-fields
                      {:name           (:graphql/multi-value-field-name %)
@@ -44,10 +45,10 @@
 
 (comment
   (generate-attribute-subtypes [{:name           :id
-                                 :type           t/id-type
+                                 :type           types/id-type
                                  :required-type? true}
                                 {:name           :name
-                                 :type           t/string-type
+                                 :type           types/string-type
                                  :required-type? true}]))
 
 (defn gen-entity-fields [fields]
@@ -68,16 +69,14 @@
        :required-list? list?
        :required-type? list?})))
 
-(defn generate []
-  (let [db-name              da/dev-env-db-name
-        conn                 (da/get-connection db-name)
-        dynamic-schema-types (:types (ds/get-graphql-schema (d/db conn)))
-        entity-filter-type   (keyword (str (name t/entity-type) "Filter"))
+(defn generate [conn]
+  (let [dynamic-schema-types (:types (ds/get-graphql-schema (d/db conn)))
+        entity-filter-type   (keyword (str (name types/entity-type) "Filter"))
         attribute-fields     [{:name           :id
-                               :type           t/id-type
+                               :type           types/id-type
                                :required-type? true}
                               {:name           :name
-                               :type           t/string-type
+                               :type           types/string-type
                                :required-type? true}]
         all-ops              (ops/all)]
     (str
@@ -86,64 +85,64 @@
       ; TODO add subscription type
       ; TODO add subscription annotations
       ; TODO use "publish" mutation for sending out data to subscriptions with generated id (in full) and after successful transaction
-      {:root-ops {:query    t/query-type
-                  :mutation t/mutation-type}})
+      {:root-ops {:query    types/query-type
+                  :mutation types/mutation-type}})
      (gd/interface-type-definition
-      {:name   t/attribute-type
+      {:name   types/attribute-type
        :fields attribute-fields})
      (generate-attribute-subtypes attribute-fields)
      (gd/object-type-definition
-      {:name   t/page-info-type
+      {:name   types/page-info-type
        :fields [{:name           :size
-                 :type           t/int-type
+                 :type           types/int-type
                  :required-type? true}
                 {:name           :first
-                 :type           t/int-type
+                 :type           types/int-type
                  :required-type? true}
                 {:name :prev
-                 :type t/int-type}
+                 :type types/int-type}
                 {:name           :current
-                 :type           t/int-type
+                 :type           types/int-type
                  :required-type? true}
                 {:name :next
-                 :type t/int-type}
+                 :type types/int-type}
                 {:name           :last
-                 :type           t/int-type
+                 :type           types/int-type
                  :required-type? true}]})
      ; entity framework & dynamic schema: query inputs
      (gd/input-object-type-definition
-      {:name   t/page-query-type
+      {:name   types/page-query-type
        :fields [{:name          :number
-                 :type          t/int-type
+                 :type          types/int-type
                  :default-value 0}
                 {:name          :size
-                 :type          t/int-type
+                 :type          types/int-type
                  :default-value 20}]})
      ; TODO generate filters for dynamic types
      (gd/input-object-type-definition
       {:name   entity-filter-type
        :fields [{:name           :attributes
-                 :type           t/id-type
+                 :type           types/id-type
                  :list?          true
                  :required-type? true}]})
      ;; entity framework & dynamic schema: query results
      (gd/object-type-definition
-      {:name   t/query-type
+      {:name   types/query-type
        :fields (concat
-                [(f/get-query t/entity-type)
-                 (f/list-page-query t/entity-type entity-filter-type)]
+                [(fields/get-query types/entity-type)
+                 (fields/list-page-query types/entity-type entity-filter-type)]
                 (for [op     all-ops
-                      :when (= (o/get-graphql-parent-type op) t/query-type)
+                      :when (= (o/get-graphql-parent-type op) types/query-type)
                       entity (keys dynamic-schema-types)]
                   (o/gen-graphql-field op entity)))})
      (gd/object-type-definition
-      {:name   t/entity-type
-       :fields [f/context
+      {:name   types/entity-type
+       :fields [fields/context
                 {:name           :id
-                 :type           t/id-type
+                 :type           types/id-type
                  :required-type? true}
                 {:name           :attributes
-                 :type           t/attribute-type
+                 :type           types/attribute-type
                  :list?          true
                  :required-type? true
                  :required-list? true}]})
@@ -153,13 +152,13 @@
         (gd/object-type-definition
          {:name   entity
           :fields (concat
-                   [f/context
+                   [fields/context
                     {:name           "id"
                      :type           :ID
                      :required-type? true}]
                    (gen-entity-fields (vals fields)))})))
      (gd/object-type-definition
-      (obj/list-page t/entity-type))
+      (obj/list-page types/entity-type))
      (str/join
       (for [op          all-ops
             entity      (keys dynamic-schema-types)
@@ -170,17 +169,27 @@
       (for [[entity fields] dynamic-schema-types]
         ; always generate all dynamic entity input types
         (gd/input-object-type-definition
-         {:name   (t/input-type entity)
+         {:name   (types/input-type entity)
           :fields (gen-entity-fields (vals fields))})))
      (gd/object-type-definition
-      {:name   t/mutation-type
+      {:name   types/mutation-type
        :fields (concat
                 (for [op     all-ops
-                      :when (= (o/get-graphql-parent-type op) t/mutation-type)
+                      :when (= (o/get-graphql-parent-type op) types/mutation-type)
                       entity (keys dynamic-schema-types)]
                   (o/gen-graphql-field op entity)))}))))
 
 (comment
-  (generate)
-  (printf (generate))
-  (spit (io/resource "cdk/schema.graphql") (generate)))
+  (let [schema (str (generate (t/temp-conn)))]
+    schema)
+  (let [schema (str (generate (t/temp-conn)))]
+    (printf schema))
+  ; regen golden snapshot
+  (let [schema (str (generate (t/temp-conn)))]
+    (spit (io/resource "cdk/schema.graphql") schema)))
+
+(deftest generate-schema-test
+  (let [golden-snapshot  (slurp (io/resource "cdk/schema.graphql"))
+        generated-schema (str (generate (t/temp-conn)))]
+    (is (string? golden-snapshot))
+    (is (= generated-schema golden-snapshot))))

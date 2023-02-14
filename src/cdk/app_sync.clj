@@ -37,7 +37,7 @@
         (.build))
     (let [api-schema                     (-> (CfnGraphQLSchema$Builder/create stack "climate-platform-api-schema")
                                              (.apiId api-id)
-                                             (.definition (schema/generate))
+                                             (.definition (schema/generate conn))
                                              (.build))
           datomic-resolver-arn           "arn:aws:lambda:eu-central-1:118776085668:function:climate-platform-primary-datomic-resolver"
           datomic-resolver-access-role   (doto (-> (Role$Builder/create stack "datomic-resolver-access-role")

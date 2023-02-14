@@ -1,21 +1,21 @@
 (ns shared.operations.replace
   (:require
    [clojure.string :as s]
-   [graphql.arguments :as a]
-   [graphql.types :as t]
+   [graphql.arguments :as arguments]
+   [graphql.types :as types]
    [shared.operations.operation :as o]))
 
 (def prefix "replace")
 
-(defn replace-mutation []
+(defn mutation []
   ;; TODO implement resolver
   (reify o/Operation
-    (o/get-graphql-parent-type [_] t/mutation-type)
+    (o/get-graphql-parent-type [_] types/mutation-type)
     (o/gen-graphql-field [_ entity]
       {:name      (str prefix (name entity))
-       :arguments [a/id
+       :arguments [arguments/id
                    {:name           "value"
-                    :type           (t/input-type entity)
+                    :type           (types/input-type entity)
                     :required-type? true}]
        :type      entity})
     (o/gen-graphql-object-types [_ _])
@@ -23,5 +23,5 @@
       (s/starts-with? (name field-name) prefix))))
 
 (comment
-  [(o/get-graphql-parent-type (replace-mutation))
-   (:name (o/gen-graphql-field (replace-mutation) "Entity"))])
+  [(o/get-graphql-parent-type (mutation))
+   (:name (o/gen-graphql-field (mutation) "Entity"))])
