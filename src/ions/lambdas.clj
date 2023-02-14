@@ -84,15 +84,16 @@
                     :input        (json/write-str
                                    {"info"      {"parentTypeName" "Query"
                                                  "fieldName"      (str "list" t/rel-type)}
-                                    "arguments" {}})}))]
-    (is (= response {"info"   {"size"    20
-                               "offset"  0
-                               "first"   0
-                               "prev"    nil
-                               "current" 0
-                               "next"    nil
-                               "last"    0}
-                     "values" []}))))
+                                    "arguments" {}})}))
+        expected {"info"   {"size"    20
+                            "offset"  0
+                            "first"   0
+                            "prev"    nil
+                            "current" 0
+                            "next"    nil
+                            "last"    0}
+                  "values" []}]
+    (is (= expected response))))
 
 (deftest test-create-with-get-and-list
   (let [conn           (t/temp-conn)
@@ -105,7 +106,7 @@
                                                        "selectionSetList" ["id" t/rel-field]}
                                           "arguments" {"value" {t/rel-field t/rel-sample-value}}})}))
         entity-id      (get created-entity "id")]
-    (is (= (get created-entity t/rel-field) t/rel-sample-value))
+    (is (= t/rel-sample-value (get created-entity t/rel-field)))
     (is (string? entity-id))
 
     (let [fetched-entity
@@ -117,7 +118,7 @@
                                           "fieldName"        (str "get" t/rel-type)
                                           "selectionSetList" ["id" t/rel-field]}
                              "arguments" {"id" entity-id}})}))]
-      (is (= fetched-entity created-entity)))
+      (is (= created-entity fetched-entity)))
 
     (let [entity-list
           (json/read-str
@@ -127,15 +128,17 @@
                             {"info"      {"parentTypeName"   "Query"
                                           "fieldName"        (str "list" t/rel-type)
                                           "selectionSetList" ["values/id" (str "values/" t/rel-field)]}
-                             "arguments" {"page" {"size" 10}}})}))]
-      (is (= entity-list {"info"   {"size"    10
-                                    "offset"  0
-                                    "first"   0
-                                    "prev"    nil
-                                    "current" 0
-                                    "next"    nil
-                                    "last"    0}
-                          "values" [created-entity]})))
+                             "arguments" {"page" {"size" 10}}})}))
+          expected-list
+          {"info"   {"size"    10
+                     "offset"  0
+                     "first"   0
+                     "prev"    nil
+                     "current" 0
+                     "next"    nil
+                     "last"    0}
+           "values" [created-entity]}]
+      (is (= expected-list entity-list)))
 
     (let [deleted-entity
           (json/read-str
@@ -146,4 +149,4 @@
                                           "fieldName"        (str "delete" t/rel-type)
                                           "selectionSetList" ["id" t/rel-field]}
                              "arguments" {"id" entity-id}})}))]
-      (is (= deleted-entity created-entity)))))
+      (is (= created-entity deleted-entity)))))

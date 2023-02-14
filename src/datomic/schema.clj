@@ -96,7 +96,7 @@
 (deftest gen-pull-pattern-test
   (let [schema  (get-graphql-schema (d/db (t/temp-conn)))
         pattern (gen-pull-pattern t/rel-type #{"id" t/rel-field} schema)]
-    (is (= pattern [:db/id t/rel-attribute]))))
+    (is (= [:db/id t/rel-attribute] pattern))))
 
 (defn pull-entities [db pattern entities]
   (->> (map-indexed vector entities)
@@ -152,7 +152,7 @@
         selected-paths #{"id" t/rel-field}
         schema         (get-graphql-schema db)
         pulled-entity  (pull-and-resolve-entity entity-long-id db t/rel-type selected-paths schema)]
-    (is (= pulled-entity
-           {"id"        (str entity-long-id)
-            t/rel-field t/rel-sample-value}))))
+    (is (= {"id"        (str entity-long-id)
+            t/rel-field t/rel-sample-value}
+           pulled-entity))))
 
