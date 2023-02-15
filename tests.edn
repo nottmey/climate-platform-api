@@ -1,7 +1,6 @@
 #kaocha/v1 #meta-merge [{:plugins        [:kaocha.plugin/cloverage]
                          :cloverage/opts {:codecov?         true
                                           :ns-exclude-regex ["user"
-                                                             "tests"
                                                              "cdk.*"]}
                          :tests          [{:id          :unit
                                            :ns-patterns [""]

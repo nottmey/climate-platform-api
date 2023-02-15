@@ -3,7 +3,7 @@
    [datomic.access :as da]
    [datomic.client.api :as d]
    [shared.attributes :as sa]
-   [tests :as t]))
+   [user :as u]))
 
 (defn map-value [attribute db-value schema]
   (let [{:keys [db/cardinality db/valueType]} (get schema attribute)
@@ -26,7 +26,7 @@
        (name gql-key) gql-value})))
 
 (comment
-  (let [db     (d/db (t/temp-conn))
+  (let [db     (d/db (u/temp-conn))
         schema (da/get-schema db)]
     #_(map-value :db/ident :db.part/db schema)
     #_(map-value :db.install/partition [#:db{:id    0
@@ -49,7 +49,7 @@
                          (map-value a-key a-val schema)))))})
 
 (comment
-  (let [db     (d/db (t/temp-conn))
+  (let [db     (d/db (u/temp-conn))
         schema (da/get-schema db)
         result (d/pull db '[*] 0)]
     (map-entity result schema)))

@@ -27,11 +27,11 @@
         (ds/pull-and-resolve-entity entity-id db gql-type selected-paths schema)))))
 
 (comment
-  (let [conn (u/sandbox-conn)]
+  (let [conn (u/temp-conn)]
     (time (o/resolve-field-data (query) conn {:field-name     :getPlanetaryBoundary
                                               :arguments      {:id "87960930222192"}
                                               :selected-paths #{"name"}})))
-  (d/transact (u/sandbox-conn) {:tx-data [{:platform/name "Hello World!"}]})
+  (d/transact (u/temp-conn) {:tx-data [{:platform/name "Hello World!"}]})
 
   [(o/get-graphql-parent-type (query))
    (:name (o/gen-graphql-field (query) "Entity"))

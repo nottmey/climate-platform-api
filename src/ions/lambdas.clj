@@ -5,7 +5,7 @@
    [clojure.walk :as walk]
    [datomic.access :as da]
    [ions.resolvers :as resolvers]
-   [tests :as t]))
+   [user :as u]))
 
 ; example:
 ;  (datomic-resolver
@@ -53,7 +53,7 @@
         selected-paths   (disj selection-set "context")
         arguments        (walk/keywordize-keys (get app-sync-context "arguments"))
         parent-value     (walk/keywordize-keys (get app-sync-context "source"))
-        conn             (if (t/test-mode?)
+        conn             (if (u/test-mode?)
                            (or testing-conn (throw (AssertionError. "missing test database")))
                            (da/get-connection da/dev-env-db-name))]
     (-> {:parent-type-name parent-type-name
@@ -66,24 +66,24 @@
         json/write-str)))
 
 (deftest test-get-non-existent-id
-  (let [conn     (t/temp-conn)
+  (let [conn     (u/temp-conn)
         response (json/read-str
                   (datomic-resolver
                    {:testing-conn conn
                     :input        (json/write-str
                                    {"info"      {"parentTypeName" "Query"
-                                                 "fieldName"      (str "get" t/rel-type)}
+                                                 "fieldName"      (str "get" u/rel-type)}
                                     "arguments" {"id" "123"}})}))]
     (is (= response nil))))
 
 (deftest test-list-empty-db
-  (let [conn     (t/temp-conn)
+  (let [conn     (u/temp-conn)
         response (json/read-str
                   (datomic-resolver
                    {:testing-conn conn
                     :input        (json/write-str
                                    {"info"      {"parentTypeName" "Query"
-                                                 "fieldName"      (str "list" t/rel-type)}
+                                                 "fieldName"      (str "list" u/rel-type)}
                                     "arguments" {}})}))
         expected {"info"   {"size"    20
                             "offset"  0
@@ -96,17 +96,17 @@
     (is (= expected response))))
 
 (deftest test-create-with-get-and-list
-  (let [conn           (t/temp-conn)
+  (let [conn           (u/temp-conn)
         created-entity (json/read-str
                         (datomic-resolver
                          {:testing-conn conn
                           :input        (json/write-str
                                          {"info"      {"parentTypeName"   "Mutation"
-                                                       "fieldName"        (str "create" t/rel-type)
-                                                       "selectionSetList" ["id" t/rel-field]}
-                                          "arguments" {"value" {t/rel-field t/rel-sample-value}}})}))
+                                                       "fieldName"        (str "create" u/rel-type)
+                                                       "selectionSetList" ["id" u/rel-field]}
+                                          "arguments" {"value" {u/rel-field u/rel-sample-value}}})}))
         entity-id      (get created-entity "id")]
-    (is (= t/rel-sample-value (get created-entity t/rel-field)))
+    (is (= u/rel-sample-value (get created-entity u/rel-field)))
     (is (string? entity-id))
 
     (let [fetched-entity
@@ -115,8 +115,8 @@
             {:testing-conn conn
              :input        (json/write-str
                             {"info"      {"parentTypeName"   "Query"
-                                          "fieldName"        (str "get" t/rel-type)
-                                          "selectionSetList" ["id" t/rel-field]}
+                                          "fieldName"        (str "get" u/rel-type)
+                                          "selectionSetList" ["id" u/rel-field]}
                              "arguments" {"id" entity-id}})}))]
       (is (= created-entity fetched-entity)))
 
@@ -126,8 +126,8 @@
             {:testing-conn conn
              :input        (json/write-str
                             {"info"      {"parentTypeName"   "Query"
-                                          "fieldName"        (str "list" t/rel-type)
-                                          "selectionSetList" ["values/id" (str "values/" t/rel-field)]}
+                                          "fieldName"        (str "list" u/rel-type)
+                                          "selectionSetList" ["values/id" (str "values/" u/rel-field)]}
                              "arguments" {"page" {"size" 10}}})}))
           expected-list
           {"info"   {"size"    10
@@ -146,13 +146,13 @@
             {:testing-conn conn
              :input        (json/write-str
                             {"info"      {"parentTypeName"   "Mutation"
-                                          "fieldName"        (str "delete" t/rel-type)
-                                          "selectionSetList" ["id" t/rel-field]}
+                                          "fieldName"        (str "delete" u/rel-type)
+                                          "selectionSetList" ["id" u/rel-field]}
                              "arguments" {"id" entity-id}})}))]
       (is (= created-entity deleted-entity)))))
 
 (deftest test-entity-browser-get
-  (let [conn     (t/temp-conn)
+  (let [conn     (u/temp-conn)
         response (json/read-str
                   (datomic-resolver
                    {:testing-conn conn
@@ -220,7 +220,7 @@
            response))))
 
 (deftest test-entity-browser-list
-  (let [conn     (t/temp-conn)
+  (let [conn     (u/temp-conn)
         response (json/read-str
                   (datomic-resolver
                    {:testing-conn conn

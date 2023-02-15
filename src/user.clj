@@ -1,31 +1,46 @@
 (ns user
   (:require
+   [clojure.pprint :as pp]
    [clojure.set :as set]
+   [clojure.test :refer [*testing-vars*]]
    [datomic.access :as access]
+   [datomic.attributes :as da]
    [datomic.client.api :as d])
   (:import
    (clojure.lang ExceptionInfo)))
 
-(def sandbox-env-db-name "sandbox")
+(defn pprint [o]
+  (pp/pprint o))
 
-(defn sandbox-conn []
-  (access/get-connection sandbox-env-db-name))
+(defn test-mode? []
+  (boolean (seq *testing-vars*)))
 
-(defn sandbox-db []
-  (d/db (sandbox-conn)))
+(def rel-type "PlanetaryBoundary")
+(def rel-field "name")
+(def rel-attribute :platform/name)
+(def rel-sample-value (str rel-attribute " sample value"))
 
-(defn create-sandbox []
-  (d/create-database (access/get-client) {:db-name sandbox-env-db-name}))
+(defn temp-conn
+  ([] (temp-conn "testing"))
+  ([db-name]
+   (let [client  (d/client {:server-type :dev-local
+                            :storage-dir :mem
+                            :system      db-name})
+         arg-map {:db-name db-name}]
+     (d/delete-database client arg-map)
+     (d/create-database client arg-map)
+     (let [conn (d/connect client arg-map)]
+       (d/transact conn {:tx-data da/graphql-attributes})
+       (d/transact conn {:tx-data da/platform-attributes})
+       (d/transact conn {:tx-data (da/add-value-field-tx-data rel-type rel-field rel-attribute)})
+       conn))))
 
 (comment
-  (create-sandbox))
+  (temp-conn))
 
-; TODO backup data regularly and test recovery
-(defn delete-sandbox []
-  (d/delete-database (access/get-client) {:db-name sandbox-env-db-name}))
-
-(comment
-  (delete-sandbox))
+(defn temp-db
+  ([] (d/db (temp-conn)))
+  ([db-name] (d/db (temp-conn db-name))))
 
 (defn empty-tx-result [conn reason]
   (let [db (d/db conn)]
@@ -36,7 +51,6 @@
      :empty-reason reason}))
 
 (defn ensure-schema
-  ([tx-data] (ensure-schema tx-data sandbox-env-db-name))
   ([tx-data db-name]
    {:pre [(every? map? tx-data)
           (every? :db/ident tx-data)]}
@@ -47,7 +61,6 @@
        (d/transact conn {:tx-data tx-data})))))
 
 (defn ensure-data
-  ([tx-data] (ensure-data tx-data sandbox-env-db-name))
   ([tx-data db-name]
    {:pre [(every? map? tx-data)]}
    (let [conn               (access/get-connection db-name)
@@ -78,8 +91,6 @@
            (throw e)))))))
 
 (defn get-tx-log
-  ([] (get-tx-log 1))
-  ([n] (get-tx-log n sandbox-env-db-name))
   ([n db-name]
    (let [conn     (access/get-connection db-name)
          db       (d/db conn)
@@ -101,21 +112,19 @@
                  %))))))
 
 (comment
-  (get-tx-log 1 #_access/dev-env-db-name))
+  (get-tx-log 1 access/dev-env-db-name))
 
 (defn get-db-stats
-  ([] (get-db-stats sandbox-env-db-name))
   ([db-name]
    (let [db (d/db (access/get-connection db-name))]
      (d/db-stats db))))
 
 (comment
-  (get-db-stats #_access/dev-env-db-name))
+  (get-db-stats access/dev-env-db-name))
 
 (defn get-schema
-  ([] (get-schema sandbox-env-db-name))
   ([db-name]
    (access/get-schema (d/db (access/get-connection db-name)))))
 
 (comment
-  (get-schema #_access/dev-env-db-name))
+  (get-schema access/dev-env-db-name))

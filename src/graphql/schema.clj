@@ -12,7 +12,7 @@
    [shared.attributes :as a]
    [shared.operations :as ops]
    [shared.operations.operation :as o]
-   [tests :as t]))
+   [user :as u]))
 
 (defn generate-attribute-subtypes [attribute-fields]
   (str
@@ -180,16 +180,16 @@
                   (o/gen-graphql-field op entity)))}))))
 
 (comment
-  (let [schema (str (generate (t/temp-conn)))]
+  (let [schema (str (generate (u/temp-conn)))]
     schema)
-  (let [schema (str (generate (t/temp-conn)))]
+  (let [schema (str (generate (u/temp-conn)))]
     (printf schema))
-  ; regen golden snapshot
-  (let [schema (str (generate (t/temp-conn)))]
+  ; re-gen golden snapshot
+  (let [schema (str (generate (u/temp-conn)))]
     (spit (io/resource "cdk/schema.graphql") schema)))
 
 (deftest generate-schema-test
   (let [golden-snapshot  (slurp (io/resource "cdk/schema.graphql"))
-        generated-schema (str (generate (t/temp-conn)))]
+        generated-schema (str (generate (u/temp-conn)))]
     (is (string? golden-snapshot))
     (is (= generated-schema golden-snapshot))))

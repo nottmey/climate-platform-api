@@ -1,7 +1,4 @@
-(ns datomic.attributes
-  (:require
-   [datomic.client.api :as d]
-   [user :as u]))
+(ns datomic.attributes)
 
 ; TODO use transaction function to ensure type is complete
 
@@ -50,21 +47,11 @@
     :db/cardinality :db.cardinality/one
     :db/doc         (graphql-doc "Whether the forward or backwards reference of this relations reference attribute should be pulled, when requested in the GraphQL API. Default: `true`.")}])
 
-(comment
-  (u/ensure-schema
-   graphql-attributes
-   #_access/dev-env-db-name))
-
 (def platform-attributes
   [{:db/ident       :platform/name
     :db/valueType   :db.type/string
     :db/cardinality :db.cardinality/one
     :db/doc         "Name of any non-user platform entity."}])
-
-(comment
-  (u/ensure-schema
-   platform-attributes
-   #_access/dev-env-db-name))
 
 (defn add-value-field-tx-data [type-name field-name attribute]
   [{:db/id             type-name
@@ -72,11 +59,6 @@
    {:graphql.relation/attribute attribute
     :graphql.relation/type      type-name
     :graphql.relation/field     field-name}])
-
-(comment
-  (u/ensure-data
-   (add-value-field-tx-data "PlanetaryBoundary" "name" :platform/name)
-   #_access/dev-env-db-name))
 
 ; TODO test and use
 (defn add-ref-field-tx-data [type-name field-name target-type attribute forward?]
@@ -88,20 +70,10 @@
     :graphql.relation/field     field-name
     :graphql.relation/target    target-type}])
 
-(comment
-  (d/transact
-   (u/sandbox-conn)
-   {:tx-data (add-ref-field-tx-data "SomeType" "refToX" "SomeType" :db/cardinality true)}))
-
 ; TODO test
 (defn deprecate-type-tx-data [type-name]
   [{:graphql.type/name        type-name
     :graphql.type/deprecated? true}])
-
-(comment
-  (d/transact
-   (u/sandbox-conn)
-   {:tx-data (deprecate-type-tx-data "SomeType")}))
 
 ; TODO test and use
 (defn deprecate-type-field-tx-data [type-name field-name]
@@ -110,8 +82,3 @@
     :graphql.type/name type-name}
    {:graphql.relation/type+field  [type-name field-name]
     :graphql.relation/deprecated? true}])
-
-(comment
-  (d/transact
-   (u/sandbox-conn)
-   {:tx-data (deprecate-type-field-tx-data "SomeType" "refToX")}))

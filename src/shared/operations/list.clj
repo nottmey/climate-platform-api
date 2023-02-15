@@ -43,7 +43,7 @@
          "values" entities}))))
 
 (comment
-  (let [conn (u/sandbox-conn)]
+  (let [conn (u/temp-conn)]
     (time (o/resolve-field-data (query) conn {:field-name     :listPlanetaryBoundary
                                               :arguments      {:page {:number 2
                                                                       :size   10}}

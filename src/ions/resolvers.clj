@@ -7,7 +7,7 @@
    [ions.utils :as utils]
    [shared.operations :as ops]
    [shared.operations.operation :as o]
-   [tests :as t]))
+   [user :as u]))
 
 (def resolvable-paths (atom #{}))
 
@@ -32,17 +32,17 @@
 (comment
   (let [args {:parent-type-name :Query
               :field-name       :listPlanetaryBoundary}]
-    (select-and-use-correct-resolver args (t/temp-conn)))
+    (select-and-use-correct-resolver args (u/temp-conn)))
 
   (let [args {:parent-type-name :Query
               :field-name       :listEntity}]
-    (select-and-use-correct-resolver args (t/temp-conn)))
+    (select-and-use-correct-resolver args (u/temp-conn)))
 
   (let [args {:parent-type-name :Mutation
               :field-name       :createPlanetaryBoundary
               :arguments        {:value {:name "Climate Change"}}
               :selected-paths   #{"id" "name"}}]
-    (select-and-use-correct-resolver args (t/temp-conn))))
+    (select-and-use-correct-resolver args (u/temp-conn))))
 
 (defmacro defresolver [multifn dispatch-val & fn-tail]
   (swap! resolvable-paths conj dispatch-val)

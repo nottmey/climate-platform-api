@@ -4,7 +4,6 @@
    [clojure.test :refer [deftest is]]
    [datomic.client.api :as d]
    [shared.attributes :as a]
-   [tests :as t]
    [user :as u]))
 
 (defn get-graphql-schema [db]
@@ -36,7 +35,7 @@
                      (update-vals #(group-by (fn [{:keys [graphql.relation/type]}] (:graphql.type/name type)) %)))}))
 
 (comment
-  (let [db (u/sandbox-db)]
+  (let [db (u/temp-db)]
     (time (get-graphql-schema db))))
 
 (defn get-graphql-types [db]
@@ -45,7 +44,7 @@
       keys))
 
 (comment
-  (let [db (u/sandbox-db)]
+  (let [db (u/temp-db)]
     (time (get-graphql-types db))))
 
 (defn resolve-input-fields [input-obj gql-type schema]
@@ -65,7 +64,7 @@
         {})))
 
 (comment
-  (let [db     (u/sandbox-db)
+  (let [db     (u/temp-db)
         schema (get-graphql-schema db)]
     (time (resolve-input-fields {"name" "Hello"} "PlanetaryBoundary" schema))))
 
@@ -83,7 +82,7 @@
        (map last)))
 
 (comment
-  (let [db (u/sandbox-db)]
+  (let [db (u/temp-db)]
     (time (get-entities-sorted db "PlanetaryBoundary"))))
 
 (defn gen-pull-pattern [gql-type gql-fields schema]
@@ -94,9 +93,9 @@
       (conj :db/id)))
 
 (deftest gen-pull-pattern-test
-  (let [schema  (get-graphql-schema (d/db (t/temp-conn)))
-        pattern (gen-pull-pattern t/rel-type #{"id" t/rel-field} schema)]
-    (is (= [:db/id t/rel-attribute] pattern))))
+  (let [schema  (get-graphql-schema (d/db (u/temp-conn)))
+        pattern (gen-pull-pattern u/rel-type #{"id" u/rel-field} schema)]
+    (is (= [:db/id u/rel-attribute] pattern))))
 
 (defn pull-entities [db pattern entities]
   (->> (map-indexed vector entities)
@@ -107,10 +106,10 @@
        (map second)))
 
 (comment
-  (let [db (u/sandbox-db)]
+  (let [db (u/temp-db)]
     (time (pull-entities db [:db/id :platform/name] [92358976733295 123 87960930222192])))
 
-  (let [db (u/sandbox-db)]
+  (let [db (u/temp-db)]
     (time (pull-entities db '[*] [123]))))
 
 (defn reverse-pull-pattern [gql-type gql-fields schema pulled-entities]
@@ -144,15 +143,15 @@
          first)))
 
 (deftest pull-and-resolve-entity-test
-  (let [conn           (t/temp-conn)
+  (let [conn           (u/temp-conn)
         added-data     (d/transact conn {:tx-data [{:db/id          "entity id"
-                                                    t/rel-attribute t/rel-sample-value}]})
+                                                    u/rel-attribute u/rel-sample-value}]})
         entity-long-id (get-in added-data [:tempids "entity id"])
         db             (d/db conn)
-        selected-paths #{"id" t/rel-field}
+        selected-paths #{"id" u/rel-field}
         schema         (get-graphql-schema db)
-        pulled-entity  (pull-and-resolve-entity entity-long-id db t/rel-type selected-paths schema)]
+        pulled-entity  (pull-and-resolve-entity entity-long-id db u/rel-type selected-paths schema)]
     (is (= {"id"        (str entity-long-id)
-            t/rel-field t/rel-sample-value}
+            u/rel-field u/rel-sample-value}
            pulled-entity))))
 

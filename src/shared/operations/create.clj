@@ -36,7 +36,7 @@
         (ds/pull-and-resolve-entity entity-id db-after gql-type selected-paths schema)))))
 
 (comment
-  (let [conn (u/sandbox-conn)]
+  (let [conn (u/temp-conn)]
     (time (o/resolve-field-data
            (mutation)
            conn
