@@ -1,5 +1,6 @@
 #kaocha/v1 #meta-merge [{:plugins        [:kaocha.plugin/cloverage]
                          :cloverage/opts {:codecov?         true
+                                          :exclude-call     [clojure.test/deftest]
                                           :ns-exclude-regex ["user"
                                                              "cdk.*"]}
                          :tests          [{:id          :unit
