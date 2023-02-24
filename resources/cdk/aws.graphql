@@ -9,3 +9,9 @@ scalar AWSTimestamp
 scalar AWSURL
 scalar AWSPhone
 scalar AWSIPAddress
+
+"Tells the service which mutation triggers this subscription."
+directive @aws_subscribe(
+    "List of mutations which will trigger this subscription when they are called."
+    mutations: [String]
+) on FIELD_DEFINITION
