@@ -15,12 +15,13 @@
 (defn query []
   (reify o/Operation
     (o/get-graphql-parent-type [_] types/query-type)
-    (o/gen-graphql-field [_ entity]
+    (o/gen-graphql-field [_ entity _]
       (fields/list-page-query entity))
     (o/gen-graphql-object-types [_ entity]
       [(objects/list-page entity)])
     (o/resolves-graphql-field? [_ field-name]
       (s/starts-with? (name field-name) prefix))
+    (o/get-resolver-location [_] :datomic)
     (o/resolve-field-data [_ conn {:keys [field-name selected-paths arguments]}]
       (let [gql-type   (s/replace (name field-name) prefix "")
             gql-fields (->> selected-paths
@@ -47,7 +48,4 @@
     (time (o/resolve-field-data (query) conn {:field-name     :listPlanetaryBoundary
                                               :arguments      {:page {:number 2
                                                                       :size   10}}
-                                              :selected-paths #{"name"}})))
-
-  [(o/get-graphql-parent-type (query))
-   (:name (o/gen-graphql-field (query) "Entity"))])
+                                              :selected-paths #{"name"}}))))

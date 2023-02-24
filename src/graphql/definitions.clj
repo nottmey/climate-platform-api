@@ -1,6 +1,8 @@
 (ns graphql.definitions
   (:refer-clojure :rename {name k-name})
-  (:require [clojure.string :as str]))
+  (:require
+   [clojure.string :as str]
+   [clojure.test :refer [deftest is]]))
 
 ; specification https://spec.graphql.org/June2018/#sec-Schema
 
@@ -76,38 +78,59 @@
                                       :type :String}]}))
 
 ; https://spec.graphql.org/June2018/#FieldDefinition
-(defn field-definition [{:keys [name type arguments default-value]
+(defn field-definition [{:keys [name type arguments default-value docstring directive]
                          :as   args-with-type-ref}]
   {:pre [(valid-name? name)
          (or (nil? arguments) (pos? (count arguments)))
          (or (not default-value) (= (k-name type) "Int"))]}
-  (str (k-name name) (when arguments (arguments-definition {:arguments arguments}))
+  (str (when docstring
+         (str "\"" docstring "\"" "\n" tab-spaces))
+       (k-name name) (when arguments (arguments-definition {:arguments arguments}))
        ": "
        (type-ref-definition args-with-type-ref)
-       (default-value-definition default-value)))
+       (default-value-definition default-value)
+       (when directive
+         ; clearly separated to the next field with an additional \n
+         (str "\n" tab-spaces directive))))
 
-(comment
-  (field-definition {:name      :get
-                     :type      :Result
-                     :arguments [{:name           :id
-                                  :type           :Int
-                                  :default-value  1
-                                  :required-type? true}
-                                 {:name :database
-                                  :type :String}]})
+(deftest field-definition-test
+  (is (= "get(id: Int! = 1, database: String): Result"
+         (field-definition {:name      :get
+                            :type      :Result
+                            :arguments [{:name           :id
+                                         :type           :Int
+                                         :default-value  1
+                                         :required-type? true}
+                                        {:name :database
+                                         :type :String}]})))
+  (is (= "size: Int = 20"
+         (field-definition {:name          :size
+                            :type          :Int
+                            :default-value 20})))
 
-  (field-definition {:name          :size
-                     :type          :Int
-                     :default-value 20}))
+  (is (= (str
+          "\"Some documentation with `code` and punctuation.\"\n"
+          "    onUpdatedPlanetaryBoundary(id: ID, name: String): PlanetaryBoundary!\n"
+          "    @aws_subscribe(mutations: [\"publishUpdatedPlanetaryBoundary\"])")
+         (field-definition
+          {:docstring      "Some documentation with `code` and punctuation."
+           :name           :onUpdatedPlanetaryBoundary
+           :arguments      [{:name :id
+                             :type :ID}
+                            {:name :name
+                             :type :String}]
+           :type           :PlanetaryBoundary
+           :required-type? true
+           :directive      "@aws_subscribe(mutations: [\"publishUpdatedPlanetaryBoundary\"])"}))))
 
 ; https://spec.graphql.org/June2018/#FieldsDefinition
-(defn field-list-definition [{:keys [fields]}]
+(defn field-list-definition [{:keys [spaced? fields]}]
   {:pre [(sequential? fields)
          (pos? (count fields))]}
   (->> fields
        (map field-definition)
        (map #(str tab-spaces % "\n"))
-       (str/join)))
+       (str/join (if spaced? "\n" ""))))
 
 (comment
   (printf (field-list-definition {:fields [{:name :query
@@ -132,11 +155,12 @@
                                          :subscription :Subscription}})))
 
 ; https://spec.graphql.org/June2018/#ObjectTypeDefinition
-(defn object-type-definition [{:keys [name fields interfaces]}]
+(defn object-type-definition [{:keys [name spaced-fields? fields interfaces]}]
   {:pre [(valid-name? name)
          (or (nil? interfaces)
              (pos? (count interfaces)))]}
-  (let [fields-def     (field-list-definition {:fields fields})
+  (let [fields-def     (field-list-definition {:spaced? spaced-fields?
+                                               :fields  fields})
         implements-def (when interfaces
                          (->> interfaces
                               (map k-name)

@@ -167,3 +167,4 @@ type Subscription {
     onDeletedPlanetaryBoundary(id: ID, name: String): PlanetaryBoundary!
     @aws_subscribe(mutations: ["publishDeletedPlanetaryBoundary"])
 }
+

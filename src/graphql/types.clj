@@ -37,9 +37,12 @@
 ; AWSIPAddress  "127.0.0.1/8"
 (def ip-address-type :AWSIPAddress)
 
-; Own Configuration
+; Standard Types
 (def query-type :Query)
 (def mutation-type :Mutation)
+(def subscription-type :Subscription)
+
+; Own Types
 (def entity-type :Entity)
 (def attribute-type :Attribute)
 (def page-info-type :PageInfo)

@@ -70,6 +70,19 @@
   ((:datomic/->gql (first (drop 3 attribute-types)))
    (Date.)))
 
+(defn attribute->config [{:keys [db/valueType]}]
+  (->> attribute-types
+       (filter
+        (fn [{:keys [datomic/type]}]
+          (contains? type (:db/ident valueType))))
+       first))
+
+(comment
+  (let [attribute #:db{:ident       :platform/name,
+                       :valueType   #:db{:ident :db.type/string},
+                       :cardinality #:db{:ident :db.cardinality/one}}]
+    (attribute->config attribute)))
+
 (def ^:private datomic-type->gql-fn
   (->> attribute-types
        (mapcat

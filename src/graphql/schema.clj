@@ -56,11 +56,7 @@
                 graphql.relation/attribute]} fields]
     (let [{:keys [db/valueType
                   db/cardinality]} attribute
-          {:keys [graphql/type]} (->> a/attribute-types
-                                      (filter
-                                       (fn [{:keys [datomic/type]}]
-                                         (contains? type (:db/ident valueType))))
-                                      first)
+          {:keys [graphql/type]} (a/attribute->config attribute)
           list? (= (:db/ident cardinality) :db.cardinality/many)]
       (assert (some? type) (str "There is a GraphQL type configured for value type " valueType "."))
       {:name           field
@@ -78,15 +74,13 @@
                               {:name           :name
                                :type           types/string-type
                                :required-type? true}]
-        all-ops              (ops/all)]
+        all-ops              (ops/all :any)]
     (str
      ;; static (db independent) schema
      (gd/schema-definition
-      ; TODO add subscription type
-      ; TODO add subscription annotations
-      ; TODO use "publish" mutation for sending out data to subscriptions with generated id (in full) and after successful transaction
-      {:root-ops {:query    types/query-type
-                  :mutation types/mutation-type}})
+      {:root-ops {:query        types/query-type
+                  :mutation     types/mutation-type
+                  :subscription types/subscription-type}})
      (gd/interface-type-definition
       {:name   types/attribute-type
        :fields attribute-fields})
@@ -131,10 +125,10 @@
        :fields (concat
                 [(fields/get-query types/entity-type)
                  (fields/list-page-query types/entity-type entity-filter-type)]
-                (for [op     all-ops
+                (for [op all-ops
                       :when (= (o/get-graphql-parent-type op) types/query-type)
-                      entity (keys dynamic-schema-types)]
-                  (o/gen-graphql-field op entity)))})
+                      [entity fields] dynamic-schema-types]
+                  (o/gen-graphql-field op entity fields)))})
      (gd/object-type-definition
       {:name   types/entity-type
        :fields [fields/context
@@ -173,11 +167,17 @@
           :fields (gen-entity-fields (vals fields))})))
      (gd/object-type-definition
       {:name   types/mutation-type
-       :fields (concat
-                (for [op     all-ops
-                      :when (= (o/get-graphql-parent-type op) types/mutation-type)
-                      entity (keys dynamic-schema-types)]
-                  (o/gen-graphql-field op entity)))}))))
+       :fields (for [op all-ops
+                     :when (= (o/get-graphql-parent-type op) types/mutation-type)
+                     [entity fields] dynamic-schema-types]
+                 (o/gen-graphql-field op entity fields))})
+     (gd/object-type-definition
+      {:name           types/subscription-type
+       :spaced-fields? true
+       :fields         (for [op all-ops
+                             :when (= (o/get-graphql-parent-type op) types/subscription-type)
+                             [entity fields] dynamic-schema-types]
+                         (o/gen-graphql-field op entity fields))}))))
 
 (comment
   (let [schema (str (generate (u/temp-conn)))]

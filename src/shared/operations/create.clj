@@ -13,7 +13,7 @@
 (defn mutation []
   (reify o/Operation
     (o/get-graphql-parent-type [_] types/mutation-type)
-    (o/gen-graphql-field [_ entity]
+    (o/gen-graphql-field [_ entity _]
       {:name           (str prefix (name entity))
        :arguments      [{:name           "value"
                          :type           (types/input-type entity)
@@ -23,6 +23,7 @@
     (o/gen-graphql-object-types [_ _])
     (o/resolves-graphql-field? [_ field-name]
       (s/starts-with? (name field-name) prefix))
+    (o/get-resolver-location [_] :datomic)
     (o/resolve-field-data [_ conn {:keys [field-name arguments selected-paths]}]
       (let [gql-type   (s/replace (name field-name) prefix "")
             {:keys [value]} arguments
@@ -42,7 +43,4 @@
            conn
            {:field-name     :createPlanetaryBoundary
             :arguments      {:value {:name "some planetary boundary"}}
-            :selected-paths #{"name"}})))
-
-  [(o/get-graphql-parent-type (mutation))
-   (:name (o/gen-graphql-field (mutation) "Entity"))])
+            :selected-paths #{"name"}}))))

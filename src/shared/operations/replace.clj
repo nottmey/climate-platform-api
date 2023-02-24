@@ -11,17 +11,15 @@
   ;; TODO implement resolver
   (reify o/Operation
     (o/get-graphql-parent-type [_] types/mutation-type)
-    (o/gen-graphql-field [_ entity]
+    (o/gen-graphql-field [_ entity _]
       {:name      (str prefix (name entity))
-       :arguments [arguments/id
+       :arguments [arguments/required-id
                    {:name           "value"
                     :type           (types/input-type entity)
                     :required-type? true}]
        :type      entity})
     (o/gen-graphql-object-types [_ _])
     (o/resolves-graphql-field? [_ field-name]
-      (s/starts-with? (name field-name) prefix))))
-
-(comment
-  [(o/get-graphql-parent-type (mutation))
-   (:name (o/gen-graphql-field (mutation) "Entity"))])
+      (s/starts-with? (name field-name) prefix))
+    (o/get-resolver-location [_] :datomic)
+    (o/resolve-field-data [_ _ _])))

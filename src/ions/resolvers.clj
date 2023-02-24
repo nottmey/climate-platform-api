@@ -21,7 +21,7 @@
 (defn select-and-use-correct-resolver [{:keys [parent-type-name field-name]
                                         :as   args}
                                        conn]
-  (if-let [op (->> (ops/all)
+  (if-let [op (->> (ops/all :datomic)
                    (filter #(= (o/get-graphql-parent-type %) parent-type-name))
                    (filter #(and (not (s/includes? (name field-name) "Entity"))
                                  (o/resolves-graphql-field? % field-name)))
