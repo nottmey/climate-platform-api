@@ -5,4 +5,5 @@
                                                              "cdk.*"]}
                          :tests          [{:id          :unit
                                            :ns-patterns [""]
-                                           :test-paths  ["src"]}]}]
+                                           :test-paths  ["src"
+                                                         "test"]}]}]
