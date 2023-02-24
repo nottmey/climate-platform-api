@@ -6,13 +6,16 @@ jobs:
   test-code:
     name: "Test code"
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1-node16
         with:
-          role-to-assume: arn:aws:iam::118776085668:role/github-actions-ions-deployment
+          role-to-assume: arn:aws:iam::118776085668:role/github-actions-ions-testing
           aws-region: eu-central-1
       - name: Setup Java
         uses: actions/setup-java@v3
