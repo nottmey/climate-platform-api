@@ -66,6 +66,7 @@
                                                  (.apiId api-id)
                                                  (.typeName tn)
                                                  (.fieldName fn)
+                                                 (.kind "UNIT")
                                                  (.dataSourceName (.getName datomic-data-source))
                                                  (.build)
                                                  (doto
@@ -78,6 +79,7 @@
                                                  (.apiId api-id)
                                                  (.typeName tn)
                                                  (.fieldName fn)
+                                                 (.kind "PIPELINE")
                                                  (.runtime (-> (CfnResolver$AppSyncRuntimeProperty/builder)
                                                                (.name "APPSYNC_JS")
                                                                (.runtimeVersion "1.0.0")
