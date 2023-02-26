@@ -1,5 +1,6 @@
 (ns shared.operations.publish-deleted
   (:require
+   [clojure.java.io :as io]
    [clojure.string :as s]
    [graphql.fields :as fields]
    [graphql.types :as types]
@@ -15,5 +16,6 @@
     (o/gen-graphql-object-types [_ _])
     (o/resolves-graphql-field? [_ field-name]
       (s/starts-with? (name field-name) prefix))
-    (o/get-resolver-location [_])
-    (o/resolve-field-data [_ _ _])))
+    (o/get-resolver-location [_] :js-resolver)
+    (o/get-js-resolver-code [_]
+      (slurp (io/resource "cdk/publishPipelineResolver.js")))))

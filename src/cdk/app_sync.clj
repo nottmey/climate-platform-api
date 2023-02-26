@@ -16,6 +16,7 @@
     CfnDataSource$LambdaConfigProperty
     CfnGraphQLApi$Builder
     CfnGraphQLSchema$Builder
+    CfnResolver$AppSyncRuntimeProperty
     CfnResolver$Builder)
    (software.amazon.awscdk.services.iam
     Effect
@@ -23,6 +24,7 @@
     Role$Builder
     ServicePrincipal)))
 
+; Docs: https://docs.aws.amazon.com/cdk/api/v2/docs/aws-construct-library.html
 (defn app-sync [^Stack stack]
   (let [db-name               da/dev-env-db-name
         conn                  (da/get-connection db-name)
@@ -57,7 +59,7 @@
                                                                 (.build)))
                                              (.serviceRoleArn (.getRoleArn datomic-resolver-access-role))
                                              (.build))
-          configure-datomic-resolver-for (fn [type-name field-name]
+          configure-datomic-resolver     (fn [type-name field-name]
                                            (let [tn (name type-name)
                                                  fn (name field-name)]
                                              (-> (CfnResolver$Builder/create stack (str "datomic-resolver-" tn "-" fn))
@@ -66,13 +68,38 @@
                                                  (.fieldName fn)
                                                  (.dataSourceName (.getName datomic-data-source))
                                                  (.build)
-                                                 (doto (.addDependsOn api-schema)
-                                                   (.addDependsOn datomic-data-source)))))]
+                                                 (doto
+                                                   (.addDependency api-schema)
+                                                   (.addDependency datomic-data-source)))))
+          configure-js-pipeline-resolver (fn [type-name field-name code]
+                                           (let [tn (name type-name)
+                                                 fn (name field-name)]
+                                             (-> (CfnResolver$Builder/create stack (str "pipeline-resolver-" tn "-" fn))
+                                                 (.apiId api-id)
+                                                 (.typeName tn)
+                                                 (.fieldName fn)
+                                                 (.runtime (-> (CfnResolver$AppSyncRuntimeProperty/builder)
+                                                               (.name "APPSYNC_JS")
+                                                               (.runtimeVersion "1.0.0")
+                                                               (.build)))
+                                                 (.code code)
+                                                 (.build)
+                                                 (doto
+                                                   (.addDependency api-schema)
+                                                   (.addDependency datomic-data-source)))))]
       ;; https://docs.aws.amazon.com/appsync/latest/devguide/utility-helpers-in-util.html
       (doseq [[parent-type-name field-name] @resolvers/resolvable-paths]
-        (configure-datomic-resolver-for parent-type-name field-name))
-      (doseq [op           (ops/all :datomic)
+        (configure-datomic-resolver parent-type-name field-name))
+      (doseq [op           (ops/all :any)
               graphql-type dynamic-graphql-types
-              :let [parent-type-name (o/get-graphql-parent-type op)
-                    field-name       (:name (o/gen-graphql-field op graphql-type {}))]]
-        (configure-datomic-resolver-for parent-type-name field-name)))))
+              :let [type-name  (o/get-graphql-parent-type op)
+                    field-name (:name (o/gen-graphql-field op graphql-type {}))]]
+        (case (o/get-resolver-location op)
+          :datomic (configure-datomic-resolver
+                    type-name
+                    field-name)
+          :js-resolver (configure-js-pipeline-resolver
+                        type-name
+                        field-name
+                        (o/get-js-resolver-code op))
+          :none)))))

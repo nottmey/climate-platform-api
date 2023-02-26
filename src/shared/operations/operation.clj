@@ -10,6 +10,10 @@
   (gen-graphql-object-types [this entity] "Generates all operation individual object types. Returns `nil`, if there are none.")
   ; TODO resolves-graphql-field? can be replaced by generated index (since we fetch the schema anyway)
   (resolves-graphql-field? [this field-name] "Returns whether a specific (entity) field belongs to this operation.")
-  (get-resolver-location [this] "Returns :datomic when `resolve-field-data` should be used, else assumes empty resolver.")
+  (get-resolver-location [this] "Returns :datomic when `resolve-field-data` should be used,
+                                 returns :js-resolver when `get-js-resolver-code` should be used,
+                                 else assumes empty resolver.")
   ; TODO fetch schema upfront resolve-field-data (allows caching) and pass it into it (since we fetch it anyway)
-  (resolve-field-data [this conn resolver-args] "Resolves entity field data for specific field matched by `resolves-graphql-field?`."))
+  (resolve-field-data [this conn resolver-args] "Resolves entity field data for specific field matched by `resolves-graphql-field?`.")
+  (get-js-resolver-code [this] "Returns JavaScript resolver code to be used inside app sync to resolve a field.
+                                Docs: https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html"))
