@@ -17,7 +17,7 @@
     CfnGraphQLApi$Builder
     CfnGraphQLSchema$Builder
     CfnResolver$AppSyncRuntimeProperty
-    CfnResolver$Builder)
+    CfnResolver$Builder CfnResolver$PipelineConfigProperty)
    (software.amazon.awscdk.services.iam
     Effect
     PolicyStatement$Builder
@@ -80,6 +80,10 @@
                                                  (.typeName tn)
                                                  (.fieldName fn)
                                                  (.kind "PIPELINE")
+                                                 (.pipelineConfig (-> (CfnResolver$PipelineConfigProperty/builder)
+                                                                      ; no data source needed
+                                                                      (.functions [])
+                                                                      (.build)))
                                                  (.runtime (-> (CfnResolver$AppSyncRuntimeProperty/builder)
                                                                (.name "APPSYNC_JS")
                                                                (.runtimeVersion "1.0.0")
