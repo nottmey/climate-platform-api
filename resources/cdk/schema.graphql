@@ -148,23 +148,23 @@ type Mutation {
     createPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary!
     replacePlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary
     deletePlanetaryBoundary(id: ID!): PlanetaryBoundary
-    publishCreatedPlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary!
-    publishUpdatedPlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary!
-    publishDeletedPlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary!
+    publishCreatedPlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary
+    publishUpdatedPlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary
+    publishDeletedPlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary
 }
 
 #generated, do not edit manually!
 type Subscription {
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
-    onCreatedPlanetaryBoundary(id: ID, name: String): PlanetaryBoundary!
+    onCreatedPlanetaryBoundary(id: ID, name: String): PlanetaryBoundary
     @aws_subscribe(mutations: ["publishCreatedPlanetaryBoundary"])
 
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
-    onUpdatedPlanetaryBoundary(id: ID, name: String): PlanetaryBoundary!
+    onUpdatedPlanetaryBoundary(id: ID, name: String): PlanetaryBoundary
     @aws_subscribe(mutations: ["publishUpdatedPlanetaryBoundary"])
 
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
-    onDeletedPlanetaryBoundary(id: ID, name: String): PlanetaryBoundary!
+    onDeletedPlanetaryBoundary(id: ID, name: String): PlanetaryBoundary
     @aws_subscribe(mutations: ["publishDeletedPlanetaryBoundary"])
 }
 

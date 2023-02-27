@@ -28,29 +28,27 @@
     :required-type? true}))
 
 (defn publish-mutation [prefix entity]
-  {:name           (str prefix (name entity))
-   :arguments      [a/required-id
-                    {:name           "value"
-                     :type           (t/input-type entity)
-                     :required-type? true}]
-   :type           entity
-   :required-type? true})
+  {:name      (str prefix (name entity))
+   :arguments [a/required-id
+               {:name           "value"
+                :type           (t/input-type entity)
+                :required-type? true}]
+   :type      entity})
 
 (defn subscription [prefix entity fields mutation-op]
-  {:docstring      "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
-   :name           (str prefix (name entity))
-   :arguments      (concat
-                    [a/optional-id]
-                    (for [[field-name {:keys [graphql.relation/attribute]}] fields]
-                      (let [{:keys [:graphql/type]}
-                            (attributes/attribute->config attribute)]
-                        {:name field-name
-                         :type type})))
-   :type           entity
-   :required-type? true
-   :directive      (str "@aws_subscribe(mutations: [\""
-                        (:name (o/gen-graphql-field mutation-op entity {}))
-                        "\"])")})
+  {:docstring "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
+   :name      (str prefix (name entity))
+   :arguments (concat
+               [a/optional-id]
+               (for [[field-name {:keys [graphql.relation/attribute]}] fields]
+                 (let [{:keys [:graphql/type]}
+                       (attributes/attribute->config attribute)]
+                   {:name field-name
+                    :type type})))
+   :type      entity
+   :directive (str "@aws_subscribe(mutations: [\""
+                   (:name (o/gen-graphql-field mutation-op entity {}))
+                   "\"])")})
 
 (comment
   (subscription
