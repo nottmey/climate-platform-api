@@ -111,6 +111,7 @@
   (let [app-sync-context (json/read-str app-sync-input)
         parent-type-name (keyword (get-in app-sync-context ["info" "parentTypeName"]))
         field-name       (keyword (get-in app-sync-context ["info" "fieldName"]))
+        ; TODO adapt to use selectionSetGraphQL, so renamed fields are answered correctly
         selection-set    (set (get-in app-sync-context ["info" "selectionSetList"]))
         ; TODO only append context in dev mode (e.g. api key or dev identity)
         assoc-context    (fn [m]
