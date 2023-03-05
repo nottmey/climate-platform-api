@@ -15,7 +15,8 @@
   (get-attribute-index (u/temp-db)))
 
 (defn pull-entities [db pattern entities]
-  (->> (map-indexed vector entities)
+  (->> entities
+       (map-indexed vector)
        (d/q '[:find ?idx (pull ?e pattern)
               :in $ pattern [[?idx ?e]]
               :where [?e]] db pattern)

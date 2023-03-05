@@ -71,20 +71,6 @@
        (reverse)
        (map first)))
 
-(defn pull-entities [db es]
-  (->> es
-       (map-indexed vector)
-       (d/q '[:find ?i (pull ?e [*])
-              :in $ [[?i ?e]]] db)
-       (sort-by first)
-       (map second)))
-
-(comment
-  (let [db              (d/db (u/temp-conn))
-        attribute-index (queries/get-attribute-index db)
-        es              (time (recently-updated-entities db #_["50"] (keys attribute-index)))]
-    (time (doall (pull-entities db es)))))
-
 (defresolver resolve-static-type-field [:Query :listEntity] [{:keys [conn arguments]}]
   (let [{:keys [page filter]} arguments
         db              (d/db conn)
@@ -96,7 +82,7 @@
         entities        (->> entities
                              (drop (get page-info "offset"))
                              (take (get page-info "size"))
-                             (pull-entities db)
+                             (queries/pull-entities db '[*])
                              (map #(mappings/map-entity % attribute-index)))]
     {"info"   page-info
      "values" entities}))
