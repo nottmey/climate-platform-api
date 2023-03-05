@@ -5,6 +5,8 @@
    [clojure.test :refer [deftest is]]
    [clojure.walk :as walk]
    [datomic.access :as access]
+   [datomic.client.api :as d]
+   [datomic.schema :as schema]
    [ions.resolvers :as resolvers]
    [user :as u]))
 
@@ -124,10 +126,14 @@
         conn             (if (u/test-mode?)
                            (or testing-conn (throw (AssertionError. "missing test database")))
                            (access/get-connection access/dev-env-db-name))
+        initial-db       (d/db conn)
+        schema           (schema/get-schema initial-db)
         publish          (if (u/test-mode?)
                            (or testing-publish (throw (AssertionError. "missing test publish callback")))
                            (build-publish (get-in app-sync-context ["request" "headers"])))]
     (-> {:conn             conn
+         :initial-db       initial-db
+         :schema           schema
          :publish          publish
          :parent-type-name parent-type-name
          :field-name       field-name

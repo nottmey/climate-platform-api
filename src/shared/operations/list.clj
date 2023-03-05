@@ -23,7 +23,7 @@
     (o/resolves-graphql-field? [_ field-name]
       (s/starts-with? (name field-name) prefix))
     (o/get-resolver-location [_] :datomic)
-    (o/resolve-field-data [_ {:keys [conn field-name selected-paths arguments]}]
+    (o/resolve-field-data [_ {:keys [initial-db schema field-name selected-paths arguments]}]
       (let [gql-type   (s/replace (name field-name) prefix "")
             gql-fields (->> selected-paths
                             (filter #(s/starts-with? % "values/"))
@@ -31,15 +31,13 @@
                             (filter #(not (s/includes? % "/")))
                             set)
             {:keys [page]} arguments
-            db         (d/db conn)
-            entities   (schema/get-entities-sorted db gql-type)
+            entities   (schema/get-entities-sorted initial-db gql-type)
             page-info  (utils/page-info page (count entities))
-            schema     (schema/get-schema db)
             pattern    (schema/gen-pull-pattern schema gql-type gql-fields)
             entities   (->> entities
                             (drop (get page-info "offset"))
                             (take (get page-info "size"))
-                            (queries/pull-entities db pattern)
+                            (queries/pull-entities initial-db pattern)
                             (schema/reverse-pull-pattern schema gql-type gql-fields))]
         {"info"   page-info
          "values" entities}))))
@@ -49,6 +47,8 @@
     (time (o/resolve-field-data
            (query)
            {:conn           conn
+            :initial-db     (d/db conn)
+            :schema         (schema/get-schema (d/db conn))
             :field-name     :listPlanetaryBoundary
             :arguments      {:page {:number 2
                                     :size   10}}

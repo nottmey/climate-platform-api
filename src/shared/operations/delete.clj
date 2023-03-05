@@ -21,13 +21,11 @@
     (o/resolves-graphql-field? [_ field-name]
       (s/starts-with? (name field-name) prefix))
     (o/get-resolver-location [_] :datomic)
-    (o/resolve-field-data [_ {:keys [conn field-name arguments selected-paths]}]
+    (o/resolve-field-data [_ {:keys [conn initial-db schema field-name arguments selected-paths]}]
       (let [gql-type  (s/replace (name field-name) prefix "")
             {:keys [id]} arguments
             entity-id (parse-long id)
-            db        (d/db conn)
-            schema    (schema/get-schema db)
-            entity    (schema/pull-and-resolve-entity schema entity-id db gql-type selected-paths)
+            entity    (schema/pull-and-resolve-entity schema entity-id initial-db gql-type selected-paths)
             _         (when entity
                         (d/transact conn {:tx-data [[:db/retractEntity entity-id]]}))]
         entity))))
@@ -37,6 +35,8 @@
     (time (o/resolve-field-data
            (mutation)
            {:conn           conn
+            :initial-db     (d/db conn)
+            :schema         (schema/get-schema (d/db conn))
             :field-name     :deletePlanetaryBoundary
             :arguments      {:id "101155069755524"}
             :selected-paths #{"name"}}))))

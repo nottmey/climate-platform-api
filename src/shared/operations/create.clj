@@ -24,11 +24,10 @@
     (o/resolves-graphql-field? [_ field-name]
       (s/starts-with? (name field-name) prefix))
     (o/get-resolver-location [_] :datomic)
-    (o/resolve-field-data [_ {:keys [conn field-name arguments selected-paths]}]
+    (o/resolve-field-data [_ {:keys [conn schema field-name arguments selected-paths]}]
       (let [gql-type   (s/replace (name field-name) prefix "")
             {:keys [value]} arguments
             input      (walk/stringify-keys value)
-            schema     (schema/get-schema (d/db conn))
             temp-id    "temp-id"
             input-data (-> (schema/resolve-input-fields schema input gql-type)
                            (assoc :db/id temp-id))
@@ -61,6 +60,8 @@
     (o/resolve-field-data
      (mutation)
      {:conn           conn
+      :initial-db     (d/db conn)
+      :schema         (schema/get-schema (d/db conn))
       :publish        #(printf (str % "\n"))
       :field-name     :createPlanetaryBoundary
       :arguments      {:value {:name "some planetary boundary"}}

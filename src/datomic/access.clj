@@ -35,6 +35,9 @@
   (utils/with-retry #(d/connect (get-client) {:timeout 1000
                                               :db-name db-name})))
 
+(comment
+  (get-connection dev-env-db-name))
+
 (deftest get-connection-test
   (let [db-name "something"]
     (with-redefs [get-client #(d/client {:server-type :dev-local
