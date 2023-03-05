@@ -5,9 +5,9 @@
    [clojure.test :refer [deftest is]]
    [datomic.client.api :as d]
    [datomic.schema :as schema]
-   [graphql.definitions :as definitions]
    [graphql.fields :as fields]
    [graphql.objects :as objects]
+   [graphql.spec :as spec]
    [graphql.types :as types]
    [shared.attributes :as attributes]
    [shared.operations :as operations]
@@ -19,7 +19,7 @@
    (->>
     attributes/attribute-types
     (map
-     #(definitions/object-type-definition
+     #(spec/object-type-definition
        {:name       (:graphql/single-value-type-name %)
         :interfaces [types/attribute-type]
         :fields     (conj
@@ -31,7 +31,7 @@
    (->>
     attributes/attribute-types
     (map
-     #(definitions/object-type-definition
+     #(spec/object-type-definition
        {:name       (:graphql/multi-value-type-name %)
         :interfaces [types/attribute-type]
         :fields     (conj
@@ -77,15 +77,15 @@
         all-ops              (operations/all :any)]
     (str
      ;; static (db independent) schema
-     (definitions/schema-definition
+     (spec/schema-definition
       {:root-ops {:query        types/query-type
                   :mutation     types/mutation-type
                   :subscription types/subscription-type}})
-     (definitions/interface-type-definition
+     (spec/interface-type-definition
       {:name   types/attribute-type
        :fields attribute-fields})
      (generate-attribute-subtypes attribute-fields)
-     (definitions/object-type-definition
+     (spec/object-type-definition
       {:name   types/page-info-type
        :fields [{:name           :size
                  :type           types/int-type
@@ -104,7 +104,7 @@
                  :type           types/int-type
                  :required-type? true}]})
      ; entity framework & dynamic schema: query inputs
-     (definitions/input-object-type-definition
+     (spec/input-object-type-definition
       {:name   types/page-query-type
        :fields [{:name          :number
                  :type          types/int-type
@@ -113,14 +113,14 @@
                  :type          types/int-type
                  :default-value 20}]})
      ; TODO generate filters for dynamic types
-     (definitions/input-object-type-definition
+     (spec/input-object-type-definition
       {:name   entity-filter-type
        :fields [{:name           :attributes
                  :type           types/id-type
                  :list?          true
                  :required-type? true}]})
      ;; entity framework & dynamic schema: query results
-     (definitions/object-type-definition
+     (spec/object-type-definition
       {:name   types/query-type
        :fields (concat
                 [(fields/get-query types/entity-type)
@@ -129,7 +129,7 @@
                       :when (= (o/get-graphql-parent-type op) types/query-type)
                       [entity fields] dynamic-schema-types]
                   (o/gen-graphql-field op entity fields)))})
-     (definitions/object-type-definition
+     (spec/object-type-definition
       {:name   types/entity-type
        :fields [fields/context
                 {:name           :id
@@ -143,7 +143,7 @@
      (s/join
       (for [[entity fields] dynamic-schema-types]
         ; always generate all dynamic entity types
-        (definitions/object-type-definition
+        (spec/object-type-definition
          {:name   entity
           :fields (concat
                    [fields/context
@@ -151,27 +151,27 @@
                      :type           :ID
                      :required-type? true}]
                    (gen-entity-fields (vals fields)))})))
-     (definitions/object-type-definition
+     (spec/object-type-definition
       (objects/list-page types/entity-type))
      (s/join
       (for [op          all-ops
             entity      (keys dynamic-schema-types)
             object-type (o/gen-graphql-object-types op entity)]
-        (definitions/object-type-definition object-type)))
+        (spec/object-type-definition object-type)))
      ;; entity framework & dynamic schema: mutation inputs & results
      (s/join
       (for [[entity fields] dynamic-schema-types]
         ; always generate all dynamic entity input types
-        (definitions/input-object-type-definition
+        (spec/input-object-type-definition
          {:name   (types/input-type entity)
           :fields (gen-entity-fields (vals fields))})))
-     (definitions/object-type-definition
+     (spec/object-type-definition
       {:name   types/mutation-type
        :fields (for [op all-ops
                      :when (= (o/get-graphql-parent-type op) types/mutation-type)
                      [entity fields] dynamic-schema-types]
                  (o/gen-graphql-field op entity fields))})
-     (definitions/object-type-definition
+     (spec/object-type-definition
       {:name           types/subscription-type
        :spaced-fields? true
        :fields         (for [op all-ops

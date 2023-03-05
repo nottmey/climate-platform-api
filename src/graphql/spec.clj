@@ -1,4 +1,4 @@
-(ns graphql.definitions
+(ns graphql.spec
   (:refer-clojure :rename {name k-name})
   (:require
    [clojure.string :as s]
