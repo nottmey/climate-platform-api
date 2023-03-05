@@ -14,6 +14,6 @@
                                  returns :js-resolver when `get-js-resolver-code` should be used,
                                  else assumes empty resolver.")
   ; TODO fetch schema upfront resolve-field-data (allows caching) and pass it into it (since we fetch it anyway)
-  (resolve-field-data [this conn resolver-args] "Resolves entity field data for specific field matched by `resolves-graphql-field?`.")
+  (resolve-field-data [this args] "Resolves entity field data for specific field matched by `resolves-graphql-field?`.")
   (get-js-resolver-code [this] "Returns JavaScript resolver code to be used inside app sync to resolve a field.
                                 Docs: https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html"))

@@ -1,6 +1,6 @@
 (ns cdk.stack
   (:require
-   [cdk.app-sync :as as]
+   [cdk.app-sync :as app-sync]
    [io.pedestal.log :as log])
   (:import
    (software.amazon.awscdk
@@ -9,7 +9,7 @@
     Stack
     StackProps)))
 
-(defn synth [opts]
+(defn synth [_opts]
   (let [app   (App.)
         props (-> (StackProps/builder)
                   (.env (-> (Environment/builder)
@@ -22,6 +22,6 @@
                   (.build))
         stack (Stack. app "climate-platform-api" props)]
     (log/info :message "Synthesizing api stack")
-    (as/app-sync stack)
+    (app-sync/app-sync stack)
     (.synth app)))
 

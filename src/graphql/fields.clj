@@ -1,17 +1,17 @@
 (ns graphql.fields
   (:require
-   [graphql.arguments :as a]
-   [graphql.types :as t]
+   [graphql.arguments :as arguments]
+   [graphql.types :as types]
    [shared.attributes :as attributes]
    [shared.operations.operation :as o]))
 
 (def context
   {:name :context
-   :type t/json-type})
+   :type types/json-type})
 
 (defn get-query [entity]
   {:name      (keyword (str "get" (name entity)))
-   :arguments [a/required-id]
+   :arguments [arguments/required-id]
    :type      (name entity)})
 
 (defn list-page-query
@@ -20,18 +20,18 @@
    {:name           (keyword (str "list" (name entity)))
     :arguments      (concat
                      [{:name :page
-                       :type t/page-query-type}]
+                       :type types/page-query-type}]
                      (when filter-type
                        [{:name :filter
                          :type filter-type}]))
-    :type           (t/list-page-type entity)
+    :type           (types/list-page-type entity)
     :required-type? true}))
 
 (defn publish-mutation [prefix entity]
   {:name      (str prefix (name entity))
-   :arguments [a/required-id
+   :arguments [arguments/required-id
                {:name           "value"
-                :type           (t/input-type entity)
+                :type           (types/input-type entity)
                 :required-type? true}]
    :type      entity})
 
@@ -39,7 +39,7 @@
   {:docstring "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
    :name      (str prefix (name entity))
    :arguments (concat
-               [a/optional-id]
+               [arguments/optional-id]
                (for [[field-name {:keys [graphql.relation/attribute]}] fields]
                  (let [{:keys [:graphql/type]}
                        (attributes/attribute->config attribute)]

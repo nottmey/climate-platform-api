@@ -17,4 +17,4 @@
     (o/resolves-graphql-field? [_ field-name]
       (s/starts-with? (name field-name) prefix))
     (o/get-resolver-location [_])
-    (o/resolve-field-data [_ _ _])))
+    (o/resolve-field-data [_ _])))

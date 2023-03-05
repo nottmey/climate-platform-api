@@ -3,10 +3,11 @@
    [clojure.string :as s]
    [clojure.test :refer [deftest is]]
    [datomic.client.api :as d]
-   [shared.attributes :as a]
+   [datomic.queries :as queries]
+   [shared.attributes :as attributes]
    [user :as u]))
 
-(defn get-graphql-schema [db]
+(defn get-schema [db]
   (let [base (->> (d/q '[:find (pull ?rel [:graphql.relation/field
                                            :graphql.relation/forward?
                                            :graphql.relation/deprecated?
@@ -35,19 +36,9 @@
                      (update-vals #(group-by (fn [{:keys [graphql.relation/type]}] (:graphql.type/name type)) %)))}))
 
 (comment
-  (let [db (u/temp-db)]
-    (time (get-graphql-schema db))))
+  (get-schema (u/temp-db)))
 
-(defn get-graphql-types [db]
-  (-> (get-graphql-schema db)
-      :types
-      keys))
-
-(comment
-  (let [db (u/temp-db)]
-    (time (get-graphql-types db))))
-
-(defn resolve-input-fields [input-obj gql-type schema]
+(defn resolve-input-fields [schema input-obj gql-type]
   ; TODO nested values
   (->> input-obj
        (map
@@ -64,9 +55,65 @@
         {})))
 
 (comment
-  (let [db     (u/temp-db)
-        schema (get-graphql-schema db)]
-    (time (resolve-input-fields {"name" "Hello"} "PlanetaryBoundary" schema))))
+  (resolve-input-fields
+   (get-schema (u/temp-db))
+   {"name" "Hello"}
+   "PlanetaryBoundary"))
+
+(defn gen-pull-pattern [schema gql-type gql-fields]
+  ; TODO nested selections
+  (-> (->> (disj gql-fields "id")
+           (map #(get-in schema [:types gql-type % :graphql.relation/attribute :db/ident]))
+           distinct)
+      (conj :db/id)))
+
+(deftest gen-pull-pattern-test
+  (let [schema  (get-schema (u/temp-db))
+        pattern (gen-pull-pattern schema u/rel-type #{"id" u/rel-field})]
+    (is (= [:db/id u/rel-attribute] pattern))))
+
+(defn reverse-pull-pattern [schema gql-type gql-fields pulled-entities]
+  ; TODO reverse nested values
+  (map
+   #(-> (->>
+         %
+         (mapcat
+          (fn [[key value]]
+            (->> (get-in schema [:attributes key gql-type])
+                 (filter (fn [{:keys [graphql.relation/field]}]
+                           (contains? gql-fields field)))
+                 (map (fn [{:keys [graphql.relation/field
+                                   graphql.relation/attribute]}]
+                        [field
+                         (attributes/->gql-value
+                          value
+                          (:db/ident (:db/valueType attribute))
+                          (:db/ident (:db/cardinality attribute)))])))))
+         (into {}))
+        (assoc "id" (str (:db/id %))))
+   pulled-entities))
+
+(defn pull-and-resolve-entity [schema entity-long-id db gql-type selected-paths]
+  ; TODO nested fields
+  (let [gql-fields (set (filter #(not (s/includes? % "/")) selected-paths))
+        pattern    (gen-pull-pattern schema gql-type gql-fields)]
+    (->> [entity-long-id]
+         (queries/pull-entities db pattern)
+         (reverse-pull-pattern schema gql-type gql-fields)
+         first)))
+
+(deftest pull-and-resolve-entity-test
+  (let [conn           (u/temp-conn)
+        added-data     (d/transact conn {:tx-data [{:db/id          "entity id"
+                                                    u/rel-attribute u/rel-sample-value}]})
+        entity-long-id (get-in added-data [:tempids "entity id"])
+        db             (d/db conn)
+        selected-paths #{"id" u/rel-field}
+        schema         (get-schema db)
+        pulled-entity  (pull-and-resolve-entity schema entity-long-id db u/rel-type selected-paths)]
+    (is (= {"id"        (str entity-long-id)
+            u/rel-field u/rel-sample-value}
+           pulled-entity))))
 
 (defn get-entities-sorted [db type-name]
   (->> (d/q '[:find (min ?t) ?e
@@ -82,76 +129,7 @@
        (map last)))
 
 (comment
-  (let [db (u/temp-db)]
-    (time (get-entities-sorted db "PlanetaryBoundary"))))
-
-(defn gen-pull-pattern [gql-type gql-fields schema]
-  ; TODO nested selections
-  (-> (->> (disj gql-fields "id")
-           (map #(get-in schema [:types gql-type % :graphql.relation/attribute :db/ident]))
-           distinct)
-      (conj :db/id)))
-
-(deftest gen-pull-pattern-test
-  (let [schema  (get-graphql-schema (d/db (u/temp-conn)))
-        pattern (gen-pull-pattern u/rel-type #{"id" u/rel-field} schema)]
-    (is (= [:db/id u/rel-attribute] pattern))))
-
-(defn pull-entities [db pattern entities]
-  (->> (map-indexed vector entities)
-       (d/q '[:find ?idx (pull ?e pattern)
-              :in $ pattern [[?idx ?e]]
-              :where [?e]] db pattern)
-       (sort-by first)
-       (map second)))
-
-(comment
-  (let [db (u/temp-db)]
-    (time (pull-entities db [:db/id :platform/name] [92358976733295 123 87960930222192])))
-
-  (let [db (u/temp-db)]
-    (time (pull-entities db '[*] [123]))))
-
-(defn reverse-pull-pattern [gql-type gql-fields schema pulled-entities]
-  ; TODO reverse nested values
-  (map
-   #(-> (->>
-         %
-         (mapcat
-          (fn [[key value]]
-            (->> (get-in schema [:attributes key gql-type])
-                 (filter (fn [{:keys [graphql.relation/field]}]
-                           (contains? gql-fields field)))
-                 (map (fn [{:keys [graphql.relation/field
-                                   graphql.relation/attribute]}]
-                        [field
-                         (a/->gql-value
-                          value
-                          (:db/ident (:db/valueType attribute))
-                          (:db/ident (:db/cardinality attribute)))])))))
-         (into {}))
-        (assoc "id" (str (:db/id %))))
-   pulled-entities))
-
-(defn pull-and-resolve-entity [entity-long-id db gql-type selected-paths schema]
-  ; TODO nested fields
-  (let [gql-fields (set (filter #(not (s/includes? % "/")) selected-paths))
-        pattern    (gen-pull-pattern gql-type gql-fields schema)]
-    (->> [entity-long-id]
-         (pull-entities db pattern)
-         (reverse-pull-pattern gql-type gql-fields schema)
-         first)))
-
-(deftest pull-and-resolve-entity-test
-  (let [conn           (u/temp-conn)
-        added-data     (d/transact conn {:tx-data [{:db/id          "entity id"
-                                                    u/rel-attribute u/rel-sample-value}]})
-        entity-long-id (get-in added-data [:tempids "entity id"])
-        db             (d/db conn)
-        selected-paths #{"id" u/rel-field}
-        schema         (get-graphql-schema db)
-        pulled-entity  (pull-and-resolve-entity entity-long-id db u/rel-type selected-paths schema)]
-    (is (= {"id"        (str entity-long-id)
-            u/rel-field u/rel-sample-value}
-           pulled-entity))))
-
+  (let [conn    (u/temp-conn)
+        example {u/rel-attribute u/rel-sample-value}]
+    (d/transact conn {:tx-data [example example example example example]})
+    (get-entities-sorted (d/db conn) u/rel-type)))

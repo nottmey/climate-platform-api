@@ -1,16 +1,12 @@
 (ns user
   (:require
-   [clojure.pprint :as pp]
    [clojure.set :as set]
    [clojure.test :refer [*testing-vars*]]
    [datomic.access :as access]
-   [datomic.attributes :as da]
+   [datomic.attributes :as attributes]
    [datomic.client.api :as d])
   (:import
    (clojure.lang ExceptionInfo)))
-
-(defn pprint [o]
-  (pp/pprint o))
 
 (defn test-mode? []
   (boolean (seq *testing-vars*)))
@@ -30,9 +26,12 @@
      (d/delete-database client arg-map)
      (d/create-database client arg-map)
      (let [conn (d/connect client arg-map)]
-       (d/transact conn {:tx-data da/graphql-attributes})
-       (d/transact conn {:tx-data da/platform-attributes})
-       (d/transact conn {:tx-data (da/add-value-field-tx-data rel-type rel-field rel-attribute)})
+       (d/transact conn {:tx-data attributes/graphql-attributes})
+       (d/transact conn {:tx-data attributes/platform-attributes})
+       (d/transact conn {:tx-data (attributes/add-value-field-tx-data
+                                   rel-type
+                                   rel-field
+                                   rel-attribute)})
        conn))))
 
 (comment
@@ -64,12 +63,16 @@
   ([tx-data db-name]
    {:pre [(every? map? tx-data)]}
    (let [conn               (access/get-connection db-name)
-         schema             (access/get-schema (d/db conn))
-         unique-attrs       (->> (vals schema)
+         attributes         (->> (d/pull (d/db conn) '{:eid      0
+                                                       :selector [{:db.install/attribute [*]}]})
+                                 :db.install/attribute
+                                 (map #(update % :db/valueType :db/ident))
+                                 (map #(update % :db/cardinality :db/ident)))
+         unique-attrs       (->> attributes
                                  (filter :db/unique)
                                  (map :db/ident)
                                  (map hash-set))
-         unique-tuple-attrs (->> (vals schema)
+         unique-tuple-attrs (->> attributes
                                  (filter :db/unique)
                                  (filter :db/tupleAttrs)
                                  (map :db/tupleAttrs)
@@ -112,7 +115,7 @@
                  %))))))
 
 (comment
-  (get-tx-log 1 access/dev-env-db-name))
+  (get-tx-log 3 access/dev-env-db-name))
 
 (defn get-db-stats
   ([db-name]
@@ -121,10 +124,3 @@
 
 (comment
   (get-db-stats access/dev-env-db-name))
-
-(defn get-schema
-  ([db-name]
-   (access/get-schema (d/db (access/get-connection db-name)))))
-
-(comment
-  (get-schema access/dev-env-db-name))

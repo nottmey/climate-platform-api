@@ -3,7 +3,7 @@
    [clojure.string :as s]
    [clojure.walk :as walk]
    [datomic.client.api :as d]
-   [datomic.schema :as ds]
+   [datomic.schema :as schema]
    [graphql.types :as types]
    [shared.operations.operation :as o]
    [user :as u]))
@@ -24,23 +24,51 @@
     (o/resolves-graphql-field? [_ field-name]
       (s/starts-with? (name field-name) prefix))
     (o/get-resolver-location [_] :datomic)
-    (o/resolve-field-data [_ conn {:keys [field-name arguments selected-paths]}]
+    (o/resolve-field-data [_ {:keys [conn field-name arguments selected-paths]}]
       (let [gql-type   (s/replace (name field-name) prefix "")
             {:keys [value]} arguments
             input      (walk/stringify-keys value)
-            schema     (ds/get-graphql-schema (d/db conn))
+            schema     (schema/get-schema (d/db conn))
             temp-id    "temp-id"
-            input-data (-> (ds/resolve-input-fields input gql-type schema)
+            input-data (-> (schema/resolve-input-fields schema input gql-type)
                            (assoc :db/id temp-id))
             {:keys [db-after tempids]} (d/transact conn {:tx-data [input-data]})
-            entity-id  (get tempids temp-id)]
-        (ds/pull-and-resolve-entity entity-id db-after gql-type selected-paths schema)))))
+            entity-id  (get tempids temp-id)
+            entity     (schema/pull-and-resolve-entity schema entity-id db-after gql-type selected-paths)]
+        #_(let [publish-op    (publish-created/mutation)
+                field-name    (:name (o/gen-graphql-field publish-op gql-type {}))
+                mutation-name (str (s/upper-case (subs field-name 0 1))
+                                   (subs field-name 1))]
+            (publish (str
+                      #_"mutation "
+                      #_mutation-name
+                      #_" { "
+                      #_field-name
+                      "(id: \""
+                      entity-id
+                      "\", value: {"
+                      (->> (vals (get (:types schema) gql-type))
+                           (map (fn [{:keys [graphql.relation/field]}]
+                                  (str field ": " (get entity field))
+                                  ; TODO also select all shallow paths (in selected-paths)
+                                  ; TODO report the whole shallow object
+                                  ))
+                           (s/join ", ")))))
+        entity))))
 
 (comment
   (let [conn (u/temp-conn)]
-    (time (o/resolve-field-data
-           (mutation)
-           conn
-           {:field-name     :createPlanetaryBoundary
-            :arguments      {:value {:name "some planetary boundary"}}
-            :selected-paths #{"name"}}))))
+    (o/resolve-field-data
+     (mutation)
+     {:conn           conn
+      :publish        #(printf (str % "\n"))
+      :field-name     :createPlanetaryBoundary
+      :arguments      {:value {:name "some planetary boundary"}}
+      :selected-paths #{"name"}})))
+
+#_"mutation PublishCreatedPlanetaryBoundary {
+      publishCreatedPlanetaryBoundary(id: \"123123123\", value: {name: \"Climate Change\"}) {
+        id
+        name
+      }
+    }"

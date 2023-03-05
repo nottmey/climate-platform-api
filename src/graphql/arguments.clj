@@ -1,11 +1,11 @@
 (ns graphql.arguments
-  (:require [graphql.types :as t]))
+  (:require [graphql.types :as types]))
 
 (def required-id
   {:name           :id
-   :type           t/id-type
+   :type           types/id-type
    :required-type? true})
 
 (def optional-id
   {:name :id
-   :type t/id-type})
+   :type types/id-type})

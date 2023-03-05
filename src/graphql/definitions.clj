@@ -1,7 +1,7 @@
 (ns graphql.definitions
   (:refer-clojure :rename {name k-name})
   (:require
-   [clojure.string :as str]
+   [clojure.string :as s]
    [clojure.test :refer [deftest is]]))
 
 ; specification https://spec.graphql.org/June2018/#sec-Schema
@@ -16,7 +16,7 @@
 (defn valid-name? [k-or-s]
   (and (not (nil? k-or-s))
        (boolean (re-matches name-regex (k-name k-or-s)))
-       (not (str/starts-with? (k-name k-or-s) "__"))))
+       (not (s/starts-with? (k-name k-or-s) "__"))))
 
 (def operation-types
   #{:query :mutation :subscription})
@@ -68,7 +68,7 @@
          (pos? (count arguments))]}
   (let [arguments-def (->> arguments
                            (map input-value-definition)
-                           (str/join ", "))]
+                           (s/join ", "))]
     (str "(" arguments-def ")")))
 
 (comment
@@ -130,7 +130,7 @@
   (->> fields
        (map field-definition)
        (map #(str tab-spaces % "\n"))
-       (str/join (if spaced? "\n" ""))))
+       (s/join (if spaced? "\n" ""))))
 
 (comment
   (printf (field-list-definition {:fields [{:name :query
@@ -164,7 +164,7 @@
         implements-def (when interfaces
                          (->> interfaces
                               (map k-name)
-                              (str/join " & ")
+                              (s/join " & ")
                               (str " implements ")))]
     (str
      generated-comment

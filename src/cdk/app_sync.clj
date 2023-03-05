@@ -1,11 +1,11 @@
 (ns cdk.app-sync
   (:require
-   [datomic.access :as da]
+   [datomic.access :as access]
    [datomic.client.api :as d]
-   [datomic.schema :as ds]
-   [graphql.schema :as schema]
+   [datomic.schema :as datomic-schema]
+   [graphql.schema :as graphql-schema]
    [ions.resolvers :as resolvers]
-   [shared.operations :as ops]
+   [shared.operations :as operations]
    [shared.operations.operation :as o])
   (:import
    (software.amazon.awscdk
@@ -26,9 +26,8 @@
 
 ; Docs: https://docs.aws.amazon.com/cdk/api/v2/docs/aws-construct-library.html
 (defn app-sync [^Stack stack]
-  (let [db-name               da/dev-env-db-name
-        conn                  (da/get-connection db-name)
-        dynamic-graphql-types (ds/get-graphql-types (d/db conn))
+  (let [conn                  (access/get-connection access/dev-env-db-name)
+        dynamic-graphql-types (-> (datomic-schema/get-schema (d/db conn)) :types keys)
         api                   (-> (CfnGraphQLApi$Builder/create stack "climate-platform-api")
                                   (.name "climate-platform-api")
                                   (.authenticationType "API_KEY")
@@ -39,7 +38,7 @@
         (.build))
     (let [api-schema                     (-> (CfnGraphQLSchema$Builder/create stack "climate-platform-api-schema")
                                              (.apiId api-id)
-                                             (.definition (schema/generate conn))
+                                             (.definition (graphql-schema/generate conn))
                                              (.build))
           datomic-resolver-arn           "arn:aws:lambda:eu-central-1:118776085668:function:climate-platform-primary-datomic-resolver"
           datomic-resolver-access-role   (doto (-> (Role$Builder/create stack "datomic-resolver-access-role")
@@ -69,8 +68,7 @@
                                                  (.kind "UNIT")
                                                  (.dataSourceName (.getName datomic-data-source))
                                                  (.build)
-                                                 (doto
-                                                   (.addDependency api-schema)
+                                                 (doto (.addDependency api-schema)
                                                    (.addDependency datomic-data-source)))))
           configure-js-pipeline-resolver (fn [type-name field-name code]
                                            (let [tn (name type-name)
@@ -90,13 +88,12 @@
                                                                (.build)))
                                                  (.code code)
                                                  (.build)
-                                                 (doto
-                                                   (.addDependency api-schema)
+                                                 (doto (.addDependency api-schema)
                                                    (.addDependency datomic-data-source)))))]
       ;; https://docs.aws.amazon.com/appsync/latest/devguide/utility-helpers-in-util.html
       (doseq [[parent-type-name field-name] @resolvers/resolvable-paths]
         (configure-datomic-resolver parent-type-name field-name))
-      (doseq [op           (ops/all :any)
+      (doseq [op           (operations/all :any)
               graphql-type dynamic-graphql-types
               :let [type-name  (o/get-graphql-parent-type op)
                     field-name (:name (o/gen-graphql-field op graphql-type {}))]]
