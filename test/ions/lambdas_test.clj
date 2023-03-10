@@ -65,7 +65,7 @@
         entity-id       (get created-entity "id")]
     (is (= u/rel-sample-value (get created-entity u/rel-field)))
     (is (string? entity-id))
-    #_(is (= true @publish-called?))
+    (is (= true @publish-called?))
 
     (let [fetched-entity
           (json/read-str
@@ -123,7 +123,7 @@
                                                              "selectionSetList" ["id" u/rel-field]}
                                                 "arguments" {"id" entity-id}})}))]
       (is (= created-entity deleted-entity))
-      #_(is (= true @publish-called?)))))
+      (is (= true @publish-called?)))))
 
 (deftest test-entity-browser-get
   (let [conn     (u/temp-conn)

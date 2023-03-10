@@ -2,6 +2,7 @@
   (:refer-clojure :rename {name k-name})
   (:require
    [clojure.string :as s]
+   [clojure.string :as str]
    [clojure.test :refer [deftest is]]))
 
 ; specification https://spec.graphql.org/June2018/#sec-Schema
@@ -36,31 +37,85 @@
   (let [list? (or list? required-list?)]
     (str (when list? "[") (k-name type) (when required-type? "!") (when list? "]") (when required-list? "!"))))
 
-(defn default-value-definition [default-value]
-  {:pre [(or (nil? default-value)
-             (int? default-value))]}
-  (when default-value
-    (str " = " default-value)))
+(defn selection-definition [field-names-or-subselections]
+  {:pre [(sequential? field-names-or-subselections)
+         (pos? (count field-names-or-subselections))
+         (not (sequential? (first field-names-or-subselections)))]}
+  (str "{ "
+       (->> field-names-or-subselections
+            (map #(if (sequential? %)
+                    (selection-definition %)
+                    (k-name %)))
+            (str/join " "))
+       " }"))
+
+(comment
+  (selection-definition [:id :some-ref [:id] "name"]))
+
+(deftest selection-definition-test
+  (let [selection [:id :some-ref [:id] "name"]]
+    (is (= "{ id some-ref { id } name }"
+           (selection-definition selection)))))
+
+(defn value-definition [value]
+  {:pre [(or (nil? value)
+             (int? value)
+             (double? value)
+             (string? value)
+             (map? value))]}
+  (cond
+    (nil? value) "null"
+    (string? value) (str "\"" value "\"")
+    (map? value) (str "{" (->> value
+                               (map (fn [[k v]] (str (k-name k) ": " (value-definition v))))
+                               (str/join ", ")) "}")
+    :else value))
 
 ; https://spec.graphql.org/June2018/#InputValueDefinition
 ; add additional default value types if needed
-(defn input-value-definition [{:keys [name default-value type]
+(defn input-value-definition [{:keys [name value type]
                                :as   args-with-type-ref}]
   {:pre [(valid-name? name)
-         (or (not default-value)
-             (= (k-name type) "Int"))]}
+         (or value type)]}
   (str (k-name name)
        ": "
-       (type-ref-definition args-with-type-ref)
-       (default-value-definition default-value)))
+       (when type
+         (type-ref-definition args-with-type-ref))
+       (when (and type value)
+         " = ")
+       (when value
+         (value-definition value))))
 
 (comment
   (input-value-definition {:name           "id"
                            :type           :Int
-                           :default-value  0
+                           :value          0
                            :list?          true
                            :required-type? true
                            :required-list? true}))
+
+(deftest input-value-definition-test
+  (is (= "id: [Int!]! = 0"
+         (input-value-definition {:name           "id"
+                                  :type           :Int
+                                  :value          0
+                                  :list?          true
+                                  :required-type? true
+                                  :required-list? true})))
+  (is (= "id: 0"
+         (input-value-definition {:name           "id"
+                                  :value          0
+                                  :list?          true
+                                  :required-type? true
+                                  :required-list? true})))
+  (is (= "id: \"123123123\""
+         (input-value-definition {:name "id"
+                                  :value "123123123"})))
+  (is (= "value: {id: 5, name: \"Climate Change\", x: {y: 0.0}}"
+         (input-value-definition {:name "value"
+                                  :value {"id" 5
+                                          :name "Climate Change"
+                                          :x {:y 0.0}}}))))
 
 ; https://spec.graphql.org/June2018/#ArgumentsDefinition
 (defn arguments-definition [{:keys [arguments]}]
@@ -78,17 +133,23 @@
                                       :type :String}]}))
 
 ; https://spec.graphql.org/June2018/#FieldDefinition
-(defn field-definition [{:keys [name type arguments default-value docstring directive]
+(defn field-definition [{:keys [name arguments type selection value docstring directive]
                          :as   args-with-type-ref}]
   {:pre [(valid-name? name)
-         (or (nil? arguments) (pos? (count arguments)))
-         (or (not default-value) (= (k-name type) "Int"))]}
+         (or (nil? arguments)
+             (pos? (count arguments)))
+         (or (not value)
+             (= (k-name type) "Int"))
+         (or type selection)]}
   (str (when docstring
          (str "\"" docstring "\"" "\n" tab-spaces))
        (k-name name) (when arguments (arguments-definition {:arguments arguments}))
-       ": "
-       (type-ref-definition args-with-type-ref)
-       (default-value-definition default-value)
+       (when type
+         (str ": " (type-ref-definition args-with-type-ref)))
+       (when selection
+         (str " " (selection-definition selection) " "))
+       (when value
+         (str " = " (value-definition value)))
        (when directive
          ; clearly separated to the next field with an additional \n
          (str "\n" tab-spaces directive))))
@@ -99,14 +160,14 @@
                             :type      :Result
                             :arguments [{:name           :id
                                          :type           :Int
-                                         :default-value  1
+                                         :value          1
                                          :required-type? true}
                                         {:name :database
                                          :type :String}]})))
   (is (= "size: Int = 20"
-         (field-definition {:name          :size
-                            :type          :Int
-                            :default-value 20})))
+         (field-definition {:name  :size
+                            :type  :Int
+                            :value 20})))
 
   (is (= (str
           "\"Some documentation with `code` and punctuation.\"\n"
@@ -202,7 +263,7 @@
 
 ; https://spec.graphql.org/June2018/#InputObjectTypeDefinition
 (defn input-object-type-definition [{:keys [name fields]}]
-  {:pre [valid-name? name]}
+  {:pre [(valid-name? name)]}
   (let [fields-def (field-list-definition {:fields fields})]
     (str
      generated-comment
@@ -213,9 +274,35 @@
                                          :fields [{:name :attribute
                                                    :type :ID}]}))
   (printf (input-object-type-definition {:name   :Query
-                                         :fields [{:name          :size
-                                                   :type          :Int
-                                                   :default-value 20}]})))
+                                         :fields [{:name  :size
+                                                   :type  :Int
+                                                   :value 20}]})))
+
+(defn mutation-definition [{:keys [name fields]}]
+  {:pre [(or (valid-name? name)
+             (and (nil? name)
+                  (= 1 (count fields))))
+         (every? :selection fields)]}
+  (let [fields-def    (field-list-definition {:fields fields})
+        mutation-name (or name
+                          (let [field-name (k-name (:name (first fields)))]
+                            (str (s/upper-case (subs field-name 0 1))
+                                 (subs field-name 1))))]
+    (-> (str "mutation " (k-name mutation-name) " {" fields-def "}")
+        (str/replace #"\s+" " "))))
+
+(deftest mutation-definition-test
+  (is (= (str "mutation PublishCreatedPlanetaryBoundary "
+              "{ publishCreatedPlanetaryBoundary("
+              "id: \"123123123\", value: {name: \"Climate Change\"}"
+              ") { id name } }")
+         (mutation-definition
+          {:fields [{:name      :publishCreatedPlanetaryBoundary
+                     :arguments [{:name  :id
+                                  :value "123123123"}
+                                 {:name  :value
+                                  :value {"name" "Climate Change"}}]
+                     :selection [:id "name"]}]}))))
 
 ; remember, there are more:
 ; ScalarTypeDefinition

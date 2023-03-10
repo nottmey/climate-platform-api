@@ -1,4 +1,5 @@
-(ns shared.operations.operation)
+(ns shared.operations.operation
+  (:require [graphql.spec :as spec]))
 
 ; TODO prefix, parent-type, and resolver-location could just as-well be data of an operation
 (defprotocol Operation
@@ -17,3 +18,16 @@
   (resolve-field-data [this args] "Resolves entity field data for specific field matched by `resolves-graphql-field?`.")
   (get-js-resolver-code [this] "Returns JavaScript resolver code to be used inside app sync to resolve a field.
                                 Docs: https://docs.aws.amazon.com/appsync/latest/devguide/resolver-reference-js-version.html"))
+
+(defn create-publish-definition [publish-op gql-type entity default-paths]
+  (let [field-name (:name (gen-graphql-field publish-op gql-type {}))]
+    (spec/mutation-definition
+     {:fields [{:name      field-name
+                :arguments [{:name  :id
+                             :value (get entity "id")}
+                            {:name  :value
+                             :value (->> (disj default-paths "id")
+                                         ; TODO nested values
+                                         (map #(vector % (get entity %)))
+                                         (into {}))}]
+                :selection (into [] default-paths)}]})))

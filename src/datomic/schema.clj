@@ -38,6 +38,19 @@
 (comment
   (get-schema (u/temp-db)))
 
+(defn get-default-paths [schema gql-type]
+  ; TODO nested fields
+  (-> schema
+      (get-in [:types gql-type])
+      keys
+      set
+      (conj "id")))
+
+(deftest get-default-paths-test
+  (let [schema (get-schema (u/temp-db))
+        paths (get-default-paths schema u/rel-type)]
+    (is (contains? paths u/rel-field))))
+
 (defn resolve-input-fields [schema input-obj gql-type]
   ; TODO nested values
   (->> input-obj
@@ -66,6 +79,9 @@
            (map #(get-in schema [:types gql-type % :graphql.relation/attribute :db/ident]))
            distinct)
       (conj :db/id)))
+
+(comment
+  (gen-pull-pattern (get-schema (u/temp-db)) u/rel-type #{"id" u/rel-field}))
 
 (deftest gen-pull-pattern-test
   (let [schema  (get-schema (u/temp-db))

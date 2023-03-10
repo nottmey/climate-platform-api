@@ -106,12 +106,12 @@
      ; entity framework & dynamic schema: query inputs
      (spec/input-object-type-definition
       {:name   types/page-query-type
-       :fields [{:name          :number
-                 :type          types/int-type
-                 :default-value 0}
-                {:name          :size
-                 :type          types/int-type
-                 :default-value 20}]})
+       :fields [{:name  :number
+                 :type  types/int-type
+                 :value 0}
+                {:name  :size
+                 :type  types/int-type
+                 :value 20}]})
      ; TODO generate filters for dynamic types
      (spec/input-object-type-definition
       {:name   entity-filter-type
