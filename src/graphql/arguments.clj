@@ -11,5 +11,5 @@
    :type types/id-type})
 
 (def optional-session
-  {:name :sessionId
+  {:name :session
    :type types/id-type})

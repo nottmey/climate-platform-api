@@ -1,6 +1,7 @@
 (ns ions.lambdas-test
   (:require
    [clojure.data.json :as json]
+   [clojure.string :as str]
    [clojure.string :as s]
    [clojure.test :refer [deftest is]]
    [ions.lambdas :refer [datomic-resolver]]
@@ -46,17 +47,14 @@
                           {:testing-conn    conn
                            :testing-publish (fn [q]
                                               (reset! publish-called? true)
-                                              (let [[q1 id q2 value q3] (s/split q #"\"")]
-                                                (is (= (str "mutation PublishCreated"
-                                                            u/rel-type
-                                                            " { publishCreated"
-                                                            u/rel-type
-                                                            "(id: ")
-                                                       q1))
-                                                (is (int? (parse-long id)))
-                                                (is (= (str ", value: {" u/rel-field ": ") q2))
-                                                (is (= u/rel-sample-value value))
-                                                (is (= (str "}) { id " u/rel-field " } }") q3))))
+                                              (let [[s1 s2] (->> (re-seq #"\".*?\"" q)
+                                                                 (map #(str/replace % "\"" "")))
+                                                    q-norm (-> (str/replace q #"\".*?\"" "<v>")
+                                                               (str/replace u/rel-type "<t>")
+                                                               (str/replace u/rel-field "<f>"))]
+                                                (is (= q-norm "mutation PublishCreated<t> { publishCreated<t>(id: <v>, value: {<f>: <v>}) { id <f> } }"))
+                                                (is (int? (parse-long s1)))
+                                                (is (= u/rel-sample-value s2))))
                            :input           (json/write-str
                                              {"info"      {"parentTypeName"   "Mutation"
                                                            "fieldName"        (str "create" u/rel-type)
