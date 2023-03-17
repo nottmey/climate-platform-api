@@ -147,9 +147,8 @@
          {:name   entity
           :fields (concat
                    [fields/context
-                    {:name           "id"
-                     :type           :ID
-                     :required-type? true}]
+                    fields/required-id
+                    fields/optional-session]
                    (gen-entity-fields (vals fields)))})))
      (spec/object-type-definition
       (objects/list-page types/entity-type))
@@ -164,7 +163,9 @@
         ; always generate all dynamic entity input types
         (spec/input-object-type-definition
          {:name   (types/input-type entity)
-          :fields (gen-entity-fields (vals fields))})))
+          :fields (concat
+                   [fields/optional-session]
+                   (gen-entity-fields (vals fields)))})))
      (spec/object-type-definition
       {:name   types/mutation-type
        :fields (for [op all-ops

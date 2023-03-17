@@ -9,3 +9,7 @@
 (def optional-id
   {:name :id
    :type types/id-type})
+
+(def optional-session
+  {:name :sessionId
+   :type types/id-type})
