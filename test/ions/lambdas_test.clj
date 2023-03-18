@@ -2,7 +2,6 @@
   (:require
    [clojure.data.json :as json]
    [clojure.string :as str]
-   [clojure.string :as s]
    [clojure.test :refer [deftest is]]
    [ions.lambdas :refer [datomic-resolver]]
    [user :as u]))
@@ -47,23 +46,27 @@
                           {:testing-conn    conn
                            :testing-publish (fn [q]
                                               (reset! publish-called? true)
-                                              (let [[s1 s2] (->> (re-seq #"\".*?\"" q)
-                                                                 (map #(str/replace % "\"" "")))
+                                              (let [[s1 s2 s3] (->> (re-seq #"\".*?\"" q)
+                                                                    (map #(str/replace % "\"" "")))
                                                     q-norm (-> (str/replace q #"\".*?\"" "<v>")
                                                                (str/replace u/rel-type "<t>")
                                                                (str/replace u/rel-field "<f>"))]
-                                                (is (= q-norm "mutation PublishCreated<t> { publishCreated<t>(id: <v>, value: {<f>: <v>}) { id <f> } }"))
+                                                (is (= q-norm "mutation PublishCreated<t> { publishCreated<t>(id: <v>, session: <v>, value: {<f>: <v>}) { id <f> session } }"))
                                                 (is (int? (parse-long s1)))
-                                                (is (= u/rel-sample-value s2))))
+                                                (is (= "session id" s2))
+                                                (is (= u/rel-sample-value s3))))
                            :input           (json/write-str
                                              {"info"      {"parentTypeName"   "Mutation"
                                                            "fieldName"        (str "create" u/rel-type)
                                                            "selectionSetList" ["id" u/rel-field]}
-                                              "arguments" {"value" {u/rel-field u/rel-sample-value}}})}))
-        entity-id       (get created-entity "id")]
+                                              "arguments" {"session" "session id"
+                                                           "value"   {u/rel-field u/rel-sample-value}}})}))
+        entity-id       (get created-entity "id")
+        created-fetched (dissoc created-entity "session")]
     (is (= u/rel-sample-value (get created-entity u/rel-field)))
     (is (string? entity-id))
     (is (= true @publish-called?))
+    (is (= "session id" (get created-entity "session")))
 
     (let [fetched-entity
           (json/read-str
@@ -75,7 +78,7 @@
                                              "fieldName"        (str "get" u/rel-type)
                                              "selectionSetList" ["id" u/rel-field]}
                                 "arguments" {"id" entity-id}})}))]
-      (is (= created-entity fetched-entity)))
+      (is (= created-fetched fetched-entity)))
 
     (let [entity-list
           (json/read-str
@@ -95,7 +98,7 @@
                      "current" 0
                      "next"    nil
                      "last"    0}
-           "values" [created-entity]}]
+           "values" [created-fetched]}]
       (is (= expected-list entity-list)))
 
     (let [publish-called? (atom false)
@@ -104,22 +107,21 @@
                             {:testing-conn    conn
                              :testing-publish (fn [q]
                                                 (reset! publish-called? true)
-                                                (let [[q1 id q2 value q3] (s/split q #"\"")]
-                                                  (is (= (str "mutation PublishDeleted"
-                                                              u/rel-type
-                                                              " { publishDeleted"
-                                                              u/rel-type
-                                                              "(id: ")
-                                                         q1))
-                                                  (is (int? (parse-long id)))
-                                                  (is (= (str ", value: {" u/rel-field ": ") q2))
-                                                  (is (= u/rel-sample-value value))
-                                                  (is (= (str "}) { id " u/rel-field " } }") q3))))
+                                                (let [[s1 s2 s3] (->> (re-seq #"\".*?\"" q)
+                                                                      (map #(str/replace % "\"" "")))
+                                                      q-norm (-> (str/replace q #"\".*?\"" "<v>")
+                                                                 (str/replace u/rel-type "<t>")
+                                                                 (str/replace u/rel-field "<f>"))]
+                                                  (is (= "mutation PublishDeleted<t> { publishDeleted<t>(id: <v>, session: <v>, value: {<f>: <v>}) { id <f> session } }"
+                                                         q-norm))
+                                                  (is (int? (parse-long s1)))
+                                                  (is (= "session id" s2))
+                                                  (is (= u/rel-sample-value s3))))
                              :input           (json/write-str
                                                {"info"      {"parentTypeName"   "Mutation"
                                                              "fieldName"        (str "delete" u/rel-type)
                                                              "selectionSetList" ["id" u/rel-field]}
-                                                "arguments" {"id" entity-id}})}))]
+                                                "arguments" {"id" entity-id, "session" "session id"}})}))]
       (is (= created-entity deleted-entity))
       (is (= true @publish-called?)))))
 

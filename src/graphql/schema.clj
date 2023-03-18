@@ -163,9 +163,7 @@
         ; always generate all dynamic entity input types
         (spec/input-object-type-definition
          {:name   (types/input-type entity)
-          :fields (concat
-                   [fields/optional-session]
-                   (gen-entity-fields (vals fields)))})))
+          :fields (gen-entity-fields (vals fields))})))
      (spec/object-type-definition
       {:name   types/mutation-type
        :fields (for [op all-ops

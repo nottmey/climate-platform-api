@@ -141,18 +141,17 @@ type PlanetaryBoundaryListPage {
 
 #generated, do not edit manually!
 input PlanetaryBoundaryInput {
-    session: ID
     name: String
 }
 
 #generated, do not edit manually!
 type Mutation {
-    createPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary!
-    replacePlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary
-    deletePlanetaryBoundary(id: ID!): PlanetaryBoundary
-    publishCreatedPlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary
-    publishUpdatedPlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary
-    publishDeletedPlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary
+    createPlanetaryBoundary(session: ID, value: PlanetaryBoundaryInput!): PlanetaryBoundary!
+    replacePlanetaryBoundary(id: ID!, session: ID, value: PlanetaryBoundaryInput!): PlanetaryBoundary
+    deletePlanetaryBoundary(id: ID!, session: ID): PlanetaryBoundary
+    publishCreatedPlanetaryBoundary(id: ID!, session: ID, value: PlanetaryBoundaryInput!): PlanetaryBoundary
+    publishUpdatedPlanetaryBoundary(id: ID!, session: ID, value: PlanetaryBoundaryInput!): PlanetaryBoundary
+    publishDeletedPlanetaryBoundary(id: ID!, session: ID, value: PlanetaryBoundaryInput!): PlanetaryBoundary
 }
 
 #generated, do not edit manually!

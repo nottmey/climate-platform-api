@@ -34,6 +34,7 @@
 (defn publish-mutation [prefix entity]
   {:name      (str prefix (name entity))
    :arguments [arguments/required-id
+               arguments/optional-session
                {:name           "value"
                 :type           (types/input-type entity)
                 :required-type? true}]

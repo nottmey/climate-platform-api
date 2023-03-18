@@ -17,7 +17,8 @@
     (o/get-graphql-parent-type [_] types/mutation-type)
     (o/gen-graphql-field [_ entity _]
       {:name      (str prefix (name entity))
-       :arguments [arguments/required-id]
+       :arguments [arguments/required-id
+                   arguments/optional-session]
        :type      entity})
     (o/gen-graphql-object-types [_ _])
     (o/resolves-graphql-field? [_ field-name]
@@ -25,19 +26,20 @@
     (o/get-resolver-location [_] :datomic)
     (o/resolve-field-data [_ {:keys [conn publish initial-db schema field-name arguments selected-paths]}]
       (let [gql-type      (s/replace (name field-name) prefix "")
-            {:keys [id]} arguments
+            {:keys [id session]} arguments
             entity-id     (parse-long id)
             default-paths (schema/get-default-paths schema gql-type)
             paths         (set/union selected-paths default-paths)
-            entity        (schema/pull-and-resolve-entity schema entity-id initial-db gql-type paths)
-            _             (when entity
-                            (d/transact conn {:tx-data [[:db/retractEntity entity-id]]}))]
-        (when entity
-          (publish (o/create-publish-definition (publish-deleted/mutation)
-                                                gql-type
-                                                entity
-                                                default-paths)))
-        entity))))
+            entity        (schema/pull-and-resolve-entity schema entity-id initial-db gql-type paths)]
+        (if (nil? entity)
+          nil
+          (let [e-with-session (assoc entity "session" session)]
+            (d/transact conn {:tx-data [[:db/retractEntity entity-id]]})
+            (publish (o/create-publish-definition (publish-deleted/mutation)
+                                                  gql-type
+                                                  e-with-session
+                                                  default-paths))
+            e-with-session))))))
 
 (comment
   (let [conn (u/temp-conn)
@@ -50,5 +52,6 @@
       :schema         (schema/get-schema db-after)
       :publish        #(printf (str % "\n"))
       :field-name     :deletePlanetaryBoundary
-      :arguments      {:id (str (get tempids "tempid"))}
+      :arguments      {:id      (str (get tempids "tempid"))
+                       :session "session id"}
       :selected-paths #{"name"}})))

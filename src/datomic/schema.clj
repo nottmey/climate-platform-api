@@ -44,11 +44,12 @@
       (get-in [:types gql-type])
       keys
       set
-      (conj "id")))
+      (conj "id")
+      (conj "session")))
 
 (deftest get-default-paths-test
   (let [schema (get-schema (u/temp-db))
-        paths (get-default-paths schema u/rel-type)]
+        paths  (get-default-paths schema u/rel-type)]
     (is (contains? paths u/rel-field))))
 
 (defn resolve-input-fields [schema input-obj gql-type]
@@ -59,6 +60,7 @@
           (let [rel (get-in schema [:types gql-type field])
                 {:keys [graphql.relation/attribute]} rel]
             [(:db/ident attribute) value])))
+       (filter (fn [[ident]] (not (nil? ident))))
        (reduce
         (fn [m [attr value]]
           (if (contains? m attr)
@@ -75,7 +77,7 @@
 
 (defn gen-pull-pattern [schema gql-type gql-fields]
   ; TODO nested selections
-  (-> (->> (disj gql-fields "id")
+  (-> (->> (disj gql-fields "id" "session")
            (map #(get-in schema [:types gql-type % :graphql.relation/attribute :db/ident]))
            distinct)
       (conj :db/id)))

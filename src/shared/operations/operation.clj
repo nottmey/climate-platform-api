@@ -23,11 +23,17 @@
   (let [field-name (:name (gen-graphql-field publish-op gql-type {}))]
     (spec/mutation-definition
      {:fields [{:name      field-name
-                :arguments [{:name  :id
-                             :value (get entity "id")}
-                            {:name  :value
-                             :value (->> (disj default-paths "id")
-                                         ; TODO nested values
-                                         (map #(vector % (get entity %)))
-                                         (into {}))}]
-                :selection (into [] default-paths)}]})))
+                :arguments (concat
+                            [{:name  :id
+                              :value (get entity "id")}]
+                            (when-let [session (get entity "session")]
+                              [{:name  :session
+                                :value session}])
+                            [{:name  :value
+                              :value (->> (disj default-paths "id" "session")
+                                          (sort)
+                                          ; TODO nested values
+                                          (map #(vector % (get entity %)))
+                                          (into {}))}])
+                :selection (->> (sort default-paths)
+                                (into []))}]})))
