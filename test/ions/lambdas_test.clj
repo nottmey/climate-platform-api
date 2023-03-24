@@ -6,22 +6,24 @@
    [ions.lambdas :refer [datomic-resolver]]
    [user :as u]))
 
+(defn resolve-input [input]
+  (json/read-str
+   (datomic-resolver
+    {:input (json/write-str input)})))
+
+
 (deftest test-get-non-existent-id
-  (let [response (json/read-str
-                  (datomic-resolver
-                   {:input (json/write-str
-                            {"info"      {"parentTypeName" "Query"
-                                          "fieldName"      (str "get" u/rel-type)}
-                             "arguments" {"id" "123"}})}))]
+  (let [response (resolve-input
+                  {"info"      {"parentTypeName" "Query"
+                                "fieldName"      (str "get" u/rel-type)}
+                   "arguments" {"id" "123"}})]
     (is (= response nil))))
 
 (deftest test-list-empty-db
-  (let [response (json/read-str
-                  (datomic-resolver
-                   {:input (json/write-str
-                            {"info"      {"parentTypeName" "Query"
-                                          "fieldName"      (str "list" u/rel-type)}
-                             "arguments" {}})}))
+  (let [response (resolve-input
+                  {"info"      {"parentTypeName" "Query"
+                                "fieldName"      (str "list" u/rel-type)}
+                   "arguments" {}})
         expected {"info"   {"size"    20
                             "offset"  0
                             "first"   0
@@ -48,14 +50,12 @@
                                                 (is (int? (parse-long s1)))
                                                 (is (= "session id" s2))
                                                 (is (= u/rel-sample-value s3))))]
-                          (json/read-str
-                           (datomic-resolver
-                            {:input (json/write-str
-                                     {"info"      {"parentTypeName"   "Mutation"
-                                                   "fieldName"        (str "create" u/rel-type)
-                                                   "selectionSetList" ["id" u/rel-field]}
-                                      "arguments" {"session" "session id"
-                                                   "value"   {u/rel-field u/rel-sample-value}}})})))
+                          (resolve-input
+                           {"info"      {"parentTypeName"   "Mutation"
+                                         "fieldName"        (str "create" u/rel-type)
+                                         "selectionSetList" ["id" u/rel-field]}
+                            "arguments" {"session" "session id"
+                                         "value"   {u/rel-field u/rel-sample-value}}}))
         entity-id       (get created-entity "id")
         created-fetched (dissoc created-entity "session")]
     (is (= u/rel-sample-value (get created-entity u/rel-field)))
@@ -65,24 +65,20 @@
 
     (let [fetched-entity
           (with-redefs [u/testing-conn (fn [] conn)]
-            (json/read-str
-             (datomic-resolver
-              {:input (json/write-str
-                       {"info"      {"parentTypeName"   "Query"
-                                     "fieldName"        (str "get" u/rel-type)
-                                     "selectionSetList" ["id" u/rel-field]}
-                        "arguments" {"id" entity-id}})})))]
+            (resolve-input
+             {"info"      {"parentTypeName"   "Query"
+                           "fieldName"        (str "get" u/rel-type)
+                           "selectionSetList" ["id" u/rel-field]}
+              "arguments" {"id" entity-id}}))]
       (is (= created-fetched fetched-entity)))
 
     (let [entity-list
           (with-redefs [u/testing-conn (fn [] conn)]
-            (json/read-str
-             (datomic-resolver
-              {:input (json/write-str
-                       {"info"      {"parentTypeName"   "Query"
-                                     "fieldName"        (str "list" u/rel-type)
-                                     "selectionSetList" ["values/id" (str "values/" u/rel-field)]}
-                        "arguments" {"page" {"size" 10}}})})))
+            (resolve-input
+             {"info"      {"parentTypeName"   "Query"
+                           "fieldName"        (str "list" u/rel-type)
+                           "selectionSetList" ["values/id" (str "values/" u/rel-field)]}
+              "arguments" {"page" {"size" 10}}}))
           expected-list
           {"info"   {"size"    10
                      "offset"  0
@@ -109,24 +105,20 @@
                                                   (is (int? (parse-long s1)))
                                                   (is (= "session id" s2))
                                                   (is (= u/rel-sample-value s3))))]
-                            (json/read-str
-                             (datomic-resolver
-                              {:input (json/write-str
-                                       {"info"      {"parentTypeName"   "Mutation"
-                                                     "fieldName"        (str "delete" u/rel-type)
-                                                     "selectionSetList" ["id" u/rel-field]}
-                                        "arguments" {"id"      entity-id,
-                                                     "session" "session id"}})})))]
+                            (resolve-input
+                             {"info"      {"parentTypeName"   "Mutation"
+                                           "fieldName"        (str "delete" u/rel-type)
+                                           "selectionSetList" ["id" u/rel-field]}
+                              "arguments" {"id"      entity-id,
+                                           "session" "session id"}}))]
       (is (= created-entity deleted-entity))
       (is (= true @publish-called?)))))
 
 (deftest test-entity-browser-get
-  (let [response (json/read-str
-                  (datomic-resolver
-                   {:input (json/write-str
-                            {"info"      {"parentTypeName" "Query"
-                                          "fieldName"      "getEntity"}
-                             "arguments" {"id" "0"}})}))]
+  (let [response (resolve-input
+                  {"info"      {"parentTypeName" "Query"
+                                "fieldName"      "getEntity"}
+                   "arguments" {"id" "0"}})]
     (is (= {"id"         "0",
             "attributes" [{"id"         "10",
                            "name"       ":db/ident",
@@ -187,13 +179,11 @@
            response))))
 
 (deftest test-entity-browser-list
-  (let [response (json/read-str
-                  (datomic-resolver
-                   {:input (json/write-str
-                            {"info"      {"parentTypeName" "Query"
-                                          "fieldName"      "listEntity"}
-                             "arguments" {"page" {"size"   1
-                                                  "number" 10000}}})}))]
+  (let [response (resolve-input
+                  {"info"      {"parentTypeName" "Query"
+                                "fieldName"      "listEntity"}
+                   "arguments" {"page" {"size"   1
+                                        "number" 10000}}})]
     (is (= [{"id"         "7",
              "attributes" [{"id"         "10",
                             "name"       ":db/ident",
