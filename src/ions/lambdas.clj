@@ -106,8 +106,6 @@
 ; FYI if you want to add a batch resolver, you need to override the default request/response mapping
 (defn datomic-resolver [{_lambda-context :context
                          app-sync-input  :input
-                         ; used exclusively in test-mode; never using the real database in tests
-                         testing-conn    :testing-conn
                          testing-publish :testing-publish}]
   ; the so called `$context` in https://docs.aws.amazon.com/appsync/latest/devguide/resolver-context-reference.html
   (let [app-sync-context (json/read-str app-sync-input)
@@ -124,7 +122,8 @@
         arguments        (walk/keywordize-keys (get app-sync-context "arguments"))
         parent-value     (walk/keywordize-keys (get app-sync-context "source"))
         conn             (if (u/test-mode?)
-                           (or testing-conn (throw (AssertionError. "missing test database")))
+                           ; making sure never to write to the real database in tests
+                           (u/testing-conn)
                            (access/get-connection access/dev-env-db-name))
         initial-db       (d/db conn)
         schema           (schema/get-schema initial-db)

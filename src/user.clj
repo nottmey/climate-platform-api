@@ -41,6 +41,12 @@
   ([] (d/db (temp-conn)))
   ([db-name] (d/db (temp-conn db-name))))
 
+(defn testing-conn
+  "default conn to be used in testing,
+  or to be redefined when a different scenario is needed"
+  []
+  (temp-conn))
+
 (defn empty-tx-result [conn reason]
   (let [db (d/db conn)]
     {:db-before    db
