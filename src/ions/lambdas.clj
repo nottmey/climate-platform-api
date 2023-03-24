@@ -105,8 +105,7 @@
 ; default response mapping is applied: https://docs.aws.amazon.com/appsync/latest/devguide/resolver-mapping-template-reference-lambda.html#lambda-mapping-template-bypass-response
 ; FYI if you want to add a batch resolver, you need to override the default request/response mapping
 (defn datomic-resolver [{_lambda-context :context
-                         app-sync-input  :input
-                         testing-publish :testing-publish}]
+                         app-sync-input  :input}]
   ; the so called `$context` in https://docs.aws.amazon.com/appsync/latest/devguide/resolver-context-reference.html
   (let [app-sync-context (json/read-str app-sync-input)
         parent-type-name (keyword (get-in app-sync-context ["info" "parentTypeName"]))
@@ -128,7 +127,8 @@
         initial-db       (d/db conn)
         schema           (schema/get-schema initial-db)
         publish          (if (u/test-mode?)
-                           (or testing-publish (throw (AssertionError. "missing test publish callback")))
+                           ; making sure never to publish to the real system in tests
+                           u/testing-publish
                            (build-publish (get-in app-sync-context ["request" "headers"])))]
     (-> {:conn             conn
          :initial-db       initial-db

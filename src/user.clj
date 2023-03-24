@@ -43,9 +43,15 @@
 
 (defn testing-conn
   "default conn to be used in testing,
-  or to be redefined when a different scenario is needed"
+   or to be redefined when a different scenario is needed"
   []
   (temp-conn))
+
+(defn testing-publish
+  "default publish callback used in testing,
+   or to be redefined when a different scenario is needed"
+  []
+  (throw (AssertionError. "no call to publish expected")))
 
 (defn empty-tx-result [conn reason]
   (let [db (d/db conn)]
