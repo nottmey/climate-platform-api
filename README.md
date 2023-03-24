@@ -15,6 +15,13 @@ A Flutter UI client prototype using this backend can be found [here](https://git
 
 ## Technical Details
 
+### Development
+
+```shell
+# install https://github.com/evilmartians/lefthook/blob/master/docs/install.md, then do:
+lefthook install
+```
+
 ### Schema Concept
 
 Bridging from Datomic

@@ -11,7 +11,6 @@
    (datomic-resolver
     {:input (json/write-str input)})))
 
-
 (deftest test-get-non-existent-id
   (let [response (resolve-input
                   {"info"      {"parentTypeName" "Query"
