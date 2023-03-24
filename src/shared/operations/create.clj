@@ -58,5 +58,6 @@
       :publish        #(printf (str % "\n"))
       :field-name     :createPlanetaryBoundary
       :arguments      {:session "session id"
-                       :value   {:name "some planetary boundary" "session" "123"}}
+                       :value   {:name     "some planetary boundary"
+                                 "session" "123"}}
       :selected-paths #{"name"}})))

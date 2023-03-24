@@ -121,7 +121,8 @@
                                                {"info"      {"parentTypeName"   "Mutation"
                                                              "fieldName"        (str "delete" u/rel-type)
                                                              "selectionSetList" ["id" u/rel-field]}
-                                                "arguments" {"id" entity-id, "session" "session id"}})}))]
+                                                "arguments" {"id"      entity-id,
+                                                             "session" "session id"}})}))]
       (is (= created-entity deleted-entity))
       (is (= true @publish-called?)))))
 
