@@ -23,7 +23,7 @@
       (let [gql-type  (s/replace (name field-name) prefix "")
             {:keys [id]} arguments
             entity-id (parse-long id)]
-        (schema/pull-and-resolve-entity schema entity-id initial-db gql-type selected-paths)))))
+        {:response (schema/pull-and-resolve-entity schema entity-id initial-db gql-type selected-paths)}))))
 
 (comment
   (let [conn (u/temp-conn)]

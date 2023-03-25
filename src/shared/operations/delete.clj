@@ -24,7 +24,7 @@
     (o/resolves-graphql-field? [_ field-name]
       (s/starts-with? (name field-name) prefix))
     (o/get-resolver-location [_] :datomic)
-    (o/resolve-field-data [_ {:keys [conn publish initial-db schema field-name arguments selected-paths]}]
+    (o/resolve-field-data [_ {:keys [conn initial-db schema field-name arguments selected-paths]}]
       (let [gql-type      (s/replace (name field-name) prefix "")
             {:keys [id session]} arguments
             entity-id     (parse-long id)
@@ -35,11 +35,12 @@
           nil
           (let [e-with-session (assoc entity "session" session)]
             (d/transact conn {:tx-data [[:db/retractEntity entity-id]]})
-            (publish (o/create-publish-definition (publish-deleted/mutation)
-                                                  gql-type
-                                                  e-with-session
-                                                  default-paths))
-            e-with-session))))))
+            {:publish-queries [(o/create-publish-definition
+                                (publish-deleted/mutation)
+                                gql-type
+                                e-with-session
+                                default-paths)]
+             :response        e-with-session}))))))
 
 (comment
   (let [conn (u/temp-conn)
@@ -50,7 +51,6 @@
      {:conn           conn
       :initial-db     db-after
       :schema         (schema/get-schema db-after)
-      :publish        #(printf (str % "\n"))
       :field-name     :deletePlanetaryBoundary
       :arguments      {:id      (str (get tempids "tempid"))
                        :session "session id"}

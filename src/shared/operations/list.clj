@@ -39,8 +39,8 @@
                             (take (get page-info "size"))
                             (queries/pull-entities initial-db pattern)
                             (schema/reverse-pull-pattern schema gql-type gql-fields))]
-        {"info"   page-info
-         "values" entities}))))
+        {:response {"info"   page-info
+                    "values" entities}}))))
 
 (comment
   (let [conn (u/temp-conn)]

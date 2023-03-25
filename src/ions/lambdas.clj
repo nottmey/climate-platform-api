@@ -129,16 +129,20 @@
         publish          (if (u/test-mode?)
                            ; making sure never to publish to the real system in tests
                            u/testing-publish
-                           (build-publish (get-in app-sync-context ["request" "headers"])))]
-    (-> {:conn             conn
-         :initial-db       initial-db
-         :schema           schema
-         :publish          publish
-         :parent-type-name parent-type-name
-         :field-name       field-name
-         :selected-paths   selected-paths
-         :arguments        arguments
-         :parent-value     parent-value}
-        resolvers/select-and-use-correct-resolver
+                           (build-publish (get-in app-sync-context ["request" "headers"])))
+        resolve-result   (resolvers/select-and-use-correct-resolver
+                          {:conn             conn
+                           :initial-db       initial-db
+                           :schema           schema
+                           :parent-type-name parent-type-name
+                           :field-name       field-name
+                           :selected-paths   selected-paths
+                           :arguments        arguments
+                           :parent-value     parent-value})
+        {:keys [response publish-queries]} resolve-result]
+    (when publish-queries
+      (doseq [query publish-queries]
+        (publish query)))
+    (-> response
         assoc-context
         json/write-str)))

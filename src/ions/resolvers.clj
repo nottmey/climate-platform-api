@@ -55,7 +55,7 @@
         db              (d/db conn)
         attribute-index (queries/get-attribute-index db)
         result          (d/pull db '[*] (parse-long (str id)))]
-    (mappings/map-entity result attribute-index)))
+    {:response (mappings/map-entity result attribute-index)}))
 
 (comment
   (resolve-static-type-field {:conn             (u/temp-conn)
@@ -84,8 +84,8 @@
                              (take (get page-info "size"))
                              (queries/pull-entities db '[*])
                              (map #(mappings/map-entity % attribute-index)))]
-    {"info"   page-info
-     "values" entities}))
+    {:response {"info"   page-info
+                "values" entities}}))
 
 (comment
   (time (resolve-static-type-field {:conn             (u/temp-conn)

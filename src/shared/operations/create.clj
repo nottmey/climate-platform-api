@@ -28,7 +28,7 @@
     (o/resolves-graphql-field? [_ field-name]
       (s/starts-with? (name field-name) prefix))
     (o/get-resolver-location [_] :datomic)
-    (o/resolve-field-data [_ {:keys [conn publish schema field-name arguments selected-paths]}]
+    (o/resolve-field-data [_ {:keys [conn schema field-name arguments selected-paths]}]
       (let [gql-type      (s/replace (name field-name) prefix "")
             {:keys [session value]} arguments
             input         (walk/stringify-keys value)
@@ -41,12 +41,12 @@
             paths         (set/union selected-paths default-paths)
             entity        (-> (schema/pull-and-resolve-entity schema entity-id db-after gql-type paths)
                               (assoc "session" session))]
-        ; TODO refactor publish to be a part of the return value
-        (publish (o/create-publish-definition (publish-created/mutation)
-                                              gql-type
-                                              entity
-                                              default-paths))
-        entity))))
+        {:publish-queries [(o/create-publish-definition
+                            (publish-created/mutation)
+                            gql-type
+                            entity
+                            default-paths)]
+         :response        entity}))))
 
 (comment
   (let [conn (u/temp-conn)]
@@ -55,7 +55,6 @@
      {:conn           conn
       :initial-db     (d/db conn)
       :schema         (schema/get-schema (d/db conn))
-      :publish        #(printf (str % "\n"))
       :field-name     :createPlanetaryBoundary
       :arguments      {:session "session id"
                        :value   {:name     "some planetary boundary"
