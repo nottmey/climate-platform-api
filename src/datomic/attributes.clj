@@ -61,24 +61,24 @@
     :graphql.relation/field     field-name}])
 
 ; TODO test and use
-(defn add-ref-field-tx-data [type-name field-name target-type attribute forward?]
-  [{:db/id             type-name
-    :graphql.type/name type-name}
-   {:graphql.relation/attribute attribute
-    :graphql.relation/forward?  forward?
-    :graphql.relation/type      type-name
-    :graphql.relation/field     field-name
-    :graphql.relation/target    target-type}])
+#_(defn add-ref-field-tx-data [type-name field-name target-type attribute forward?]
+    [{:db/id             type-name
+      :graphql.type/name type-name}
+     {:graphql.relation/attribute attribute
+      :graphql.relation/forward?  forward?
+      :graphql.relation/type      type-name
+      :graphql.relation/field     field-name
+      :graphql.relation/target    target-type}])
 
 ; TODO test
-(defn deprecate-type-tx-data [type-name]
-  [{:graphql.type/name        type-name
-    :graphql.type/deprecated? true}])
+#_(defn deprecate-type-tx-data [type-name]
+    [{:graphql.type/name        type-name
+      :graphql.type/deprecated? true}])
 
 ; TODO test and use
-(defn deprecate-type-field-tx-data [type-name field-name]
-  ; FIXME doesn't work like this, always creates new relation entities
-  [{:db/id             type-name
-    :graphql.type/name type-name}
-   {:graphql.relation/type+field  [type-name field-name]
-    :graphql.relation/deprecated? true}])
+#_(defn deprecate-type-field-tx-data [type-name field-name]
+    ; FIXME doesn't work like this, always creates new relation entities
+    [{:db/id             type-name
+      :graphql.type/name type-name}
+     {:graphql.relation/type+field  [type-name field-name]
+      :graphql.relation/deprecated? true}])
