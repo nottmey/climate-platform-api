@@ -9,3 +9,8 @@ pre-commit:
     test:
       glob: "*.clj"
       run: bin/kaocha --fail-fast
+
+commit-msg:
+  commands:
+    commitlint:
+      run: npx --yes commitlint --edit
