@@ -6,7 +6,7 @@
    [datomic.schema :as datomic-schema]
    [graphql.schema :as graphql-schema]
    [ions.resolvers :as resolvers]
-   [shared.operations :as operations])
+   [shared.operations :as ops])
   (:import
    (software.amazon.awscdk
     Stack)
@@ -93,7 +93,7 @@
       ;; https://docs.aws.amazon.com/appsync/latest/devguide/utility-helpers-in-util.html
       (doseq [[parent-type-name field-name] @resolvers/resolvable-paths]
         (configure-datomic-resolver parent-type-name field-name))
-      (doseq [op           (operations/all :any)
+      (doseq [op           (ops/all :any)
               graphql-type dynamic-graphql-types
               :let [type-name  (:parent-type op)
                     field-name (:name ((:gen-graphql-field op) (:prefix op) graphql-type {}))]]

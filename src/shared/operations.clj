@@ -39,7 +39,7 @@
    :resolver          :js-file
    :resolver-file     "cdk/publishPipelineResolver.js"
    ; TODO extract into functions:
-   :gen-graphql-field (fn [prefix entity fields]
+   :gen-graphql-field (fn [prefix entity _]
                         (fields/publish-mutation prefix entity))})
 
 (def publish-deleted-op
@@ -48,7 +48,7 @@
    :resolver          :js-file
    :resolver-file     "cdk/publishPipelineResolver.js"
    ; TODO extract into functions:
-   :gen-graphql-field (fn [prefix entity fields]
+   :gen-graphql-field (fn [prefix entity _]
                         (fields/publish-mutation prefix entity))})
 
 (def publish-updated-op
@@ -57,7 +57,7 @@
    :resolver          :js-file
    :resolver-file     "cdk/publishPipelineResolver.js"
    ; TODO extract into functions:
-   :gen-graphql-field (fn [prefix entity fields]
+   :gen-graphql-field (fn [prefix entity _]
                         (fields/publish-mutation prefix entity))})
 
 (def get-op
@@ -65,9 +65,9 @@
    :prefix             "get"
    :resolver           :datomic
    ; TODO extract into functions:
-   :gen-graphql-field  (fn [prefix entity fields]
+   :gen-graphql-field  (fn [_ entity _]
                          (fields/get-query entity))
-   :resolve-field-data (fn [prefix {:keys [conn initial-db schema parent-type-name field-name selected-paths arguments parent-value]}]
+   :resolve-field-data (fn [prefix {:keys [initial-db schema field-name selected-paths arguments]}]
                          (let [gql-type  (s/replace (name field-name) prefix "")
                                {:keys [id]} arguments
                                entity-id (parse-long id)]
@@ -78,11 +78,11 @@
    :prefix                   "list"
    :resolver                 :datomic
    ; TODO extract into functions:
-   :gen-graphql-field        (fn [prefix entity fields]
+   :gen-graphql-field        (fn [_ entity _]
                                (fields/list-page-query entity))
    :gen-graphql-object-types (fn [entity]
                                [(objects/list-page entity)])
-   :resolve-field-data       (fn [prefix {:keys [conn initial-db schema parent-type-name field-name selected-paths arguments parent-value]}]
+   :resolve-field-data       (fn [prefix {:keys [initial-db schema field-name selected-paths arguments]}]
                                (let [gql-type   (s/replace (name field-name) prefix "")
                                      gql-fields (->> selected-paths
                                                      (filter #(s/starts-with? % "values/"))
@@ -106,7 +106,7 @@
    :prefix             "create"
    :resolver           :datomic
    ; TODO extract into functions:
-   :gen-graphql-field  (fn [prefix entity fields]
+   :gen-graphql-field  (fn [prefix entity _]
                          {:name           (str prefix (name entity))
                           :arguments      [arguments/optional-session
                                            {:name           "value"
@@ -114,7 +114,7 @@
                                             :required-type? true}]
                           :type           entity
                           :required-type? true})
-   :resolve-field-data (fn [prefix {:keys [conn initial-db schema parent-type-name field-name selected-paths arguments parent-value]}]
+   :resolve-field-data (fn [prefix {:keys [conn schema field-name selected-paths arguments]}]
                          (let [gql-type      (s/replace (name field-name) prefix "")
                                {:keys [session value]} arguments
                                input         (walk/stringify-keys value)
@@ -139,7 +139,7 @@
    :prefix             "replace"
    :resolver           :datomic
    ; TODO extract into functions:
-   :gen-graphql-field  (fn [prefix entity fields]
+   :gen-graphql-field  (fn [prefix entity _]
                          {:name      (str prefix (name entity))
                           :arguments [arguments/required-id
                                       arguments/optional-session
@@ -156,12 +156,12 @@
    :prefix             "delete"
    :resolver           :datomic
    ; TODO extract into functions:
-   :gen-graphql-field  (fn [prefix entity fields]
+   :gen-graphql-field  (fn [prefix entity _]
                          {:name      (str prefix (name entity))
                           :arguments [arguments/required-id
                                       arguments/optional-session]
                           :type      entity})
-   :resolve-field-data (fn [prefix {:keys [conn initial-db schema parent-type-name field-name selected-paths arguments parent-value]}]
+   :resolve-field-data (fn [prefix {:keys [conn initial-db schema field-name selected-paths arguments]}]
                          (let [gql-type      (s/replace (name field-name) prefix "")
                                {:keys [id session]} arguments
                                entity-id     (parse-long id)

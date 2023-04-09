@@ -10,7 +10,7 @@
    [graphql.spec :as spec]
    [graphql.types :as types]
    [shared.attributes :as attributes]
-   [shared.operations :as operations]
+   [shared.operations :as ops]
    [user :as u]))
 
 (defn generate-attribute-subtypes [attribute-fields]
@@ -73,7 +73,7 @@
                               {:name           :name
                                :type           types/string-type
                                :required-type? true}]
-        all-ops              (operations/all :any)]
+        all-ops              (ops/all :any)]
     (str
      ;; static (db independent) schema
      (spec/schema-definition

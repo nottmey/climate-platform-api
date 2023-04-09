@@ -5,7 +5,7 @@
    [datomic.queries :as queries]
    [ions.mappings :as mappings]
    [ions.utils :as utils]
-   [shared.operations :as operations]
+   [shared.operations :as ops]
    [user :as u]))
 
 (def resolvable-paths (atom #{}))
@@ -19,10 +19,10 @@
 
 (defn select-and-use-correct-resolver [{:keys [parent-type-name field-name]
                                         :as   args}]
-  (if-let [op (->> (operations/all :datomic)
+  (if-let [op (->> (ops/all :datomic)
                    (filter #(= (:parent-type %) parent-type-name))
                    (filter #(and (not (str/includes? (name field-name) "Entity"))
-                                 (operations/resolves-graphql-field? % field-name)))
+                                 (ops/resolves-graphql-field? % field-name)))
                    first)]
     ((:resolve-field-data op) (:prefix op) args)
     (resolve-static-type-field args)))
