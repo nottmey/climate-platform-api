@@ -1,12 +1,12 @@
 (ns cdk.app-sync
   (:require
+   [clojure.java.io :as io]
    [datomic.access :as access]
    [datomic.client.api :as d]
    [datomic.schema :as datomic-schema]
    [graphql.schema :as graphql-schema]
    [ions.resolvers :as resolvers]
-   [shared.operations :as operations]
-   [shared.operations.operation :as o])
+   [shared.operations :as operations])
   (:import
    (software.amazon.awscdk
     Stack)
@@ -95,14 +95,14 @@
         (configure-datomic-resolver parent-type-name field-name))
       (doseq [op           (operations/all :any)
               graphql-type dynamic-graphql-types
-              :let [type-name  (o/get-graphql-parent-type op)
-                    field-name (:name (o/gen-graphql-field op graphql-type {}))]]
-        (case (o/get-resolver-location op)
+              :let [type-name  (:parent-type op)
+                    field-name (:name ((:gen-graphql-field op) (:prefix op) graphql-type {}))]]
+        (case (:resolver op)
           :datomic (configure-datomic-resolver
                     type-name
                     field-name)
-          :js-resolver (configure-js-pipeline-resolver
-                        type-name
-                        field-name
-                        (o/get-js-resolver-code op))
+          :js-file (configure-js-pipeline-resolver
+                    type-name
+                    field-name
+                    (slurp (io/resource (:resolver-file op))))
           :none)))))

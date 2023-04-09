@@ -1,12 +1,11 @@
 (ns ions.resolvers
   (:require
-   [clojure.string :as s]
+   [clojure.string :as str]
    [datomic.client.api :as d]
    [datomic.queries :as queries]
    [ions.mappings :as mappings]
    [ions.utils :as utils]
    [shared.operations :as operations]
-   [shared.operations.operation :as o]
    [user :as u]))
 
 (def resolvable-paths (atom #{}))
@@ -21,11 +20,11 @@
 (defn select-and-use-correct-resolver [{:keys [parent-type-name field-name]
                                         :as   args}]
   (if-let [op (->> (operations/all :datomic)
-                   (filter #(= (o/get-graphql-parent-type %) parent-type-name))
-                   (filter #(and (not (s/includes? (name field-name) "Entity"))
-                                 (o/resolves-graphql-field? % field-name)))
+                   (filter #(= (:parent-type %) parent-type-name))
+                   (filter #(and (not (str/includes? (name field-name) "Entity"))
+                                 (operations/resolves-graphql-field? % field-name)))
                    first)]
-    (o/resolve-field-data op args)
+    ((:resolve-field-data op) (:prefix op) args)
     (resolve-static-type-field args)))
 
 (comment

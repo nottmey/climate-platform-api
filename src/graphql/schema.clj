@@ -11,7 +11,6 @@
    [graphql.types :as types]
    [shared.attributes :as attributes]
    [shared.operations :as operations]
-   [shared.operations.operation :as o]
    [user :as u]))
 
 (defn generate-attribute-subtypes [attribute-fields]
@@ -126,9 +125,9 @@
                 [(fields/get-query types/entity-type)
                  (fields/list-page-query types/entity-type entity-filter-type)]
                 (for [op all-ops
-                      :when (= (o/get-graphql-parent-type op) types/query-type)
+                      :when (= (:parent-type op) types/query-type)
                       [entity fields] dynamic-schema-types]
-                  (o/gen-graphql-field op entity fields)))})
+                  ((:gen-graphql-field op) (:prefix op) entity fields)))})
      (spec/object-type-definition
       {:name   types/entity-type
        :fields [fields/context
@@ -155,7 +154,7 @@
      (s/join
       (for [op          all-ops
             entity      (keys dynamic-schema-types)
-            object-type (o/gen-graphql-object-types op entity)]
+            object-type ((or (:gen-graphql-object-types op) (fn [_])) entity)]
         (spec/object-type-definition object-type)))
      ;; entity framework & dynamic schema: mutation inputs & results
      (s/join
@@ -167,16 +166,16 @@
      (spec/object-type-definition
       {:name   types/mutation-type
        :fields (for [op all-ops
-                     :when (= (o/get-graphql-parent-type op) types/mutation-type)
+                     :when (= (:parent-type op) types/mutation-type)
                      [entity fields] dynamic-schema-types]
-                 (o/gen-graphql-field op entity fields))})
+                 ((:gen-graphql-field op) (:prefix op) entity fields))})
      (spec/object-type-definition
       {:name           types/subscription-type
        :spaced-fields? true
        :fields         (for [op all-ops
-                             :when (= (o/get-graphql-parent-type op) types/subscription-type)
+                             :when (= (:parent-type op) types/subscription-type)
                              [entity fields] dynamic-schema-types]
-                         (o/gen-graphql-field op entity fields))}))))
+                         ((:gen-graphql-field op) (:prefix op) entity fields))}))))
 
 (comment
   (let [schema (str (generate (u/temp-conn)))]

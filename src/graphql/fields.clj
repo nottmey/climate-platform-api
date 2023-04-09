@@ -2,8 +2,7 @@
   (:require
    [graphql.arguments :as arguments]
    [graphql.types :as types]
-   [shared.attributes :as attributes]
-   [shared.operations.operation :as o]))
+   [shared.attributes :as attributes]))
 
 (def required-id arguments/required-id)
 
@@ -53,16 +52,5 @@
                     :type type})))
    :type      entity
    :directive (str "@aws_subscribe(mutations: [\""
-                   (:name (o/gen-graphql-field mutation-op entity {}))
+                   (:name ((:gen-graphql-field mutation-op) (:prefix mutation-op) entity {}))
                    "\"])")})
-
-(comment
-  (subscription
-   "onCreate"
-   "PlanetaryBoundary"
-   {"name" #:graphql.relation{:field     "name",
-                              :attribute #:db{:ident       :platform/name,
-                                              :valueType   #:db{:ident :db.type/string},
-                                              :cardinality #:db{:ident :db.cardinality/one}},
-                              :type      #:graphql.type{:name "PlanetaryBoundary"}}}
-   (reify o/Operation (o/gen-graphql-field [_ _ _] {:name "publishCreatedPlanetaryBoundary"}))))

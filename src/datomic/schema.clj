@@ -1,6 +1,6 @@
 (ns datomic.schema
   (:require
-   [clojure.string :as s]
+   [clojure.string :as str]
    [clojure.test :refer [deftest is]]
    [datomic.client.api :as d]
    [datomic.queries :as queries]
@@ -113,7 +113,7 @@
 
 (defn pull-and-resolve-entity [schema entity-long-id db gql-type selected-paths]
   ; TODO nested fields
-  (let [gql-fields (set (filter #(not (s/includes? % "/")) selected-paths))
+  (let [gql-fields (set (filter #(not (str/includes? % "/")) selected-paths))
         pattern    (gen-pull-pattern schema gql-type gql-fields)]
     (->> [entity-long-id]
          (queries/pull-entities db pattern)

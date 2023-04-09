@@ -1,7 +1,6 @@
 (ns graphql.spec
   (:refer-clojure :rename {name k-name})
   (:require
-   [clojure.string :as s]
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]))
 
@@ -17,7 +16,7 @@
 (defn valid-name? [k-or-s]
   (and (not (nil? k-or-s))
        (boolean (re-matches name-regex (k-name k-or-s)))
-       (not (s/starts-with? (k-name k-or-s) "__"))))
+       (not (str/starts-with? (k-name k-or-s) "__"))))
 
 (def operation-types
   #{:query :mutation :subscription})
@@ -109,13 +108,13 @@
                                   :required-type? true
                                   :required-list? true})))
   (is (= "id: \"123123123\""
-         (input-value-definition {:name "id"
+         (input-value-definition {:name  "id"
                                   :value "123123123"})))
   (is (= "value: {id: 5, name: \"Climate Change\", x: {y: 0.0}}"
-         (input-value-definition {:name "value"
-                                  :value {"id" 5
+         (input-value-definition {:name  "value"
+                                  :value {"id"  5
                                           :name "Climate Change"
-                                          :x {:y 0.0}}}))))
+                                          :x    {:y 0.0}}}))))
 
 ; https://spec.graphql.org/June2018/#ArgumentsDefinition
 (defn arguments-definition [{:keys [arguments]}]
@@ -123,7 +122,7 @@
          (pos? (count arguments))]}
   (let [arguments-def (->> arguments
                            (map input-value-definition)
-                           (s/join ", "))]
+                           (str/join ", "))]
     (str "(" arguments-def ")")))
 
 (comment
@@ -191,7 +190,7 @@
   (->> fields
        (map field-definition)
        (map #(str tab-spaces % "\n"))
-       (s/join (if spaced? "\n" ""))))
+       (str/join (if spaced? "\n" ""))))
 
 (comment
   (printf (field-list-definition {:fields [{:name :query
@@ -225,7 +224,7 @@
         implements-def (when interfaces
                          (->> interfaces
                               (map k-name)
-                              (s/join " & ")
+                              (str/join " & ")
                               (str " implements ")))]
     (str
      generated-comment
@@ -286,7 +285,7 @@
   (let [fields-def    (field-list-definition {:fields fields})
         mutation-name (or name
                           (let [field-name (k-name (:name (first fields)))]
-                            (str (s/upper-case (subs field-name 0 1))
+                            (str (str/upper-case (subs field-name 0 1))
                                  (subs field-name 1))))]
     (-> (str "mutation " (k-name mutation-name) " {" fields-def "}")
         (str/replace #"\s+" " "))))
