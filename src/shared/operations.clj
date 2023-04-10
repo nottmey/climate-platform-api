@@ -47,9 +47,9 @@
    :prefix      "create"
    :resolver    :datomic})
 
-(def replace-op
+(def merge-op
   {:parent-type types/mutation-type
-   :prefix      "replace"
+   :prefix      "merge"
    :resolver    :datomic})
 
 (def delete-op
@@ -76,7 +76,7 @@
         get-op
         list-op
         create-op
-        replace-op
+        merge-op
         delete-op
         on-created-op
         on-updated-op
@@ -111,18 +111,14 @@
       "list" (fields/list-page-query field-name entity-name)
       "create" {:name           field-name
                 :arguments      [arguments/optional-session
-                                 {:name           "value"
-                                  :type           (types/input-type entity-name)
-                                  :required-type? true}]
+                                 (arguments/required-input-value entity-name)]
                 :type           entity-name
                 :required-type? true}
-      "replace" {:name      field-name
-                 :arguments [arguments/required-id
-                             arguments/optional-session
-                             {:name           "value"
-                              :type           (types/input-type entity-name)
-                              :required-type? true}]
-                 :type      entity-name}
+      "merge" {:name      field-name
+               :arguments [arguments/required-id
+                           arguments/optional-session
+                           (arguments/required-input-value entity-name)]
+               :type      entity-name}
       "delete" {:name      field-name
                 :arguments [arguments/required-id
                             arguments/optional-session]
@@ -199,7 +195,7 @@
                                      entity-value
                                      default-paths)]
                   :response        entity-value})
-      "replace" nil                                         ; TODO
+      "merge" nil                                           ; TODO
       "delete" (let [default-paths (schema/get-default-paths schema entity-name)
                      paths         (set/union selected-paths default-paths)
                      entity-value  (schema/pull-and-resolve-entity-value schema entity-id db-before entity-name paths)]

@@ -13,3 +13,8 @@
 (def optional-session
   {:name :session
    :type types/id-type})
+
+(defn required-input-value [entity-name]
+  {:name           "value"
+   :type           (types/input-type entity-name)
+   :required-type? true})
