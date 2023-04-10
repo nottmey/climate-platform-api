@@ -163,7 +163,7 @@
         {:keys [conn field-name selected-paths arguments]} args
         {:keys [id page session value]} (or arguments {})
         entity-id   (when id (parse-long id))
-        entity-name (gen-entity-name op (name field-name))
+        entity-name (gen-entity-name op field-name)
         db-before   (d/db conn)
         schema      (schema/get-schema db-before)]
     (case prefix
