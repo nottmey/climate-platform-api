@@ -14,25 +14,24 @@
    [graphql.types :as types]
    [ions.utils :as utils]))
 
-(declare gen-graphql-field)
+(declare gen-field-name)
 (defn create-publish-definition [publish-op gql-type entity default-paths]
-  (let [field-name (:name (gen-graphql-field publish-op gql-type {}))]
-    (spec/mutation-definition
-     {:fields [{:name      field-name
-                :arguments (concat
-                            [{:name  :id
-                              :value (get entity "id")}]
-                            (when-let [session (get entity "session")]
-                              [{:name  :session
-                                :value session}])
-                            [{:name  :value
-                              :value (->> (disj default-paths "id" "session")
-                                          (sort)
-                                          ; TODO nested values
-                                          (map #(vector % (get entity %)))
-                                          (into {}))}])
-                :selection (->> (sort default-paths)
-                                (into []))}]})))
+  (spec/mutation-definition
+   {:fields [{:name      (gen-field-name publish-op gql-type)
+              :arguments (concat
+                          [{:name  :id
+                            :value (get entity "id")}]
+                          (when-let [session (get entity "session")]
+                            [{:name  :session
+                              :value session}])
+                          [{:name  :value
+                            :value (->> (disj default-paths "id" "session")
+                                        (sort)
+                                        ; TODO nested values
+                                        (map #(vector % (get entity %)))
+                                        (into {}))}])
+              :selection (->> (sort default-paths)
+                              (into []))}]}))
 
 (def publish-created-op
   {:parent-type   types/mutation-type
@@ -217,6 +216,6 @@
                 :arguments [arguments/required-id
                             arguments/optional-session]
                 :type      entity}
-      "onCreated" (fields/subscription prefix entity fields (:name (gen-graphql-field publish-created-op entity {})))
-      "onUpdated" (fields/subscription prefix entity fields (:name (gen-graphql-field publish-updated-op entity {})))
-      "onDeleted" (fields/subscription prefix entity fields (:name (gen-graphql-field publish-deleted-op entity {}))))))
+      "onCreated" (fields/subscription prefix entity fields (gen-field-name publish-created-op entity))
+      "onUpdated" (fields/subscription prefix entity fields (gen-field-name publish-updated-op entity))
+      "onDeleted" (fields/subscription prefix entity fields (gen-field-name publish-deleted-op entity)))))
