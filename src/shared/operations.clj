@@ -161,17 +161,16 @@
 (defn resolve-field [op args]
   (let [{:keys [prefix]} op
         {:keys [conn initial-db schema field-name selected-paths arguments]} args
+        {:keys [id page session value]} (or arguments {})
+        entity-id   (when id (parse-long id))
         entity-name (gen-entity-name op (name field-name))]
     (case prefix
-      "get" (let [{:keys [id]} arguments
-                  entity-id (parse-long id)]
-              {:response (schema/pull-and-resolve-entity-value schema entity-id initial-db entity-name selected-paths)})
+      "get" {:response (schema/pull-and-resolve-entity-value schema entity-id initial-db entity-name selected-paths)}
       "list" (let [gql-fields (->> selected-paths
                                    (filter #(s/starts-with? % "values/"))
                                    (map #(s/replace % #"^values/" ""))
                                    (filter #(not (s/includes? % "/")))
                                    set)
-                   {:keys [page]} arguments
                    entities   (schema/get-entities-sorted initial-db entity-name)
                    page-info  (utils/page-info page (count entities))
                    pattern    (schema/gen-pull-pattern schema entity-name gql-fields)
@@ -182,8 +181,7 @@
                                    (schema/reverse-pull-pattern schema entity-name gql-fields))]
                {:response {"info"   page-info
                            "values" entities}})
-      "create" (let [{:keys [session value]} arguments
-                     input         (walk/stringify-keys value)
+      "create" (let [input         (walk/stringify-keys value)
                      temp-id       "temp-id"
                      input-data    (-> (schema/resolve-input-fields schema input entity-name)
                                        (assoc :db/id temp-id))
@@ -200,9 +198,7 @@
                                      default-paths)]
                   :response        entity-value})
       "replace" nil                                         ; TODO
-      "delete" (let [{:keys [id session]} arguments
-                     entity-id     (parse-long id)
-                     default-paths (schema/get-default-paths schema entity-name)
+      "delete" (let [default-paths (schema/get-default-paths schema entity-name)
                      paths         (set/union selected-paths default-paths)
                      entity-value  (schema/pull-and-resolve-entity-value schema entity-id initial-db entity-name paths)]
                  (if (nil? entity-value)
