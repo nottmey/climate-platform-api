@@ -42,18 +42,18 @@
    :gen-graphql-field (fn [prefix entity _]
                         (fields/publish-mutation prefix entity))})
 
-(def publish-deleted-op
+(def publish-updated-op
   {:parent-type       types/mutation-type
-   :prefix            "publishDeleted"
+   :prefix            "publishUpdated"
    :resolver          :js-file
    :resolver-file     "cdk/publishPipelineResolver.js"
    ; TODO extract into functions:
    :gen-graphql-field (fn [prefix entity _]
                         (fields/publish-mutation prefix entity))})
 
-(def publish-updated-op
+(def publish-deleted-op
   {:parent-type       types/mutation-type
-   :prefix            "publishUpdated"
+   :prefix            "publishDeleted"
    :resolver          :js-file
    :resolver-file     "cdk/publishPipelineResolver.js"
    ; TODO extract into functions:
