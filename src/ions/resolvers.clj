@@ -24,7 +24,7 @@
                    (filter #(and (not (str/includes? (name field-name) "Entity"))
                                  (ops/resolves-graphql-field? % field-name)))
                    first)]
-    ((:resolve-field-data op) (:prefix op) args)
+    (ops/resolve-field op args)
     (resolve-static-type-field args)))
 
 (comment
