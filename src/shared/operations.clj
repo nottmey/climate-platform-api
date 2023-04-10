@@ -94,44 +94,47 @@
 (comment
   (all :any))
 
-(defn gen-field-name [op entity]
-  (str (:prefix op) (name entity)))
+(defn gen-field-name [op entity-name]
+  (str (:prefix op) (name entity-name)))
 
-(defn gen-graphql-field [op entity fields]
+(defn gen-entity-name [op field-name]
+  (s/replace (name field-name) (:prefix op) ""))
+
+(defn gen-graphql-field [op entity-name fields]
   (let [{:keys [prefix]} op
-        field-name (gen-field-name op entity)]
+        field-name (gen-field-name op entity-name)]
     (case prefix
-      "publishCreated" (fields/publish-mutation field-name entity)
-      "publishUpdated" (fields/publish-mutation field-name entity)
-      "publishDeleted" (fields/publish-mutation field-name entity)
-      "get" (fields/get-query field-name entity)
-      "list" (fields/list-page-query field-name entity)
+      "publishCreated" (fields/publish-mutation field-name entity-name)
+      "publishUpdated" (fields/publish-mutation field-name entity-name)
+      "publishDeleted" (fields/publish-mutation field-name entity-name)
+      "get" (fields/get-query field-name entity-name)
+      "list" (fields/list-page-query field-name entity-name)
       "create" {:name           field-name
                 :arguments      [arguments/optional-session
                                  {:name           "value"
-                                  :type           (types/input-type entity)
+                                  :type           (types/input-type entity-name)
                                   :required-type? true}]
-                :type           entity
+                :type           entity-name
                 :required-type? true}
       "replace" {:name      field-name
                  :arguments [arguments/required-id
                              arguments/optional-session
                              {:name           "value"
-                              :type           (types/input-type entity)
+                              :type           (types/input-type entity-name)
                               :required-type? true}]
-                 :type      entity}
+                 :type      entity-name}
       "delete" {:name      field-name
                 :arguments [arguments/required-id
                             arguments/optional-session]
-                :type      entity}
-      "onCreated" (fields/subscription field-name entity fields (gen-field-name publish-created-op entity))
-      "onUpdated" (fields/subscription field-name entity fields (gen-field-name publish-updated-op entity))
-      "onDeleted" (fields/subscription field-name entity fields (gen-field-name publish-deleted-op entity)))))
+                :type      entity-name}
+      "onCreated" (fields/subscription field-name entity-name fields (gen-field-name publish-created-op entity-name))
+      "onUpdated" (fields/subscription field-name entity-name fields (gen-field-name publish-updated-op entity-name))
+      "onDeleted" (fields/subscription field-name entity-name fields (gen-field-name publish-deleted-op entity-name)))))
 
-(defn gen-graphql-object-types [op entity]
+(defn gen-graphql-object-types [op entity-name]
   (let [{:keys [prefix]} op]
     (case prefix
-      "list" [(objects/list-page entity)]
+      "list" [(objects/list-page entity-name)]
       nil)))
 
 (defn create-publish-definition [publish-op gql-type entity default-paths]
@@ -157,61 +160,58 @@
 
 (defn resolve-field [op args]
   (let [{:keys [prefix]} op
-        {:keys [conn initial-db schema field-name selected-paths arguments]} args]
+        {:keys [conn initial-db schema field-name selected-paths arguments]} args
+        entity-name (gen-entity-name op (name field-name))]
     (case prefix
-      "get" (let [gql-type  (s/replace (name field-name) prefix "")
-                  {:keys [id]} arguments
+      "get" (let [{:keys [id]} arguments
                   entity-id (parse-long id)]
-              {:response (schema/pull-and-resolve-entity schema entity-id initial-db gql-type selected-paths)})
-      "list" (let [gql-type   (s/replace (name field-name) prefix "")
-                   gql-fields (->> selected-paths
+              {:response (schema/pull-and-resolve-entity-value schema entity-id initial-db entity-name selected-paths)})
+      "list" (let [gql-fields (->> selected-paths
                                    (filter #(s/starts-with? % "values/"))
                                    (map #(s/replace % #"^values/" ""))
                                    (filter #(not (s/includes? % "/")))
                                    set)
                    {:keys [page]} arguments
-                   entities   (schema/get-entities-sorted initial-db gql-type)
+                   entities   (schema/get-entities-sorted initial-db entity-name)
                    page-info  (utils/page-info page (count entities))
-                   pattern    (schema/gen-pull-pattern schema gql-type gql-fields)
+                   pattern    (schema/gen-pull-pattern schema entity-name gql-fields)
                    entities   (->> entities
                                    (drop (get page-info "offset"))
                                    (take (get page-info "size"))
                                    (queries/pull-entities initial-db pattern)
-                                   (schema/reverse-pull-pattern schema gql-type gql-fields))]
+                                   (schema/reverse-pull-pattern schema entity-name gql-fields))]
                {:response {"info"   page-info
                            "values" entities}})
-      "create" (let [gql-type      (s/replace (name field-name) prefix "")
-                     {:keys [session value]} arguments
+      "create" (let [{:keys [session value]} arguments
                      input         (walk/stringify-keys value)
                      temp-id       "temp-id"
-                     input-data    (-> (schema/resolve-input-fields schema input gql-type)
+                     input-data    (-> (schema/resolve-input-fields schema input entity-name)
                                        (assoc :db/id temp-id))
                      {:keys [db-after tempids]} (d/transact conn {:tx-data [input-data]})
                      entity-id     (get tempids temp-id)
-                     default-paths (schema/get-default-paths schema gql-type)
+                     default-paths (schema/get-default-paths schema entity-name)
                      paths         (set/union selected-paths default-paths)
-                     entity        (-> (schema/pull-and-resolve-entity schema entity-id db-after gql-type paths)
+                     entity-value  (-> (schema/pull-and-resolve-entity-value schema entity-id db-after entity-name paths)
                                        (assoc "session" session))]
                  {:publish-queries [(create-publish-definition
                                      publish-created-op
-                                     gql-type
-                                     entity
+                                     entity-name
+                                     entity-value
                                      default-paths)]
-                  :response        entity})
+                  :response        entity-value})
       "replace" nil                                         ; TODO
-      "delete" (let [gql-type      (s/replace (name field-name) prefix "")
-                     {:keys [id session]} arguments
+      "delete" (let [{:keys [id session]} arguments
                      entity-id     (parse-long id)
-                     default-paths (schema/get-default-paths schema gql-type)
+                     default-paths (schema/get-default-paths schema entity-name)
                      paths         (set/union selected-paths default-paths)
-                     entity        (schema/pull-and-resolve-entity schema entity-id initial-db gql-type paths)]
-                 (if (nil? entity)
+                     entity-value  (schema/pull-and-resolve-entity-value schema entity-id initial-db entity-name paths)]
+                 (if (nil? entity-value)
                    nil
-                   (let [e-with-session (assoc entity "session" session)]
+                   (let [e-with-session (assoc entity-value "session" session)]
                      (d/transact conn {:tx-data [[:db/retractEntity entity-id]]})
                      {:publish-queries [(create-publish-definition
                                          publish-deleted-op
-                                         gql-type
+                                         entity-name
                                          e-with-session
                                          default-paths)]
                       :response        e-with-session}))))))

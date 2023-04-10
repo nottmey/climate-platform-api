@@ -111,7 +111,7 @@
         (assoc "id" (str (:db/id %))))
    pulled-entities))
 
-(defn pull-and-resolve-entity [schema entity-long-id db gql-type selected-paths]
+(defn pull-and-resolve-entity-value [schema entity-long-id db gql-type selected-paths]
   ; TODO nested fields
   (let [gql-fields (set (filter #(not (str/includes? % "/")) selected-paths))
         pattern    (gen-pull-pattern schema gql-type gql-fields)]
@@ -128,7 +128,7 @@
         db             (d/db conn)
         selected-paths #{"id" u/rel-field}
         schema         (get-schema db)
-        pulled-entity  (pull-and-resolve-entity schema entity-long-id db u/rel-type selected-paths)]
+        pulled-entity  (pull-and-resolve-entity-value schema entity-long-id db u/rel-type selected-paths)]
     (is (= {"id"        (str entity-long-id)
             u/rel-field u/rel-sample-value}
            pulled-entity))))
