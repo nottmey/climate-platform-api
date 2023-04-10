@@ -67,8 +67,6 @@
    :prefix                   "list"
    :resolver                 :datomic
    ; TODO extract into functions:
-   :gen-graphql-object-types (fn [entity]
-                               [(objects/list-page entity)])
    :resolve-field-data       (fn [prefix {:keys [initial-db schema field-name selected-paths arguments]}]
                                (let [gql-type   (s/replace (name field-name) prefix "")
                                      gql-fields (->> selected-paths
@@ -218,3 +216,9 @@
       "onCreated" (fields/subscription field-name entity fields (gen-field-name publish-created-op entity))
       "onUpdated" (fields/subscription field-name entity fields (gen-field-name publish-updated-op entity))
       "onDeleted" (fields/subscription field-name entity fields (gen-field-name publish-deleted-op entity)))))
+
+(defn gen-graphql-object-types [op entity]
+  (let [{:keys [prefix]} op]
+    (case prefix
+      "list" [(objects/list-page entity)]
+      nil)))

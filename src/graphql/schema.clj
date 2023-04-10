@@ -154,7 +154,7 @@
      (s/join
       (for [op          all-ops
             entity      (keys dynamic-schema-types)
-            object-type ((or (:gen-graphql-object-types op) (fn [_])) entity)]
+            object-type (ops/gen-graphql-object-types op entity)]
         (spec/object-type-definition object-type)))
      ;; entity framework & dynamic schema: mutation inputs & results
      (s/join
