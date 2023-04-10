@@ -122,8 +122,8 @@
      (spec/object-type-definition
       {:name   types/query-type
        :fields (concat
-                [(fields/get-query types/entity-type)
-                 (fields/list-page-query types/entity-type entity-filter-type)]
+                [(fields/get-query (str "get" (name types/entity-type)) types/entity-type)
+                 (fields/list-page-query (str "list" (name types/entity-type)) types/entity-type entity-filter-type)]
                 (for [op all-ops
                       :when (= (:parent-type op) types/query-type)
                       [entity fields] dynamic-schema-types]

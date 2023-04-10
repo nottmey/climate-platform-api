@@ -190,14 +190,13 @@
 
 (defn gen-graphql-field [op entity fields]
   (let [{:keys [prefix]} op
-        ; TODO use `field-name` consistently
         field-name (gen-field-name op entity)]
     (case prefix
-      "publishCreated" (fields/publish-mutation prefix entity)
-      "publishUpdated" (fields/publish-mutation prefix entity)
-      "publishDeleted" (fields/publish-mutation prefix entity)
-      "get" (fields/get-query entity)
-      "list" (fields/list-page-query entity)
+      "publishCreated" (fields/publish-mutation field-name entity)
+      "publishUpdated" (fields/publish-mutation field-name entity)
+      "publishDeleted" (fields/publish-mutation field-name entity)
+      "get" (fields/get-query field-name entity)
+      "list" (fields/list-page-query field-name entity)
       "create" {:name           field-name
                 :arguments      [arguments/optional-session
                                  {:name           "value"
@@ -216,6 +215,6 @@
                 :arguments [arguments/required-id
                             arguments/optional-session]
                 :type      entity}
-      "onCreated" (fields/subscription prefix entity fields (gen-field-name publish-created-op entity))
-      "onUpdated" (fields/subscription prefix entity fields (gen-field-name publish-updated-op entity))
-      "onDeleted" (fields/subscription prefix entity fields (gen-field-name publish-deleted-op entity)))))
+      "onCreated" (fields/subscription field-name entity fields (gen-field-name publish-created-op entity))
+      "onUpdated" (fields/subscription field-name entity fields (gen-field-name publish-updated-op entity))
+      "onDeleted" (fields/subscription field-name entity fields (gen-field-name publish-deleted-op entity)))))

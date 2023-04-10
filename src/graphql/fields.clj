@@ -12,15 +12,15 @@
   {:name :context
    :type types/json-type})
 
-(defn get-query [entity]
-  {:name      (keyword (str "get" (name entity)))
+(defn get-query [field-name entity]
+  {:name      field-name
    :arguments [arguments/required-id]
    :type      (name entity)})
 
 (defn list-page-query
-  ([entity] (list-page-query entity nil))
-  ([entity filter-type]
-   {:name           (keyword (str "list" (name entity)))
+  ([field-name entity] (list-page-query field-name entity nil))
+  ([field-name entity filter-type]
+   {:name           field-name
     :arguments      (concat
                      [{:name :page
                        :type types/page-query-type}]
@@ -30,8 +30,8 @@
     :type           (types/list-page-type entity)
     :required-type? true}))
 
-(defn publish-mutation [prefix entity]
-  {:name      (str prefix (name entity))
+(defn publish-mutation [field-name entity]
+  {:name      field-name
    :arguments [arguments/required-id
                arguments/optional-session
                {:name           "value"
@@ -39,9 +39,9 @@
                 :required-type? true}]
    :type      entity})
 
-(defn subscription [prefix entity fields mutation-name]
+(defn subscription [field-name entity fields mutation-name]
   {:docstring "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
-   :name      (str prefix (name entity))
+   :name      field-name
    :arguments (concat
                [arguments/optional-id
                 arguments/optional-session]
