@@ -5,8 +5,6 @@
    [clojure.test :refer [deftest is]]
    [clojure.walk :as walk]
    [datomic.access :as access]
-   [datomic.client.api :as d]
-   [datomic.schema :as schema]
    [ions.resolvers :as resolvers]
    [user :as u]))
 
@@ -124,16 +122,12 @@
                            ; making sure never to write to the real database in tests
                            (u/testing-conn)
                            (access/get-connection access/dev-env-db-name))
-        initial-db       (d/db conn)
-        schema           (schema/get-schema initial-db)
         publish          (if (u/test-mode?)
                            ; making sure never to publish to the real system in tests
                            u/testing-publish
                            (build-publish (get-in app-sync-context ["request" "headers"])))
         resolve-result   (resolvers/select-and-use-correct-resolver
                           {:conn             conn
-                           :initial-db       initial-db
-                           :schema           schema
                            :parent-type-name parent-type-name
                            :field-name       field-name
                            :selected-paths   selected-paths
