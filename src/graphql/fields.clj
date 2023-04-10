@@ -39,7 +39,7 @@
                 :required-type? true}]
    :type      entity})
 
-(defn subscription [prefix entity fields mutation-op]
+(defn subscription [prefix entity fields mutation-name]
   {:docstring "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
    :name      (str prefix (name entity))
    :arguments (concat
@@ -51,6 +51,4 @@
                    {:name field-name
                     :type type})))
    :type      entity
-   :directive (str "@aws_subscribe(mutations: [\""
-                   (:name ((:gen-graphql-field mutation-op) (:prefix mutation-op) entity {}))
-                   "\"])")})
+   :directive (str "@aws_subscribe(mutations: [\"" mutation-name "\"])")})

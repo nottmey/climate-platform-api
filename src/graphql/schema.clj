@@ -127,7 +127,7 @@
                 (for [op all-ops
                       :when (= (:parent-type op) types/query-type)
                       [entity fields] dynamic-schema-types]
-                  ((:gen-graphql-field op) (:prefix op) entity fields)))})
+                  (ops/gen-graphql-field op entity fields)))})
      (spec/object-type-definition
       {:name   types/entity-type
        :fields [fields/context
@@ -168,14 +168,14 @@
        :fields (for [op all-ops
                      :when (= (:parent-type op) types/mutation-type)
                      [entity fields] dynamic-schema-types]
-                 ((:gen-graphql-field op) (:prefix op) entity fields))})
+                 (ops/gen-graphql-field op entity fields))})
      (spec/object-type-definition
       {:name           types/subscription-type
        :spaced-fields? true
        :fields         (for [op all-ops
                              :when (= (:parent-type op) types/subscription-type)
                              [entity fields] dynamic-schema-types]
-                         ((:gen-graphql-field op) (:prefix op) entity fields))}))))
+                         (ops/gen-graphql-field op entity fields))}))))
 
 (comment
   (let [schema (str (generate (u/temp-conn)))]

@@ -96,7 +96,7 @@
       (doseq [op           (ops/all :any)
               graphql-type dynamic-graphql-types
               :let [type-name  (:parent-type op)
-                    field-name (:name ((:gen-graphql-field op) (:prefix op) graphql-type {}))]]
+                    field-name (:name (ops/gen-graphql-field op graphql-type {}))]]
         (case (:resolver op)
           :datomic (configure-datomic-resolver
                     type-name
