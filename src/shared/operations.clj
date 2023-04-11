@@ -1,7 +1,7 @@
 (ns shared.operations
   (:require
    [clojure.set :as set]
-   [clojure.string :as s]
+   [clojure.string :as str]
    [clojure.test :refer [deftest is]]
    [clojure.walk :as walk]
    [datomic.client.api :as d]
@@ -12,7 +12,8 @@
    [graphql.objects :as objects]
    [graphql.spec :as spec]
    [graphql.types :as types]
-   [ions.utils :as utils]))
+   [ions.utils :as utils]
+   [user :as u]))
 
 (def publish-created-op
   {:parent-type   types/mutation-type
@@ -98,7 +99,7 @@
   (str (:prefix op) (name entity-name)))
 
 (defn gen-entity-name [op field-name]
-  (s/replace (name field-name) (:prefix op) ""))
+  (str/replace (name field-name) (:prefix op) ""))
 
 (defn gen-graphql-field [op entity-name fields]
   (let [{:keys [prefix]} op
@@ -152,7 +153,7 @@
                               (into []))}]}))
 
 (defn resolves-graphql-field? [op field-name]
-  (s/starts-with? (name field-name) (:prefix op)))
+  (str/starts-with? (name field-name) (:prefix op)))
 
 (defn resolve-field [op args]
   (let [{:keys [prefix]} op
@@ -165,9 +166,9 @@
     (case prefix
       "get" {:response (schema/pull-and-resolve-entity-value schema entity-id db-before entity-name selected-paths)}
       "list" (let [gql-fields (->> selected-paths
-                                   (filter #(s/starts-with? % "values/"))
-                                   (map #(s/replace % #"^values/" ""))
-                                   (filter #(not (s/includes? % "/")))
+                                   (filter #(str/starts-with? % "values/"))
+                                   (map #(str/replace % #"^values/" ""))
+                                   (filter #(not (str/includes? % "/")))
                                    set)
                    entities   (schema/get-entities-sorted db-before entity-name)
                    page-info  (utils/page-info page (count entities))
@@ -195,7 +196,21 @@
                                      entity-value
                                      default-paths)]
                   :response        entity-value})
-      "merge" nil                                           ; TODO
+      "merge" (let [input         (walk/stringify-keys value)
+                    input-data    (-> (schema/resolve-input-fields schema input entity-name)
+                                      (assoc :db/id entity-id))
+                    ; TODO validate id to be not nil -> error reporting
+                    {:keys [db-after]} (d/transact conn {:tx-data [input-data]})
+                    default-paths (schema/get-default-paths schema entity-name)
+                    paths         (set/union selected-paths default-paths)
+                    entity-value  (-> (schema/pull-and-resolve-entity-value schema entity-id db-after entity-name paths)
+                                      (assoc "session" session))]
+                {:publish-queries [(create-publish-definition
+                                    publish-updated-op
+                                    entity-name
+                                    entity-value
+                                    default-paths)]
+                 :response        entity-value})
       "delete" (let [default-paths (schema/get-default-paths schema entity-name)
                      paths         (set/union selected-paths default-paths)
                      entity-value  (schema/pull-and-resolve-entity-value schema entity-id db-before entity-name paths)]
@@ -209,3 +224,37 @@
                                          e-with-session
                                          default-paths)]
                       :response        e-with-session}))))))
+
+(deftest resolve-merge-test
+  (let [conn         (u/temp-conn)
+        {:keys [tempids]} (d/transact
+                           conn
+                           {:tx-data [{:db/id          "tempid"
+                                       u/rel-attribute u/rel-sample-value
+                                       :db/doc         "other attr value"}]})
+        entity-id    (get tempids "tempid")
+        entity-value (d/pull (d/db conn) '[*] entity-id)]
+    (is (= {:db/id          entity-id
+            u/rel-attribute u/rel-sample-value
+            :db/doc         "other attr value"}
+           entity-value))
+    (let [result    (resolve-field
+                     merge-op
+                     {:conn       conn
+                      :field-name (str "merge" u/rel-type)
+                      :arguments  {:id      (str entity-id)
+                                   :session "device-1"
+                                   :value   {u/rel-field "123"}}})
+          {:keys [response publish-queries]} result
+          new-value (d/pull (d/db conn) '[*] entity-id)]
+      (is (= {"id"        (str entity-id)
+              "session"   "device-1"
+              u/rel-field "123"}
+             response))
+      (is (= {:db/id          entity-id
+              u/rel-attribute "123"
+              :db/doc         "other attr value"}
+             new-value))
+      (is (= "mutation PublishUpdatedPlanetaryBoundary { publishUpdatedPlanetaryBoundary(id: \"<id>\", session: \"device-1\", value: {name: \"123\"}) { id name session } }"
+             (-> (first publish-queries)
+                 (str/replace (str entity-id) "<id>")))))))
