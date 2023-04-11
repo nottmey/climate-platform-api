@@ -199,7 +199,7 @@
       "merge" (let [input         (walk/stringify-keys value)
                     input-data    (-> (schema/resolve-input-fields schema input entity-name)
                                       (assoc :db/id entity-id))
-                    ; TODO validate id to be not nil -> error reporting
+                    ; TODO validate id -> return nil if not present
                     {:keys [db-after]} (d/transact conn {:tx-data [input-data]})
                     default-paths (schema/get-default-paths schema entity-name)
                     paths         (set/union selected-paths default-paths)
