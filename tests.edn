@@ -2,7 +2,8 @@
                          :cloverage/opts {:codecov?         true
                                           :exclude-call     [clojure.test/deftest]
                                           :ns-exclude-regex ["user"
-                                                             "cdk.*"]}
+                                                             "cdk.*"
+                                                             "ai.*"]}
                          :tests          [{:id          :unit
                                            :ns-patterns [""]
                                            :test-paths  ["src"
