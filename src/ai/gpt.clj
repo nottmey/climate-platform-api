@@ -46,6 +46,7 @@
 (def api-key "...")
 
 (comment
+  ; TODO add "create via ai" operation
   (list-models api-key)
 
   (complete-text "How is \"How are you?\" pronounced in 1. French, 2. Spanish and 3. Japanese? Use english language to describe it." "text-davinci-003" 200 api-key)
