@@ -170,7 +170,8 @@
                                          "79"
                                          "80"
                                          "81"
-                                         "82"]}
+                                         "82"
+                                         "83"]}
                           {"id"         "63",
                            "name"       ":db/doc",
                            "__typename" "StringAttribute",

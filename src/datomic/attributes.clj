@@ -51,7 +51,11 @@
   [{:db/ident       :platform/name
     :db/valueType   :db.type/string
     :db/cardinality :db.cardinality/one
-    :db/doc         "Name of any non-user platform entity."}])
+    :db/doc         "Name of any non-user platform entity."}
+   {:db/ident       :platform/description
+    :db/valueType   :db.type/string
+    :db/cardinality :db.cardinality/one
+    :db/doc         "Description of any non-user platform entity."}])
 
 (defn add-value-field-tx-data [type-name field-name attribute]
   [{:db/id             type-name

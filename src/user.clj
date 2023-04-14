@@ -78,6 +78,13 @@
        (empty-tx-result conn "empty transaction")
        (d/transact conn {:tx-data tx-data})))))
 
+(comment
+  (ensure-schema attributes/platform-attributes access/dev-env-db-name)
+
+  (d/transact
+   (access/get-connection access/dev-env-db-name)
+   {:tx-data (attributes/add-value-field-tx-data "PlanetaryBoundary" "description" :platform/description)}))
+
 (defn ensure-data
   ([tx-data db-name]
    {:pre [(every? map? tx-data)]}
