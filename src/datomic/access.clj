@@ -13,10 +13,16 @@
 
 (def dev-env-db-name "development")
 
-(defn- load-client []
+(defn load-config []
   (if-let [r (io/resource client-config-path)]
-    (d/client (edn/read-string (slurp r)))
+    (edn/read-string (slurp r))
     (throw (RuntimeException. (str "Missing " client-config-path)))))
+
+(defn- load-client []
+  (d/client (load-config)))
+
+(comment
+  (d/list-databases (load-client) {}))
 
 (declare thrown?)
 (deftest load-client-test

@@ -8,6 +8,13 @@
   (:import
    (clojure.lang ExceptionInfo)))
 
+(comment
+  ; doesn't seem to work :(
+  #_(datomic.dev-local/divert-system {:system "climate-platform"})
+
+  ; only shows "development" when not using divert-system...
+  (d/list-databases (d/client (access/load-config)) {}))
+
 (defn test-mode? []
   (boolean (seq *testing-vars*)))
 
