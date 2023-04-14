@@ -144,6 +144,7 @@
             db
             type-name)
        (map first)
+       (distinct)
        (sort)))
 
 (comment
