@@ -134,17 +134,17 @@
            pulled-entity))))
 
 (defn get-entities-sorted [db type-name]
-  (->> (d/q '[:find (min ?t) ?e
+  (->> (d/q '[:find ?e
               :in $ ?type-name
               :where
               [?type :graphql.type/name ?type-name]
               [?rel :graphql.relation/type ?type]
               [?rel :graphql.relation/attribute ?a]
-              [?e ?a _ ?t]]
+              [?e ?a]]
             db
             type-name)
-       (sort-by first)
-       (map last)))
+       (map first)
+       (sort)))
 
 (comment
   (let [conn    (u/temp-conn)
