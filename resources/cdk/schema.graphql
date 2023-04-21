@@ -118,7 +118,13 @@ type Entity {
 }
 
 #generated, do not edit manually!
-type PlanetaryBoundary {
+interface EntityBase {
+    id: ID!
+    session: ID
+}
+
+#generated, do not edit manually!
+type PlanetaryBoundary implements EntityBase {
     context: AWSJSON
     id: ID!
     session: ID

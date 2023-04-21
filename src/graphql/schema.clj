@@ -67,9 +67,7 @@
 (defn generate [conn]
   (let [dynamic-schema-types (:types (framework/get-schema (d/db conn)))
         entity-filter-type   (keyword (str (name types/entity-type) "Filter"))
-        attribute-fields     [{:name           :id
-                               :type           types/id-type
-                               :required-type? true}
+        attribute-fields     [fields/required-id
                               {:name           :name
                                :type           types/string-type
                                :required-type? true}]
@@ -139,16 +137,21 @@
                  :list?          true
                  :required-type? true
                  :required-list? true}]})
+     (spec/interface-type-definition
+      {:name   types/entity-base-type
+       :fields [fields/required-id
+                fields/optional-session]})
      (s/join
       (for [[entity fields] dynamic-schema-types]
         ; always generate all dynamic entity types
         (spec/object-type-definition
-         {:name   entity
-          :fields (concat
-                   [fields/context
-                    fields/required-id
-                    fields/optional-session]
-                   (gen-entity-fields (vals fields)))})))
+         {:name       entity
+          :interfaces [types/entity-base-type]
+          :fields     (concat
+                       [fields/context
+                        fields/required-id
+                        fields/optional-session]
+                       (gen-entity-fields (vals fields)))})))
      (spec/object-type-definition
       (objects/list-page types/entity-type))
      (s/join

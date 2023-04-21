@@ -44,6 +44,7 @@
 
 ; Own Types
 (def entity-type :Entity)
+(def entity-base-type :EntityBase)
 (def attribute-type :Attribute)
 (def page-info-type :PageInfo)
 (def page-query-type :PageQuery)
