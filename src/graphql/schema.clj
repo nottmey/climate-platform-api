@@ -73,7 +73,7 @@
                               {:name           :name
                                :type           types/string-type
                                :required-type? true}]
-        all-ops              (ops/all :any)]
+        all-ops              (ops/all ::ops/any)]
     (str
      ;; static (db independent) schema
      (spec/schema-definition
@@ -125,7 +125,7 @@
                 [(fields/get-query (str "get" (name types/entity-type)) types/entity-type)
                  (fields/list-page-query (str "list" (name types/entity-type)) types/entity-type entity-filter-type)]
                 (for [op all-ops
-                      :when (= (:parent-type op) types/query-type)
+                      :when (= (::ops/parent-type op) types/query-type)
                       [entity fields] dynamic-schema-types]
                   (ops/gen-graphql-field op entity fields)))})
      (spec/object-type-definition
@@ -166,14 +166,14 @@
      (spec/object-type-definition
       {:name   types/mutation-type
        :fields (for [op all-ops
-                     :when (= (:parent-type op) types/mutation-type)
+                     :when (= (::ops/parent-type op) types/mutation-type)
                      [entity fields] dynamic-schema-types]
                  (ops/gen-graphql-field op entity fields))})
      (spec/object-type-definition
       {:name           types/subscription-type
        :spaced-fields? true
        :fields         (for [op all-ops
-                             :when (= (:parent-type op) types/subscription-type)
+                             :when (= (::ops/parent-type op) types/subscription-type)
                              [entity fields] dynamic-schema-types]
                          (ops/gen-graphql-field op entity fields))}))))
 

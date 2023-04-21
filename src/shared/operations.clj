@@ -16,69 +16,67 @@
    [user :as u])
   (:import (java.util UUID)))
 
-; TODO namespace keys
-
 (def publish-created-op
-  {:parent-type      types/mutation-type
-   :prefix           "publishCreated"
-   :resolver         :js-file
-   :resolver-options {:file         "cdk/publishPipelineResolver.js"
-                      :requires-id? true}})
+  {::parent-type      types/mutation-type
+   ::prefix           "publishCreated"
+   ::resolver         ::js-file
+   ::resolver-options {::file         "cdk/publishPipelineResolver.js"
+                       ::requires-id? true}})
 
 (def publish-updated-op
-  {:parent-type      types/mutation-type
-   :prefix           "publishUpdated"
-   :resolver         :js-file
-   :resolver-options {:file         "cdk/publishPipelineResolver.js"
-                      :requires-id? true}})
+  {::parent-type      types/mutation-type
+   ::prefix           "publishUpdated"
+   ::resolver         ::js-file
+   ::resolver-options {::file         "cdk/publishPipelineResolver.js"
+                       ::requires-id? true}})
 
 (def publish-deleted-op
-  {:parent-type      types/mutation-type
-   :prefix           "publishDeleted"
-   :resolver         :js-file
-   :resolver-options {:file         "cdk/publishPipelineResolver.js"
-                      :requires-id? true}})
+  {::parent-type      types/mutation-type
+   ::prefix           "publishDeleted"
+   ::resolver         ::js-file
+   ::resolver-options {::file         "cdk/publishPipelineResolver.js"
+                       ::requires-id? true}})
 
 (def get-op
-  {:parent-type      types/query-type
-   :prefix           "get"
-   :resolver         :datomic
-   :resolver-options {:requires-id? true}})
+  {::parent-type      types/query-type
+   ::prefix           "get"
+   ::resolver         ::datomic
+   ::resolver-options {::requires-id? true}})
 
 (def list-op
-  {:parent-type types/query-type
-   :prefix      "list"
-   :resolver    :datomic})
+  {::parent-type types/query-type
+   ::prefix      "list"
+   ::resolver    ::datomic})
 
 (def create-op
-  {:parent-type      types/mutation-type
-   :prefix           "create"
-   :resolver         :datomic
-   :resolver-options {:requires-id? true}})
+  {::parent-type      types/mutation-type
+   ::prefix           "create"
+   ::resolver         ::datomic
+   ::resolver-options {::requires-id? true}})
 
 (def merge-op
-  {:parent-type      types/mutation-type
-   :prefix           "merge"
-   :resolver         :datomic
-   :resolver-options {:requires-id? true}})
+  {::parent-type      types/mutation-type
+   ::prefix           "merge"
+   ::resolver         ::datomic
+   ::resolver-options {::requires-id? true}})
 
 (def delete-op
-  {:parent-type      types/mutation-type
-   :prefix           "delete"
-   :resolver         :datomic
-   :resolver-options {:requires-id? true}})
+  {::parent-type      types/mutation-type
+   ::prefix           "delete"
+   ::resolver         ::datomic
+   ::resolver-options {::requires-id? true}})
 
 (def on-created-op
-  {:parent-type types/subscription-type
-   :prefix      "onCreated"})
+  {::parent-type types/subscription-type
+   ::prefix      "onCreated"})
 
 (def on-updated-op
-  {:parent-type types/subscription-type
-   :prefix      "onUpdated"})
+  {::parent-type types/subscription-type
+   ::prefix      "onUpdated"})
 
 (def on-deleted-op
-  {:parent-type types/subscription-type
-   :prefix      "onDeleted"})
+  {::parent-type types/subscription-type
+   ::prefix      "onDeleted"})
 
 (defn all [resolver-location]
   (->> [publish-created-op
@@ -92,27 +90,27 @@
         on-created-op
         on-updated-op
         on-deleted-op]
-       (filter #(or (= resolver-location :any)
-                    (= (:resolver %) resolver-location)))))
+       (filter #(or (= resolver-location ::any)
+                    (= (::resolver %) resolver-location)))))
 
 (deftest all-test
-  (is (< 0 (count (all :any))))
-  (is (< 0 (count (all :datomic))))
+  (is (< 0 (count (all ::any))))
+  (is (< 0 (count (all ::datomic))))
   (is (every?
-       #(= (:resolver %) :datomic)
-       (all :datomic))))
+       #(= (::resolver %) ::datomic)
+       (all ::datomic))))
 
 (comment
-  (all :any))
+  (all ::any))
 
 (defn gen-field-name [op entity-name]
-  (str (:prefix op) (name entity-name)))
+  (str (::prefix op) (name entity-name)))
 
 (defn gen-entity-name [op field-name]
-  (str/replace (name field-name) (:prefix op) ""))
+  (str/replace (name field-name) (::prefix op) ""))
 
 (defn gen-graphql-field [op entity-name fields]
-  (let [{:keys [prefix]} op
+  (let [{:keys [shared.operations/prefix]} op
         field-name (gen-field-name op entity-name)]
     (case prefix
       "publishCreated" (fields/publish-mutation field-name entity-name)
@@ -140,7 +138,7 @@
       "onDeleted" (fields/subscription field-name entity-name fields (gen-field-name publish-deleted-op entity-name)))))
 
 (defn gen-graphql-object-types [op entity-name]
-  (let [{:keys [prefix]} op]
+  (let [{:keys [shared.operations/prefix]} op]
     (case prefix
       "list" [(objects/list-page entity-name)]
       nil)))
@@ -164,7 +162,7 @@
                               (into []))}]}))
 
 (defn resolves-graphql-field? [op field-name]
-  (str/starts-with? (name field-name) (:prefix op)))
+  (str/starts-with? (name field-name) (::prefix op)))
 
 (defn graphql-error [^String msg]
   ; TODO find better way to report errors in resolver lambdas for appsync (throwing seems to be the only way)
@@ -174,8 +172,8 @@
     (.setStackTrace (make-array StackTraceElement 0))))
 
 (defn resolve-field [op args]
-  (let [{:keys [prefix resolver-options]} op
-        {:keys [requires-id?]} resolver-options
+  (let [{:keys [shared.operations/prefix shared.operations/resolver-options]} op
+        {:keys [shared.operations/requires-id?]} resolver-options
         {:keys [conn field-name selected-paths arguments]} args
         {:keys [id page session value]} (or arguments {})
         entity-id   (when id (parse-uuid id))
