@@ -14,8 +14,8 @@
 (comment
   (get-attribute-index (u/temp-db)))
 
-(defn pull-entities [db pattern entities]
-  (->> entities
+(defn pull-entities [db pattern entity-ids]
+  (->> entity-ids
        (map-indexed vector)
        (d/q '[:find ?idx (pull ?e pattern)
               :in $ pattern [[?idx ?e]]
@@ -25,3 +25,12 @@
 
 (comment
   (pull-entities (u/temp-db) '[:db/doc] [0 1 2 3 4 5]))
+
+(defn pull-platform-entities [db pattern entity-uuids]
+  (->> entity-uuids
+       (map-indexed vector)
+       (d/q '[:find ?idx (pull ?e pattern)
+              :in $ pattern [[?idx ?id]]
+              :where [?e :platform/id ?id]] db pattern)
+       (sort-by first)
+       (map second)))

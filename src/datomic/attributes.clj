@@ -48,7 +48,15 @@
     :db/doc         (graphql-doc "Whether the forward or backwards reference of this relations reference attribute should be pulled, when requested in the GraphQL API. Default: `true`.")}])
 
 (def platform-attributes
-  [{:db/ident       :platform/name
+  [{:db/ident       :platform/id
+    :db/valueType   :db.type/uuid
+    :db/cardinality :db.cardinality/one
+    :db/unique      :db.unique/identity
+    :db/doc         "Client generated external UUID for any non-user platform entity.
+
+                     It allows clients to have a simpler structure, because they can
+                     assume that they have a correct id before creating an entity."}
+   {:db/ident       :platform/name
     :db/valueType   :db.type/string
     :db/cardinality :db.cardinality/one
     :db/doc         "Name of any non-user platform entity."}

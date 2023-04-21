@@ -104,5 +104,5 @@
           :js-file (configure-js-pipeline-resolver
                     type-name
                     field-name
-                    (slurp (io/resource (:resolver-file op))))
+                    (slurp (io/resource (-> op :resolver-options :file))))
           :none)))))

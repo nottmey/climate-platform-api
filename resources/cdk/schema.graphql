@@ -149,7 +149,7 @@ type Mutation {
     publishCreatedPlanetaryBoundary(id: ID!, session: ID, value: PlanetaryBoundaryInput!): PlanetaryBoundary
     publishUpdatedPlanetaryBoundary(id: ID!, session: ID, value: PlanetaryBoundaryInput!): PlanetaryBoundary
     publishDeletedPlanetaryBoundary(id: ID!, session: ID, value: PlanetaryBoundaryInput!): PlanetaryBoundary
-    createPlanetaryBoundary(session: ID, value: PlanetaryBoundaryInput!): PlanetaryBoundary!
+    createPlanetaryBoundary(id: ID!, session: ID, value: PlanetaryBoundaryInput!): PlanetaryBoundary!
     mergePlanetaryBoundary(id: ID!, session: ID, value: PlanetaryBoundaryInput!): PlanetaryBoundary
     deletePlanetaryBoundary(id: ID!, session: ID): PlanetaryBoundary
 }

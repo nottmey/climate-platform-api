@@ -90,7 +90,7 @@
   (time (resolve-static-type-field {:conn             (u/temp-conn)
                                     :parent-type-name :Query
                                     :field-name       :listEntity
-                                    :arguments        {:filter {:attributes ["50" "77"]}
-                                                       :page   {:number 0
-                                                                :size   20}}})))
+                                    :arguments        {#_#_:filter {:attributes ["50" "77"]}
+                                                       #_#_:page {:number 0
+                                                                  :size   20}}})))
 

@@ -5,7 +5,8 @@
    [datomic.client.api :as d]
    [datomic.queries :as queries]
    [shared.attributes :as attributes]
-   [user :as u]))
+   [user :as u])
+  (:import (java.util UUID)))
 
 (defn get-schema [db]
   (let [base (->> (d/q '[:find (pull ?rel [:graphql.relation/field
@@ -80,7 +81,7 @@
   (-> (->> (disj gql-fields "id" "session")
            (map #(get-in schema [:types gql-type % :graphql.relation/attribute :db/ident]))
            distinct)
-      (conj :db/id)))
+      (conj :platform/id)))
 
 (comment
   (gen-pull-pattern (get-schema (u/temp-db)) u/rel-type #{"id" u/rel-field}))
@@ -88,7 +89,8 @@
 (deftest gen-pull-pattern-test
   (let [schema  (get-schema (u/temp-db))
         pattern (gen-pull-pattern schema u/rel-type #{"id" u/rel-field})]
-    (is (= [:db/id u/rel-attribute] pattern))))
+    (is (= [:platform/id u/rel-attribute]
+           pattern))))
 
 (defn reverse-pull-pattern [schema gql-type gql-fields pulled-entities]
   ; TODO reverse nested values
@@ -108,39 +110,40 @@
                           (:db/ident (:db/valueType attribute))
                           (:db/ident (:db/cardinality attribute)))])))))
          (into {}))
-        (assoc "id" (str (:db/id %))))
+        (assoc "id" (str (:platform/id %))))
    pulled-entities))
 
-(defn pull-and-resolve-entity-value [schema entity-long-id db gql-type selected-paths]
+(defn pull-and-resolve-entity-value [schema entity-uuid db gql-type selected-paths]
   ; TODO nested fields
+  ; TODO continue using entity-uuid
   (let [gql-fields (set (filter #(not (str/includes? % "/")) selected-paths))
         pattern    (gen-pull-pattern schema gql-type gql-fields)]
-    (->> [entity-long-id]
-         (queries/pull-entities db pattern)
+    (->> [entity-uuid]
+         (queries/pull-platform-entities db pattern)
          (reverse-pull-pattern schema gql-type gql-fields)
          first)))
 
 (deftest pull-and-resolve-entity-test
   (let [conn           (u/temp-conn)
-        added-data     (d/transact conn {:tx-data [{:db/id          "entity id"
-                                                    u/rel-attribute u/rel-sample-value}]})
-        entity-long-id (get-in added-data [:tempids "entity id"])
-        db             (d/db conn)
+        entity-uuid    (UUID/randomUUID)
+        {:keys [db-after]} (d/transact conn {:tx-data [{:platform/id    entity-uuid
+                                                        u/rel-attribute u/rel-sample-value}]})
         selected-paths #{"id" u/rel-field}
-        schema         (get-schema db)
-        pulled-entity  (pull-and-resolve-entity-value schema entity-long-id db u/rel-type selected-paths)]
-    (is (= {"id"        (str entity-long-id)
+        schema         (get-schema db-after)
+        pulled-entity  (pull-and-resolve-entity-value schema entity-uuid db-after u/rel-type selected-paths)]
+    (is (= {"id"        (str entity-uuid)
             u/rel-field u/rel-sample-value}
            pulled-entity))))
 
 (defn get-entities-sorted [db type-name]
-  (->> (d/q '[:find ?e
+  (->> (d/q '[:find ?id
               :in $ ?type-name
               :where
               [?type :graphql.type/name ?type-name]
               [?rel :graphql.relation/type ?type]
               [?rel :graphql.relation/attribute ?a]
-              [?e ?a]]
+              [?e ?a]
+              [?e :platform/id ?id]]
             db
             type-name)
        (map first)
@@ -149,6 +152,7 @@
 
 (comment
   (let [conn    (u/temp-conn)
-        example {u/rel-attribute u/rel-sample-value}]
-    (d/transact conn {:tx-data [example example example example example]})
+        example (fn [] {:platform/id    (UUID/randomUUID)
+                        u/rel-attribute u/rel-sample-value})]
+    (d/transact conn {:tx-data [(example) (example) (example) (example) (example)]})
     (get-entities-sorted (d/db conn) u/rel-type)))

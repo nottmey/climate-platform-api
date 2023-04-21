@@ -13,30 +13,37 @@
    [graphql.spec :as spec]
    [graphql.types :as types]
    [ions.utils :as utils]
-   [user :as u]))
+   [user :as u])
+  (:import (java.util UUID)))
+
+; TODO namespace keys
 
 (def publish-created-op
-  {:parent-type   types/mutation-type
-   :prefix        "publishCreated"
-   :resolver      :js-file
-   :resolver-file "cdk/publishPipelineResolver.js"})
+  {:parent-type      types/mutation-type
+   :prefix           "publishCreated"
+   :resolver         :js-file
+   :resolver-options {:file         "cdk/publishPipelineResolver.js"
+                      :requires-id? true}})
 
 (def publish-updated-op
-  {:parent-type   types/mutation-type
-   :prefix        "publishUpdated"
-   :resolver      :js-file
-   :resolver-file "cdk/publishPipelineResolver.js"})
+  {:parent-type      types/mutation-type
+   :prefix           "publishUpdated"
+   :resolver         :js-file
+   :resolver-options {:file         "cdk/publishPipelineResolver.js"
+                      :requires-id? true}})
 
 (def publish-deleted-op
-  {:parent-type   types/mutation-type
-   :prefix        "publishDeleted"
-   :resolver      :js-file
-   :resolver-file "cdk/publishPipelineResolver.js"})
+  {:parent-type      types/mutation-type
+   :prefix           "publishDeleted"
+   :resolver         :js-file
+   :resolver-options {:file         "cdk/publishPipelineResolver.js"
+                      :requires-id? true}})
 
 (def get-op
-  {:parent-type types/query-type
-   :prefix      "get"
-   :resolver    :datomic})
+  {:parent-type      types/query-type
+   :prefix           "get"
+   :resolver         :datomic
+   :resolver-options {:requires-id? true}})
 
 (def list-op
   {:parent-type types/query-type
@@ -44,19 +51,22 @@
    :resolver    :datomic})
 
 (def create-op
-  {:parent-type types/mutation-type
-   :prefix      "create"
-   :resolver    :datomic})
+  {:parent-type      types/mutation-type
+   :prefix           "create"
+   :resolver         :datomic
+   :resolver-options {:requires-id? true}})
 
 (def merge-op
-  {:parent-type types/mutation-type
-   :prefix      "merge"
-   :resolver    :datomic})
+  {:parent-type      types/mutation-type
+   :prefix           "merge"
+   :resolver         :datomic
+   :resolver-options {:requires-id? true}})
 
 (def delete-op
-  {:parent-type types/mutation-type
-   :prefix      "delete"
-   :resolver    :datomic})
+  {:parent-type      types/mutation-type
+   :prefix           "delete"
+   :resolver         :datomic
+   :resolver-options {:requires-id? true}})
 
 (def on-created-op
   {:parent-type types/subscription-type
@@ -111,7 +121,8 @@
       "get" (fields/get-query field-name entity-name)
       "list" (fields/list-page-query field-name entity-name)
       "create" {:name           field-name
-                :arguments      [arguments/optional-session
+                :arguments      [arguments/required-id
+                                 arguments/optional-session
                                  (arguments/required-input-value entity-name)]
                 :type           entity-name
                 :required-type? true}
@@ -155,14 +166,24 @@
 (defn resolves-graphql-field? [op field-name]
   (str/starts-with? (name field-name) (:prefix op)))
 
+(defn graphql-error [^String msg]
+  ; TODO find better way to report errors in resolver lambdas for appsync (throwing seems to be the only way)
+  ; TODO see whether this looks ok for clients
+  (doto (IllegalArgumentException. msg)
+    ; https://stackoverflow.com/questions/11434431/exception-without-stack-trace-in-java
+    (.setStackTrace (make-array StackTraceElement 0))))
+
 (defn resolve-field [op args]
-  (let [{:keys [prefix]} op
+  (let [{:keys [prefix resolver-options]} op
+        {:keys [requires-id?]} resolver-options
         {:keys [conn field-name selected-paths arguments]} args
         {:keys [id page session value]} (or arguments {})
-        entity-id   (when id (parse-long id))
+        entity-id   (when id (parse-uuid id))
         entity-name (gen-entity-name op field-name)
         db-before   (d/db conn)
         schema      (schema/get-schema db-before)]
+    (when (and requires-id? (nil? entity-id))
+      (throw (graphql-error "`id` is missing or not a valid UUID")))
     (case prefix
       "get" {:response (schema/pull-and-resolve-entity-value schema entity-id db-before entity-name selected-paths)}
       "list" (let [gql-fields (->> selected-paths
@@ -176,16 +197,14 @@
                    entities   (->> entities
                                    (drop (get page-info "offset"))
                                    (take (get page-info "size"))
-                                   (queries/pull-entities db-before pattern)
+                                   (queries/pull-platform-entities db-before pattern)
                                    (schema/reverse-pull-pattern schema entity-name gql-fields))]
                {:response {"info"   page-info
                            "values" entities}})
       "create" (let [input         (walk/stringify-keys value)
-                     temp-id       "temp-id"
                      input-data    (-> (schema/resolve-input-fields schema input entity-name)
-                                       (assoc :db/id temp-id))
-                     {:keys [db-after tempids]} (d/transact conn {:tx-data [input-data]})
-                     entity-id     (get tempids temp-id)
+                                       (assoc :platform/id entity-id))
+                     {:keys [db-after]} (d/transact conn {:tx-data [input-data]})
                      default-paths (schema/get-default-paths schema entity-name)
                      paths         (set/union selected-paths default-paths)
                      entity-value  (-> (schema/pull-and-resolve-entity-value schema entity-id db-after entity-name paths)
@@ -198,7 +217,7 @@
                   :response        entity-value})
       "merge" (let [input         (walk/stringify-keys value)
                     input-data    (-> (schema/resolve-input-fields schema input entity-name)
-                                      (assoc :db/id entity-id))
+                                      (assoc :db/id [:platform/id entity-id]))
                     ; TODO validate id -> return nil if not present
                     {:keys [db-after]} (d/transact conn {:tx-data [input-data]})
                     default-paths (schema/get-default-paths schema entity-name)
@@ -226,35 +245,39 @@
                       :response        e-with-session}))))))
 
 (deftest resolve-merge-test
-  (let [conn         (u/temp-conn)
+  (let [conn        (u/temp-conn)
+        entity-uuid (UUID/randomUUID)
         {:keys [tempids]} (d/transact
                            conn
                            {:tx-data [{:db/id          "tempid"
+                                       :platform/id    entity-uuid
                                        u/rel-attribute u/rel-sample-value
                                        :db/doc         "other attr value"}]})
-        entity-id    (get tempids "tempid")
-        entity-value (d/pull (d/db conn) '[*] entity-id)]
-    (is (= {:db/id          entity-id
+        db-id       (get tempids "tempid")
+        db-value    (d/pull (d/db conn) '[*] db-id)]
+    (is (= {:db/id          db-id
+            :platform/id    entity-uuid
             u/rel-attribute u/rel-sample-value
             :db/doc         "other attr value"}
-           entity-value))
-    (let [result    (resolve-field
-                     merge-op
-                     {:conn       conn
-                      :field-name (str "merge" u/rel-type)
-                      :arguments  {:id      (str entity-id)
-                                   :session "device-1"
-                                   :value   {u/rel-field "123"}}})
+           db-value))
+    (let [result       (resolve-field
+                        merge-op
+                        {:conn       conn
+                         :field-name (str "merge" u/rel-type)
+                         :arguments  {:id      (str entity-uuid)
+                                      :session "device-1"
+                                      :value   {u/rel-field "123"}}})
           {:keys [response publish-queries]} result
-          new-value (d/pull (d/db conn) '[*] entity-id)]
-      (is (= {"id"        (str entity-id)
+          new-db-value (d/pull (d/db conn) '[*] db-id)]
+      (is (= {"id"        (str entity-uuid)
               "session"   "device-1"
               u/rel-field "123"}
              response))
-      (is (= {:db/id          entity-id
+      (is (= {:db/id          db-id
+              :platform/id    entity-uuid
               u/rel-attribute "123"
               :db/doc         "other attr value"}
-             new-value))
-      (is (= "mutation PublishUpdatedPlanetaryBoundary { publishUpdatedPlanetaryBoundary(id: \"<id>\", session: \"device-1\", value: {name: \"123\"}) { id name session } }"
+             new-db-value))
+      (is (= "mutation PublishUpdatedPlanetaryBoundary { publishUpdatedPlanetaryBoundary(id: <id>, session: \"device-1\", value: {name: \"123\"}) { id name session } }"
              (-> (first publish-queries)
-                 (str/replace (str entity-id) "<id>")))))))
+                 (str/replace (str "\"" entity-uuid "\"") "<id>")))))))
