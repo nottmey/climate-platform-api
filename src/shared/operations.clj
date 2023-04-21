@@ -5,8 +5,8 @@
    [clojure.test :refer [deftest is]]
    [clojure.walk :as walk]
    [datomic.client.api :as d]
+   [datomic.framework :as framework]
    [datomic.queries :as queries]
-   [datomic.schema :as schema]
    [graphql.arguments :as arguments]
    [graphql.fields :as fields]
    [graphql.objects :as objects]
@@ -179,33 +179,33 @@
         entity-id   (when id (parse-uuid id))
         entity-name (gen-entity-name op field-name)
         db-before   (d/db conn)
-        schema      (schema/get-schema db-before)]
+        schema      (framework/get-schema db-before)]
     (when (and requires-id? (nil? entity-id))
       (throw (graphql-error "`id` is missing or not a valid UUID")))
     (case prefix
-      "get" {:response (schema/pull-and-resolve-entity-value schema entity-id db-before entity-name selected-paths)}
+      "get" {:response (framework/pull-and-resolve-entity-value schema entity-id db-before entity-name selected-paths)}
       "list" (let [gql-fields (->> selected-paths
                                    (filter #(str/starts-with? % "values/"))
                                    (map #(str/replace % #"^values/" ""))
                                    (filter #(not (str/includes? % "/")))
                                    set)
-                   entities   (schema/get-entities-sorted db-before entity-name)
+                   entities   (framework/get-entities-sorted db-before entity-name)
                    page-info  (utils/page-info page (count entities))
-                   pattern    (schema/gen-pull-pattern schema entity-name gql-fields)
+                   pattern    (framework/gen-pull-pattern schema entity-name gql-fields)
                    entities   (->> entities
                                    (drop (get page-info "offset"))
                                    (take (get page-info "size"))
                                    (queries/pull-platform-entities db-before pattern)
-                                   (schema/reverse-pull-pattern schema entity-name gql-fields))]
+                                   (framework/reverse-pull-pattern schema entity-name gql-fields))]
                {:response {"info"   page-info
                            "values" entities}})
       "create" (let [input         (walk/stringify-keys value)
-                     input-data    (-> (schema/resolve-input-fields schema input entity-name)
+                     input-data    (-> (framework/resolve-input-fields schema input entity-name)
                                        (assoc :platform/id entity-id))
                      {:keys [db-after]} (d/transact conn {:tx-data [input-data]})
-                     default-paths (schema/get-default-paths schema entity-name)
+                     default-paths (framework/get-default-paths schema entity-name)
                      paths         (set/union selected-paths default-paths)
-                     entity-value  (-> (schema/pull-and-resolve-entity-value schema entity-id db-after entity-name paths)
+                     entity-value  (-> (framework/pull-and-resolve-entity-value schema entity-id db-after entity-name paths)
                                        (assoc "session" session))]
                  {:publish-queries [(create-publish-definition
                                      publish-created-op
@@ -214,13 +214,13 @@
                                      default-paths)]
                   :response        entity-value})
       "merge" (let [input         (walk/stringify-keys value)
-                    input-data    (-> (schema/resolve-input-fields schema input entity-name)
+                    input-data    (-> (framework/resolve-input-fields schema input entity-name)
                                       (assoc :db/id [:platform/id entity-id]))
                     ; TODO validate id -> return nil if not present
                     {:keys [db-after]} (d/transact conn {:tx-data [input-data]})
-                    default-paths (schema/get-default-paths schema entity-name)
+                    default-paths (framework/get-default-paths schema entity-name)
                     paths         (set/union selected-paths default-paths)
-                    entity-value  (-> (schema/pull-and-resolve-entity-value schema entity-id db-after entity-name paths)
+                    entity-value  (-> (framework/pull-and-resolve-entity-value schema entity-id db-after entity-name paths)
                                       (assoc "session" session))]
                 {:publish-queries [(create-publish-definition
                                     publish-updated-op
@@ -228,9 +228,9 @@
                                     entity-value
                                     default-paths)]
                  :response        entity-value})
-      "delete" (let [default-paths (schema/get-default-paths schema entity-name)
+      "delete" (let [default-paths (framework/get-default-paths schema entity-name)
                      paths         (set/union selected-paths default-paths)
-                     entity-value  (schema/pull-and-resolve-entity-value schema entity-id db-before entity-name paths)]
+                     entity-value  (framework/pull-and-resolve-entity-value schema entity-id db-before entity-name paths)]
                  (if (nil? entity-value)
                    nil
                    (let [e-with-session (assoc entity-value "session" session)]

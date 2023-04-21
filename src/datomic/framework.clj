@@ -1,4 +1,4 @@
-(ns datomic.schema
+(ns datomic.framework
   (:require
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]

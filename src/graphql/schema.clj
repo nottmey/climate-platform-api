@@ -4,7 +4,7 @@
    [clojure.string :as s]
    [clojure.test :refer [deftest is]]
    [datomic.client.api :as d]
-   [datomic.schema :as schema]
+   [datomic.framework :as framework]
    [graphql.fields :as fields]
    [graphql.objects :as objects]
    [graphql.spec :as spec]
@@ -65,7 +65,7 @@
        :required-type? list?})))
 
 (defn generate [conn]
-  (let [dynamic-schema-types (:types (schema/get-schema (d/db conn)))
+  (let [dynamic-schema-types (:types (framework/get-schema (d/db conn)))
         entity-filter-type   (keyword (str (name types/entity-type) "Filter"))
         attribute-fields     [{:name           :id
                                :type           types/id-type

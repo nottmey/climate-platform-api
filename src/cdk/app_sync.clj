@@ -3,8 +3,8 @@
    [clojure.java.io :as io]
    [datomic.access :as access]
    [datomic.client.api :as d]
-   [datomic.schema :as datomic-schema]
-   [graphql.schema :as graphql-schema]
+   [datomic.framework :as framework]
+   [graphql.schema :as schema]
    [ions.resolvers :as resolvers]
    [shared.operations :as ops])
   (:import
@@ -27,7 +27,7 @@
 ; Docs: https://docs.aws.amazon.com/cdk/api/v2/docs/aws-construct-library.html
 (defn app-sync [^Stack stack]
   (let [conn                  (access/get-connection access/dev-env-db-name)
-        dynamic-graphql-types (-> (datomic-schema/get-schema (d/db conn)) :types keys)
+        dynamic-graphql-types (-> (framework/get-schema (d/db conn)) :types keys)
         api                   (-> (CfnGraphQLApi$Builder/create stack "climate-platform-api")
                                   (.name "climate-platform-api")
                                   (.authenticationType "API_KEY")
@@ -38,7 +38,7 @@
         (.build))
     (let [api-schema                     (-> (CfnGraphQLSchema$Builder/create stack "climate-platform-api-schema")
                                              (.apiId api-id)
-                                             (.definition (graphql-schema/generate conn))
+                                             (.definition (schema/generate conn))
                                              (.build))
           datomic-resolver-arn           "arn:aws:lambda:eu-central-1:118776085668:function:climate-platform-primary-datomic-resolver"
           datomic-resolver-access-role   (doto (-> (Role$Builder/create stack "datomic-resolver-access-role")
