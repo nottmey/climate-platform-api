@@ -2,9 +2,10 @@
   (:require
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]
+   [datomic.attributes :as attributes]
    [datomic.client.api :as d]
    [datomic.queries :as queries]
-   [shared.attributes :as attributes]
+   [shared.attributes :as sa]
    [user :as u])
   (:import (java.util UUID)))
 
@@ -67,14 +68,25 @@
           (if (contains? m attr)
             ; TODO describe cause more in detail (fields + value, not attr)
             (throw (ex-info (str "InputDataConflict: " attr " already set by other input field.") {}))
-            (assoc m attr value)))
+            (if (nil? value)
+              m
+              (assoc m attr value))))
         {})))
 
-(comment
-  (resolve-input-fields
-   (get-schema (u/temp-db))
-   {"name" "Hello"}
-   "PlanetaryBoundary"))
+(deftest resolve-input-fields-test
+  (let [conn (u/temp-conn)
+        {:keys [db-after]} (d/transact
+                            conn
+                            {:tx-data (attributes/add-value-field-tx-data
+                                       u/rel-type
+                                       "description"
+                                       :platform/description)})]
+    (is (= {:platform/name "Hello"}
+           (resolve-input-fields
+            (get-schema db-after)
+            {"name"        "Hello"
+             "description" nil}
+            u/rel-type)))))
 
 (defn gen-pull-pattern [schema gql-type gql-fields]
   ; TODO nested selections
@@ -82,9 +94,6 @@
            (map #(get-in schema [:types gql-type % :graphql.relation/attribute :db/ident]))
            distinct)
       (conj :platform/id)))
-
-(comment
-  (gen-pull-pattern (get-schema (u/temp-db)) u/rel-type #{"id" u/rel-field}))
 
 (deftest gen-pull-pattern-test
   (let [schema  (get-schema (u/temp-db))
@@ -105,7 +114,7 @@
                  (map (fn [{:keys [graphql.relation/field
                                    graphql.relation/attribute]}]
                         [field
-                         (attributes/->gql-value
+                         (sa/->gql-value
                           value
                           (:db/ident (:db/valueType attribute))
                           (:db/ident (:db/cardinality attribute)))])))))
@@ -136,7 +145,7 @@
            pulled-entity))))
 
 (defn get-entities-sorted [db type-name]
-  (->> (d/q '[:find ?id
+  (->> (d/q '[:find ?e ?id
               :in $ ?type-name
               :where
               [?type :graphql.type/name ?type-name]
@@ -146,13 +155,26 @@
               [?e :platform/id ?id]]
             db
             type-name)
-       (map first)
-       (distinct)
-       (sort)))
+       (sort-by first)
+       (map second)
+       (distinct)))
 
-(comment
-  (let [conn    (u/temp-conn)
-        example (fn [] {:platform/id    (UUID/randomUUID)
-                        u/rel-attribute u/rel-sample-value})]
-    (d/transact conn {:tx-data [(example) (example) (example) (example) (example)]})
-    (get-entities-sorted (d/db conn) u/rel-type)))
+(deftest get-entities-sorted-test
+  (let [example     (fn [] {:platform/id          (UUID/randomUUID)
+                            u/rel-attribute       u/rel-sample-value
+                            :platform/description "bla"})
+        sample-data [(example) (example) (example) (example) (example)]
+        conn        (u/temp-conn)
+        _           (d/transact
+                     conn
+                     {:tx-data (attributes/add-value-field-tx-data
+                                u/rel-type
+                                "description"
+                                :platform/description)})]
+    (d/transact conn {:tx-data sample-data})
+    (is (= (map :platform/id sample-data)
+           (get-entities-sorted (d/db conn) u/rel-type)))
+    (is (->> (get-entities-sorted (d/db conn) u/rel-type)
+             (map #(d/pull (d/db conn) '[:db/id] [:platform/id %]))
+             (map :db/id)
+             (apply <)))))
