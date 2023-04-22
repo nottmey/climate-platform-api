@@ -139,8 +139,7 @@
                  :required-list? true}]})
      (spec/interface-type-definition
       {:name   types/entity-base-type
-       :fields [fields/required-id
-                fields/optional-session]})
+       :fields [fields/required-id]})
      (s/join
       (for [[entity fields] dynamic-schema-types]
         ; always generate all dynamic entity types
@@ -149,8 +148,7 @@
           :interfaces [types/entity-base-type]
           :fields     (concat
                        [fields/context
-                        fields/required-id
-                        fields/optional-session]
+                        fields/required-id]
                        (gen-entity-fields (vals fields)))})))
      (spec/object-type-definition
       (objects/list-page types/entity-type))

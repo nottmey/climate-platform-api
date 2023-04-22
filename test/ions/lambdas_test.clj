@@ -47,21 +47,18 @@
                                                      q-norm (-> (str/replace q #"\".*?\"" "<v>")
                                                                 (str/replace u/rel-type "<t>")
                                                                 (str/replace u/rel-field "<f>"))]
-                                                 (is (= "mutation PublishCreated<t> { publishCreated<t>(id: <v>, session: <v>, value: {<f>: <v>}) { id <f> session } }"
+                                                 (is (= "mutation PublishCreated<t> { publishCreated<t>(id: <v>, value: {<f>: <v>}) { id <f> } }"
                                                         q-norm))
-                                                 (is (= [entity-id "session id" u/rel-sample-value]
+                                                 (is (= [entity-id u/rel-sample-value]
                                                         values))))]
                            (resolve-input
                             {"info"      {"parentTypeName"   "Mutation"
                                           "fieldName"        (str "create" u/rel-type)
                                           "selectionSetList" ["id" u/rel-field]}
-                             "arguments" {"id"      entity-id
-                                          "session" "session id"
-                                          "value"   {u/rel-field u/rel-sample-value}}}))
-        created-entity   (dissoc created-response "session")]
+                             "arguments" {"id"    entity-id
+                                          "value" {u/rel-field u/rel-sample-value}}}))]
     (is (= true @publish-called?))
     (is (= {"id"        entity-id
-            "session"   "session id"
             u/rel-field u/rel-sample-value}
            created-response))
 
@@ -72,7 +69,7 @@
                            "fieldName"        (str "get" u/rel-type)
                            "selectionSetList" ["id" u/rel-field]}
               "arguments" {"id" entity-id}}))]
-      (is (= created-entity fetched-entity)))
+      (is (= created-response fetched-entity)))
 
     (let [entity-list
           (with-redefs [u/testing-conn (fn [] conn)]
@@ -88,7 +85,7 @@
                         "current" 0
                         "next"    nil
                         "last"    0}
-              "values" [created-entity]}
+              "values" [created-response]}
              entity-list)))
 
     (let [publish-called? (atom false)
@@ -101,16 +98,15 @@
                                                       q-norm (-> (str/replace q #"\".*?\"" "<v>")
                                                                  (str/replace u/rel-type "<t>")
                                                                  (str/replace u/rel-field "<f>"))]
-                                                  (is (= "mutation PublishDeleted<t> { publishDeleted<t>(id: <v>, session: <v>, value: {<f>: <v>}) { id <f> session } }"
+                                                  (is (= "mutation PublishDeleted<t> { publishDeleted<t>(id: <v>, value: {<f>: <v>}) { id <f> } }"
                                                          q-norm))
-                                                  (is (= [entity-id "session id" u/rel-sample-value]
+                                                  (is (= [entity-id u/rel-sample-value]
                                                          values))))]
                             (resolve-input
                              {"info"      {"parentTypeName"   "Mutation"
                                            "fieldName"        (str "delete" u/rel-type)
                                            "selectionSetList" ["id" u/rel-field]}
-                              "arguments" {"id"      entity-id,
-                                           "session" "session id"}}))]
+                              "arguments" {"id" entity-id}}))]
       (is (= created-response deleted-entity))
       (is (= true @publish-called?)))
 

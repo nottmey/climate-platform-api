@@ -120,18 +120,15 @@
       "list" (fields/list-page-query field-name entity-name)
       "create" {:name           field-name
                 :arguments      [arguments/required-id
-                                 arguments/optional-session
                                  (arguments/required-input-value entity-name)]
                 :type           entity-name
                 :required-type? true}
       "merge" {:name      field-name
                :arguments [arguments/required-id
-                           arguments/optional-session
                            (arguments/required-input-value entity-name)]
                :type      entity-name}
       "delete" {:name      field-name
-                :arguments [arguments/required-id
-                            arguments/optional-session]
+                :arguments [arguments/required-id]
                 :type      entity-name}
       "onCreated" (fields/subscription field-name entity-name fields (gen-field-name publish-created-op entity-name))
       "onUpdated" (fields/subscription field-name entity-name fields (gen-field-name publish-updated-op entity-name))
@@ -149,11 +146,8 @@
               :arguments (concat
                           [{:name  :id
                             :value (get entity "id")}]
-                          (when-let [session (get entity "session")]
-                            [{:name  :session
-                              :value session}])
                           [{:name  :value
-                            :value (->> (disj default-paths "id" "session")
+                            :value (->> (disj default-paths "id")
                                         (sort)
                                         ; TODO nested values
                                         (map #(vector % (get entity %)))
@@ -175,7 +169,7 @@
   (let [{:keys [shared.operations/prefix shared.operations/resolver-options]} op
         {:keys [shared.operations/requires-id?]} resolver-options
         {:keys [conn field-name selected-paths arguments]} args
-        {:keys [id page session value]} (or arguments {})
+        {:keys [id page value]} (or arguments {})
         entity-id   (when id (parse-uuid id))
         entity-name (gen-entity-name op field-name)
         db-before   (d/db conn)
@@ -205,8 +199,7 @@
                      {:keys [db-after]} (d/transact conn {:tx-data [input-data]})
                      default-paths (framework/get-default-paths schema entity-name)
                      paths         (set/union selected-paths default-paths)
-                     entity-value  (-> (framework/pull-and-resolve-entity-value schema entity-id db-after entity-name paths)
-                                       (assoc "session" session))]
+                     entity-value  (framework/pull-and-resolve-entity-value schema entity-id db-after entity-name paths)]
                  {:publish-queries [(create-publish-definition
                                      publish-created-op
                                      entity-name
@@ -220,8 +213,7 @@
                     {:keys [db-after]} (d/transact conn {:tx-data [input-data]})
                     default-paths (framework/get-default-paths schema entity-name)
                     paths         (set/union selected-paths default-paths)
-                    entity-value  (-> (framework/pull-and-resolve-entity-value schema entity-id db-after entity-name paths)
-                                      (assoc "session" session))]
+                    entity-value  (framework/pull-and-resolve-entity-value schema entity-id db-after entity-name paths)]
                 {:publish-queries [(create-publish-definition
                                     publish-updated-op
                                     entity-name
@@ -233,14 +225,14 @@
                      entity-value  (framework/pull-and-resolve-entity-value schema entity-id db-before entity-name paths)]
                  (if (nil? entity-value)
                    nil
-                   (let [e-with-session (assoc entity-value "session" session)]
+                   (do
                      (d/transact conn {:tx-data [[:db/retractEntity [:platform/id entity-id]]]})
                      {:publish-queries [(create-publish-definition
                                          publish-deleted-op
                                          entity-name
-                                         e-with-session
+                                         entity-value
                                          default-paths)]
-                      :response        e-with-session}))))))
+                      :response        entity-value}))))))
 
 (deftest resolve-merge-test
   (let [conn        (u/temp-conn)
@@ -262,13 +254,11 @@
                         merge-op
                         {:conn       conn
                          :field-name (str "merge" u/rel-type)
-                         :arguments  {:id      (str entity-uuid)
-                                      :session "device-1"
-                                      :value   {u/rel-field "123"}}})
+                         :arguments  {:id    (str entity-uuid)
+                                      :value {u/rel-field "123"}}})
           {:keys [response publish-queries]} result
           new-db-value (d/pull (d/db conn) '[*] db-id)]
       (is (= {"id"        (str entity-uuid)
-              "session"   "device-1"
               u/rel-field "123"}
              response))
       (is (= {:db/id          db-id
@@ -276,6 +266,6 @@
               u/rel-attribute "123"
               :db/doc         "other attr value"}
              new-db-value))
-      (is (= "mutation PublishUpdatedPlanetaryBoundary { publishUpdatedPlanetaryBoundary(id: <id>, session: \"device-1\", value: {name: \"123\"}) { id name session } }"
+      (is (= "mutation PublishUpdatedPlanetaryBoundary { publishUpdatedPlanetaryBoundary(id: <id>, value: {name: \"123\"}) { id name } }"
              (-> (first publish-queries)
                  (str/replace (str "\"" entity-uuid "\"") "<id>")))))))

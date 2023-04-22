@@ -46,8 +46,7 @@
       (get-in [:types gql-type])
       keys
       set
-      (conj "id")
-      (conj "session")))
+      (conj "id")))
 
 (deftest get-default-paths-test
   (let [schema (get-schema (u/temp-db))
@@ -90,7 +89,7 @@
 
 (defn gen-pull-pattern [schema gql-type gql-fields]
   ; TODO nested selections
-  (-> (->> (disj gql-fields "id" "session")
+  (-> (->> (disj gql-fields "id")
            (map #(get-in schema [:types gql-type % :graphql.relation/attribute :db/ident]))
            distinct)
       (conj :platform/id)))

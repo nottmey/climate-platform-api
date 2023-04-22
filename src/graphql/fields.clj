@@ -6,8 +6,6 @@
 
 (def required-id arguments/required-id)
 
-(def optional-session arguments/optional-session)
-
 (def context
   {:name :context
    :type types/json-type})
@@ -33,7 +31,6 @@
 (defn publish-mutation [field-name entity]
   {:name      field-name
    :arguments [arguments/required-id
-               arguments/optional-session
                {:name           "value"
                 :type           (types/input-type entity)
                 :required-type? true}]
@@ -43,8 +40,7 @@
   {:docstring "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
    :name      field-name
    :arguments (concat
-               [arguments/optional-id
-                arguments/optional-session]
+               [arguments/optional-id]
                (for [[field-name {:keys [graphql.relation/attribute]}] fields]
                  (let [{:keys [:graphql/type]}
                        (attributes/attribute->config attribute)]

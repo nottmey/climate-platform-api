@@ -120,14 +120,12 @@ type Entity {
 #generated, do not edit manually!
 interface EntityBase {
     id: ID!
-    session: ID
 }
 
 #generated, do not edit manually!
 type PlanetaryBoundary implements EntityBase {
     context: AWSJSON
     id: ID!
-    session: ID
     name: String
 }
 
@@ -152,26 +150,26 @@ input PlanetaryBoundaryInput {
 
 #generated, do not edit manually!
 type Mutation {
-    publishCreatedPlanetaryBoundary(id: ID!, session: ID, value: PlanetaryBoundaryInput!): PlanetaryBoundary
-    publishUpdatedPlanetaryBoundary(id: ID!, session: ID, value: PlanetaryBoundaryInput!): PlanetaryBoundary
-    publishDeletedPlanetaryBoundary(id: ID!, session: ID, value: PlanetaryBoundaryInput!): PlanetaryBoundary
-    createPlanetaryBoundary(id: ID!, session: ID, value: PlanetaryBoundaryInput!): PlanetaryBoundary!
-    mergePlanetaryBoundary(id: ID!, session: ID, value: PlanetaryBoundaryInput!): PlanetaryBoundary
-    deletePlanetaryBoundary(id: ID!, session: ID): PlanetaryBoundary
+    publishCreatedPlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary
+    publishUpdatedPlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary
+    publishDeletedPlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary
+    createPlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary!
+    mergePlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary
+    deletePlanetaryBoundary(id: ID!): PlanetaryBoundary
 }
 
 #generated, do not edit manually!
 type Subscription {
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
-    onCreatedPlanetaryBoundary(id: ID, session: ID, name: String): PlanetaryBoundary
+    onCreatedPlanetaryBoundary(id: ID, name: String): PlanetaryBoundary
     @aws_subscribe(mutations: ["publishCreatedPlanetaryBoundary"])
 
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
-    onUpdatedPlanetaryBoundary(id: ID, session: ID, name: String): PlanetaryBoundary
+    onUpdatedPlanetaryBoundary(id: ID, name: String): PlanetaryBoundary
     @aws_subscribe(mutations: ["publishUpdatedPlanetaryBoundary"])
 
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
-    onDeletedPlanetaryBoundary(id: ID, session: ID, name: String): PlanetaryBoundary
+    onDeletedPlanetaryBoundary(id: ID, name: String): PlanetaryBoundary
     @aws_subscribe(mutations: ["publishDeletedPlanetaryBoundary"])
 }
 
