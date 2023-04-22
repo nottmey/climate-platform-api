@@ -234,7 +234,7 @@
                  (if (nil? entity-value)
                    nil
                    (let [e-with-session (assoc entity-value "session" session)]
-                     (d/transact conn {:tx-data [[:db/retractEntity entity-id]]})
+                     (d/transact conn {:tx-data [[:db/retractEntity [:platform/id entity-id]]]})
                      {:publish-queries [(create-publish-definition
                                          publish-deleted-op
                                          entity-name

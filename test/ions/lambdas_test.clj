@@ -112,7 +112,16 @@
                               "arguments" {"id"      entity-id,
                                            "session" "session id"}}))]
       (is (= created-response deleted-entity))
-      (is (= true @publish-called?)))))
+      (is (= true @publish-called?)))
+
+    (let [fetched-entity
+          (with-redefs [u/testing-conn (fn [] conn)]
+            (resolve-input
+             {"info"      {"parentTypeName"   "Query"
+                           "fieldName"        (str "get" u/rel-type)
+                           "selectionSetList" ["id" u/rel-field]}
+              "arguments" {"id" entity-id}}))]
+      (is (nil? fetched-entity)))))
 
 (deftest test-entity-browser-get
   (let [response (resolve-input
