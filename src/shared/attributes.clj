@@ -25,7 +25,8 @@
          :graphql/multi-value-field-name  :strings
          :datomic/type                    #{:db.type/symbol
                                             :db.type/string
-                                            :db.type/keyword}
+                                            :db.type/keyword
+                                            :db.type/uuid}
          :datomic/->gql                   str}
         {:graphql/name                    :Boolean
          :graphql/type                    types/boolean-type
