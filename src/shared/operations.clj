@@ -266,6 +266,6 @@
               u/rel-attribute "123"
               :db/doc         "other attr value"}
              new-db-value))
-      (is (= "mutation PublishUpdatedPlanetaryBoundary { publishUpdatedPlanetaryBoundary(id: <id>, value: {name: \"123\"}) { id name } }"
+      (is (= "mutation PublishUpdatedPlanetaryBoundary {\n    publishUpdatedPlanetaryBoundary(id: <id>, value: {name: \"123\"}) { id name } \n}\n\n"
              (-> (first publish-queries)
                  (str/replace (str "\"" entity-uuid "\"") "<id>")))))))

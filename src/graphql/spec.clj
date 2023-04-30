@@ -193,10 +193,10 @@
        (str/join (if spaced? "\n" ""))))
 
 (comment
-  (printf (field-list-definition {:fields [{:name :query
-                                            :type :Query}
-                                           {:name :mutation
-                                            :type :Mutation}]})))
+  (field-list-definition {:fields [{:name :query
+                                    :type :Query}
+                                   {:name :mutation
+                                    :type :Mutation}]}))
 
 ; https://spec.graphql.org/June2018/#SchemaDefinition
 (defn schema-definition [{:keys [root-ops]}]
@@ -287,20 +287,18 @@
                           (let [field-name (k-name (:name (first fields)))]
                             (str (str/upper-case (subs field-name 0 1))
                                  (subs field-name 1))))]
-    (-> (str "mutation " (k-name mutation-name) " {" fields-def "}")
-        (str/replace #"\s+" " "))))
+    (str "mutation " (k-name mutation-name) " {\n" fields-def "}\n\n")))
 
 (deftest mutation-definition-test
-  (is (= (str "mutation PublishCreatedPlanetaryBoundary "
-              "{ publishCreatedPlanetaryBoundary("
-              "id: \"123123123\", value: {name: \"Climate Change\"}"
-              ") { id name } }")
+  (is (= (str "mutation PublishCreatedPlanetaryBoundary {\n"
+              "    publishCreatedPlanetaryBoundary(id: \"123123123\", value: {name: \" Climate Change\n\"}) { id name } \n"
+              "}\n\n")
          (mutation-definition
           {:fields [{:name      :publishCreatedPlanetaryBoundary
                      :arguments [{:name  :id
                                   :value "123123123"}
                                  {:name  :value
-                                  :value {"name" "Climate Change"}}]
+                                  :value {"name" " Climate Change\n"}}]
                      :selection [:id "name"]}]}))))
 
 ; remember, there are more:

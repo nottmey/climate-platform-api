@@ -42,12 +42,12 @@
                           [u/testing-conn    (fn [] conn)
                            u/testing-publish (fn [q]
                                                (reset! publish-called? true)
-                                               (let [values (->> (re-seq #"\".*?\"" q)
+                                               (let [values (->> (re-seq #"(?s)\".*?\"" q)
                                                                  (map #(str/replace % "\"" "")))
-                                                     q-norm (-> (str/replace q #"\".*?\"" "<v>")
+                                                     q-norm (-> (str/replace q #"(?s)\".*?\"" "<v>")
                                                                 (str/replace u/rel-type "<t>")
                                                                 (str/replace u/rel-field "<f>"))]
-                                                 (is (= "mutation PublishCreated<t> { publishCreated<t>(id: <v>, value: {<f>: <v>}) { id <f> } }"
+                                                 (is (= "mutation PublishCreated<t> {\n    publishCreated<t>(id: <v>, value: {<f>: <v>}) { id <f> } \n}\n\n"
                                                         q-norm))
                                                  (is (= [entity-id u/rel-sample-value]
                                                         values))))]
@@ -93,12 +93,12 @@
                            [u/testing-conn    (fn [] conn)
                             u/testing-publish (fn [q]
                                                 (reset! publish-called? true)
-                                                (let [values (->> (re-seq #"\".*?\"" q)
+                                                (let [values (->> (re-seq #"(?s)\".*?\"" q)
                                                                   (map #(str/replace % "\"" "")))
-                                                      q-norm (-> (str/replace q #"\".*?\"" "<v>")
+                                                      q-norm (-> (str/replace q #"(?s)\".*?\"" "<v>")
                                                                  (str/replace u/rel-type "<t>")
                                                                  (str/replace u/rel-field "<f>"))]
-                                                  (is (= "mutation PublishDeleted<t> { publishDeleted<t>(id: <v>, value: {<f>: <v>}) { id <f> } }"
+                                                  (is (= "mutation PublishDeleted<t> {\n    publishDeleted<t>(id: <v>, value: {<f>: <v>}) { id <f> } \n}\n\n"
                                                          q-norm))
                                                   (is (= [entity-id u/rel-sample-value]
                                                          values))))]

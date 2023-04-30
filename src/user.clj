@@ -21,7 +21,7 @@
 (def rel-type "PlanetaryBoundary")
 (def rel-field "name")
 (def rel-attribute :platform/name)
-(def rel-sample-value (str rel-attribute " sample value"))
+(def rel-sample-value (str " " rel-attribute " sample value\n"))
 
 (defn temp-conn
   ([] (temp-conn "testing"))
