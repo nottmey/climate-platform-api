@@ -302,6 +302,12 @@
                      :selection [:id "name"]}]}))))
 
 ; remember, there are more:
+
 ; ScalarTypeDefinition
+; Reminder: AWS AppSync does not support custom scalars
+
 ; UnionTypeDefinition
+; Reminder: Usable for generics
+
 ; EnumTypeDefinition
+; Reminder: e.g. use for sort params
