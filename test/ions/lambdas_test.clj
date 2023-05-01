@@ -49,7 +49,7 @@
                                                                 (str/replace u/rel-field "<f>"))]
                                                  (is (= "mutation PublishCreated<t> {\n    publishCreated<t>(id: <v>, value: {<f>: <v>}) { id <f> } \n}\n\n"
                                                         q-norm))
-                                                 (is (= [entity-id u/rel-sample-value]
+                                                 (is (= [entity-id u/rel-sample-value-escaped]
                                                         values))))]
                            (resolve-input
                             {"info"      {"parentTypeName"   "Mutation"
@@ -100,7 +100,7 @@
                                                                  (str/replace u/rel-field "<f>"))]
                                                   (is (= "mutation PublishDeleted<t> {\n    publishDeleted<t>(id: <v>, value: {<f>: <v>}) { id <f> } \n}\n\n"
                                                          q-norm))
-                                                  (is (= [entity-id u/rel-sample-value]
+                                                  (is (= [entity-id u/rel-sample-value-escaped]
                                                          values))))]
                             (resolve-input
                              {"info"      {"parentTypeName"   "Mutation"

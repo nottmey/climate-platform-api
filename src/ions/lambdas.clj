@@ -100,10 +100,10 @@
 
 (comment
   ((build-publish {"host"      "3vbfo5wg6vbibbmesukjlqaw74.appsync-api.eu-central-1.amazonaws.com"
-                   "x-api-key" "da2-n52t5yo4ovay3jud2ebyyp6mtu"})
+                   "x-api-key" "..."})
    ; query for all fields, only then they are pushed in subscriptions
    "mutation PublishUpdatedPlanetaryBoundary {
-      publishUpdatedPlanetaryBoundary(id: \"b50ed0a0-dbe5-492b-b542-d2585bd1070c\", value: {name: \"Climate Change 2\", description: \"hello world! \n\"}) {
+      publishUpdatedPlanetaryBoundary(id: \"b50ed0a0-dbe5-492b-b542-d2585bd1070c\", value: {name: \"Climate Change 3\", description: \"hello world!\\n# 123\"}) {
         id
         name
         description

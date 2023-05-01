@@ -12,6 +12,12 @@
 
 (def generated-comment "#generated, do not edit manually!\n")
 
+(defn escape-str [s]
+  (str "\"" (str/escape s char-escape-string) "\""))
+
+(deftest escape-str-test
+  (is (= (str \" \\ "n" \") (escape-str "\n"))))
+
 ; https://spec.graphql.org/June2018/#Name
 (defn valid-name? [k-or-s]
   (and (not (nil? k-or-s))
@@ -64,11 +70,15 @@
              (map? value))]}
   (cond
     (nil? value) "null"
-    (string? value) (str "\"" value "\"")
+    (string? value) (escape-str value)
     (map? value) (str "{" (->> value
                                (map (fn [[k v]] (str (k-name k) ": " (value-definition v))))
                                (str/join ", ")) "}")
     :else value))
+
+(deftest value-definition-test
+  (is (= "\"text with\\nline breaks and\\t tabs!\""
+         (value-definition "text with\nline breaks and\t tabs!"))))
 
 ; https://spec.graphql.org/June2018/#InputValueDefinition
 ; add additional default value types if needed
@@ -291,7 +301,7 @@
 
 (deftest mutation-definition-test
   (is (= (str "mutation PublishCreatedPlanetaryBoundary {\n"
-              "    publishCreatedPlanetaryBoundary(id: \"123123123\", value: {name: \" Climate Change\n\"}) { id name } \n"
+              "    publishCreatedPlanetaryBoundary(id: \"123123123\", value: {name: \" Climate Change\\n\"}) { id name } \n"
               "}\n\n")
          (mutation-definition
           {:fields [{:name      :publishCreatedPlanetaryBoundary

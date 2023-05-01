@@ -15,13 +15,22 @@
   ; only shows "development" when not using divert-system...
   (d/list-databases (d/client (access/load-config)) {}))
 
+(comment
+  ; example of historic values
+  (d/q '[:find ?e ?v ?t ?add
+         :where
+         [?e :platform/name "Climate Change"]
+         [?e :platform/description ?v ?t ?add]]
+       (d/history (d/db (access/get-connection access/dev-env-db-name)))))
+
 (defn test-mode? []
   (boolean (seq *testing-vars*)))
 
 (def rel-type "PlanetaryBoundary")
 (def rel-field "name")
 (def rel-attribute :platform/name)
-(def rel-sample-value (str " " rel-attribute " sample value\n"))
+(def rel-sample-value " :platform/name sample value\n")
+(def rel-sample-value-escaped " :platform/name sample value\\n")
 
 (defn temp-conn
   ([] (temp-conn "testing"))
