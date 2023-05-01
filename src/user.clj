@@ -44,7 +44,11 @@
      (let [conn (d/connect client arg-map)]
        (d/transact conn {:tx-data attributes/graphql-attributes})
        (d/transact conn {:tx-data attributes/platform-attributes})
+       (d/transact conn {:tx-data (attributes/add-type-tx-data
+                                   "tempid"
+                                   rel-type)})
        (d/transact conn {:tx-data (attributes/add-value-field-tx-data
+                                   "tempid"
                                    rel-type
                                    rel-field
                                    rel-attribute)})

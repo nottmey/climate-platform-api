@@ -77,6 +77,7 @@
         {:keys [db-after]} (d/transact
                             conn
                             {:tx-data (attributes/add-value-field-tx-data
+                                       "tempid"
                                        u/rel-type
                                        "description"
                                        :platform/description)})]
@@ -167,6 +168,7 @@
         _           (d/transact
                      conn
                      {:tx-data (attributes/add-value-field-tx-data
+                                "tempid"
                                 u/rel-type
                                 "description"
                                 :platform/description)})]
