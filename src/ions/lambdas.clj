@@ -2,11 +2,13 @@
   (:require
    [clj-http.client :as client]
    [clojure.data.json :as json]
+   [clojure.string :as str]
    [clojure.test :refer [deftest is]]
    [clojure.walk :as walk]
    [datomic.access :as access]
    [ions.resolvers :as resolvers]
-   [user :as u]))
+   [user :as u])
+  (:import (clojure.lang ExceptionInfo)))
 
 ; example:
 #_(datomic-resolver
@@ -69,9 +71,17 @@
                      "x-api-key"    (get headers "x-api-key")}]
     ; TODO don't use the client api key (because publish needs to be restricted)
     (fn publish [query]
-      (client/post url
-                   {:headers req-headers
-                    :body    (json/write-str {"query" query})}))))
+      (try
+        (client/post url
+                     {:headers req-headers
+                      :body    (json/write-str {"query" query})})
+        (catch ExceptionInfo e
+          (Exception. (->> (-> (ex-data e)
+                               :body
+                               json/read-str
+                               (get "errors"))
+                           (map #(str (get % "errorType") ": " (get % "message")))
+                           (str/join "\n"))))))))
 
 (deftest build-publish-test
   (let [host  "some.host"
@@ -90,12 +100,13 @@
 
 (comment
   ((build-publish {"host"      "3vbfo5wg6vbibbmesukjlqaw74.appsync-api.eu-central-1.amazonaws.com"
-                   "x-api-key" "..."})
+                   "x-api-key" "da2-n52t5yo4ovay3jud2ebyyp6mtu"})
    ; query for all fields, only then they are pushed in subscriptions
-   "mutation PublishCreatedPlanetaryBoundary {
-      publishCreatedPlanetaryBoundary(id: \"123123123\", value: {name: \"Climate Change\"}) {
+   "mutation PublishUpdatedPlanetaryBoundary {
+      publishUpdatedPlanetaryBoundary(id: \"b50ed0a0-dbe5-492b-b542-d2585bd1070c\", value: {name: \"Climate Change 2\", description: \"hello world! \n\"}) {
         id
         name
+        description
       }
     }"))
 
