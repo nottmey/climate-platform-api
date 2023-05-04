@@ -121,11 +121,6 @@
         field-name       (keyword (get-in app-sync-context ["info" "fieldName"]))
         ; TODO adapt to use selectionSetGraphQL, so renamed fields are answered correctly
         selection-set    (set (get-in app-sync-context ["info" "selectionSetList"]))
-        ; TODO only append context in dev mode (e.g. api key or dev identity)
-        assoc-context    (fn [m]
-                           (if (and (map? m) (contains? selection-set "context"))
-                             (assoc m :context app-sync-context)
-                             m))
         selected-paths   (disj selection-set "context")
         arguments        (walk/keywordize-keys (get app-sync-context "arguments"))
         parent-value     (walk/keywordize-keys (get app-sync-context "source"))
@@ -149,5 +144,4 @@
       (doseq [query publish-queries]
         (publish query)))
     (-> response
-        assoc-context
         json/write-str)))

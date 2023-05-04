@@ -6,10 +6,6 @@
 
 (def required-id arguments/required-id)
 
-(def context
-  {:name :context
-   :type types/json-type})
-
 (defn get-query [field-name entity]
   {:name      field-name
    :arguments [arguments/required-id]
@@ -28,13 +24,10 @@
     :type           (types/list-page-type entity)
     :required-type? true}))
 
-(defn publish-mutation [field-name entity]
+(defn publish-mutation [field-name entity-name]
   {:name      field-name
-   :arguments [arguments/required-id
-               {:name           "value"
-                :type           (types/input-type entity)
-                :required-type? true}]
-   :type      entity})
+   :arguments [(arguments/required-input-value entity-name)]
+   :type      entity-name})
 
 (defn subscription [field-name entity fields mutation-name]
   {:docstring "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."

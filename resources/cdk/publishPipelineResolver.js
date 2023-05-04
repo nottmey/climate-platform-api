@@ -58,7 +58,7 @@ export function request(ctx) {
   //   "stash": {},
   //   "outErrors": []
   // }
-  return { id: ctx.arguments.id, ...ctx.arguments.value };
+  return { ...ctx.arguments.value };
 }
 
 /**

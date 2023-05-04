@@ -43,26 +43,26 @@
     s/join)))
 
 (comment
-  (generate-attribute-subtypes [{:name           :id
-                                 :type           types/id-type
-                                 :required-type? true}
+  (generate-attribute-subtypes [fields/required-id
                                 {:name           :name
                                  :type           types/string-type
                                  :required-type? true}]))
 
 (defn gen-entity-fields [fields]
-  (for [{:keys [graphql.relation/field
-                graphql.relation/attribute]} fields]
-    (let [{:keys [db/valueType
-                  db/cardinality]} attribute
-          {:keys [graphql/type]} (attributes/attribute->config attribute)
-          list? (= (:db/ident cardinality) :db.cardinality/many)]
-      (assert (some? type) (str "There is a GraphQL type configured for value type " valueType "."))
-      {:name           field
-       :type           type
-       :list?          list?
-       :required-list? list?
-       :required-type? list?})))
+  (concat
+   [fields/required-id]
+   (for [{:keys [graphql.relation/field
+                 graphql.relation/attribute]} fields]
+     (let [{:keys [db/valueType
+                   db/cardinality]} attribute
+           {:keys [graphql/type]} (attributes/attribute->config attribute)
+           list? (= (:db/ident cardinality) :db.cardinality/many)]
+       (assert (some? type) (str "There is a GraphQL type configured for value type " valueType "."))
+       {:name           field
+        :type           type
+        :list?          list?
+        :required-list? list?
+        :required-type? list?}))))
 
 (defn generate [conn]
   (let [dynamic-schema-types (:types (framework/get-schema (d/db conn)))
@@ -128,10 +128,7 @@
                   (ops/gen-graphql-field op entity fields)))})
      (spec/object-type-definition
       {:name   types/entity-type
-       :fields [fields/context
-                {:name           :id
-                 :type           types/id-type
-                 :required-type? true}
+       :fields [fields/required-id
                 {:name           :attributes
                  :type           types/attribute-type
                  :list?          true
@@ -146,10 +143,7 @@
         (spec/object-type-definition
          {:name       entity
           :interfaces [types/entity-base-type]
-          :fields     (concat
-                       [fields/context
-                        fields/required-id]
-                       (gen-entity-fields (vals fields)))})))
+          :fields     (gen-entity-fields (vals fields))})))
      (spec/object-type-definition
       (objects/list-page types/entity-type))
      (s/join

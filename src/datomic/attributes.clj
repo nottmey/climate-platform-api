@@ -31,7 +31,11 @@
    {:db/ident       :platform/description
     :db/valueType   :db.type/string
     :db/cardinality :db.cardinality/one
-    :db/doc         "Description of any non-user platform entity."}])
+    :db/doc         "Description of any non-user platform entity."}
+   {:db/ident       :platform/quantifications
+    :db/valueType   :db.type/ref
+    :db/cardinality :db.cardinality/many
+    :db/doc         "Reference to quantifications of some platform entities."}])
 
 (deftest platform-attributes-test
   (let [conn    (temp-conn)

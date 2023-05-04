@@ -15,14 +15,14 @@
 (deftest test-get-non-existent-id
   (let [response (resolve-input
                   {"info"      {"parentTypeName" "Query"
-                                "fieldName"      (str "get" u/rel-type)}
+                                "fieldName"      (str "get" u/test-type-one)}
                    "arguments" {"id" (UUID/randomUUID)}})]
     (is (= response nil))))
 
 (deftest test-list-empty-db
   (let [response (resolve-input
                   {"info"      {"parentTypeName" "Query"
-                                "fieldName"      (str "list" u/rel-type)}
+                                "fieldName"      (str "list" u/test-type-one)}
                    "arguments" {}})
         expected {"info"   {"size"    20
                             "offset"  0
@@ -45,29 +45,30 @@
                                                (let [values (->> (re-seq #"(?s)\".*?\"" q)
                                                                  (map #(str/replace % "\"" "")))
                                                      q-norm (-> (str/replace q #"(?s)\".*?\"" "<v>")
-                                                                (str/replace u/rel-type "<t>")
-                                                                (str/replace u/rel-field "<f>"))]
-                                                 (is (= "mutation PublishCreated<t> {\n    publishCreated<t>(id: <v>, value: {<f>: <v>}) { id <f> } \n}\n\n"
+                                                                (str/replace u/test-type-one "<t>")
+                                                                (str/replace u/test-field-one "<f1>")
+                                                                (str/replace u/test-field-two "<f2>"))]
+                                                 (is (= "mutation PublishCreated<t> {\n    publishCreated<t>(value: {id: <v>, <f1>: <v>, <f2>: null}) { id <f1> <f2> } \n}\n\n"
                                                         q-norm))
-                                                 (is (= [entity-id u/rel-sample-value-escaped]
+                                                 (is (= [entity-id u/test-field-one-value-escaped]
                                                         values))))]
                            (resolve-input
                             {"info"      {"parentTypeName"   "Mutation"
-                                          "fieldName"        (str "create" u/rel-type)
-                                          "selectionSetList" ["id" u/rel-field]}
-                             "arguments" {"id"    entity-id
-                                          "value" {u/rel-field u/rel-sample-value}}}))]
+                                          "fieldName"        (str "create" u/test-type-one)
+                                          "selectionSetList" ["id" u/test-field-one]}
+                             "arguments" {"value" {"id"             entity-id
+                                                   u/test-field-one u/test-field-one-value}}}))]
     (is (= true @publish-called?))
-    (is (= {"id"        entity-id
-            u/rel-field u/rel-sample-value}
+    (is (= {"id"             entity-id
+            u/test-field-one u/test-field-one-value}
            created-response))
 
     (let [fetched-entity
           (with-redefs [u/testing-conn (fn [] conn)]
             (resolve-input
              {"info"      {"parentTypeName"   "Query"
-                           "fieldName"        (str "get" u/rel-type)
-                           "selectionSetList" ["id" u/rel-field]}
+                           "fieldName"        (str "get" u/test-type-one)
+                           "selectionSetList" ["id" u/test-field-one]}
               "arguments" {"id" entity-id}}))]
       (is (= created-response fetched-entity)))
 
@@ -75,8 +76,8 @@
           (with-redefs [u/testing-conn (fn [] conn)]
             (resolve-input
              {"info"      {"parentTypeName"   "Query"
-                           "fieldName"        (str "list" u/rel-type)
-                           "selectionSetList" ["values/id" (str "values/" u/rel-field)]}
+                           "fieldName"        (str "list" u/test-type-one)
+                           "selectionSetList" ["values/id" (str "values/" u/test-field-one)]}
               "arguments" {"page" {"size" 10}}}))]
       (is (= {"info"   {"size"    10
                         "offset"  0
@@ -96,16 +97,17 @@
                                                 (let [values (->> (re-seq #"(?s)\".*?\"" q)
                                                                   (map #(str/replace % "\"" "")))
                                                       q-norm (-> (str/replace q #"(?s)\".*?\"" "<v>")
-                                                                 (str/replace u/rel-type "<t>")
-                                                                 (str/replace u/rel-field "<f>"))]
-                                                  (is (= "mutation PublishDeleted<t> {\n    publishDeleted<t>(id: <v>, value: {<f>: <v>}) { id <f> } \n}\n\n"
+                                                                 (str/replace u/test-type-one "<t>")
+                                                                 (str/replace u/test-field-one "<f1>")
+                                                                 (str/replace u/test-field-two "<f2>"))]
+                                                  (is (= "mutation PublishDeleted<t> {\n    publishDeleted<t>(value: {id: <v>, <f1>: <v>, <f2>: null}) { id <f1> <f2> } \n}\n\n"
                                                          q-norm))
-                                                  (is (= [entity-id u/rel-sample-value-escaped]
+                                                  (is (= [entity-id u/test-field-one-value-escaped]
                                                          values))))]
                             (resolve-input
                              {"info"      {"parentTypeName"   "Mutation"
-                                           "fieldName"        (str "delete" u/rel-type)
-                                           "selectionSetList" ["id" u/rel-field]}
+                                           "fieldName"        (str "delete" u/test-type-one)
+                                           "selectionSetList" ["id" u/test-field-one]}
                               "arguments" {"id" entity-id}}))]
       (is (= created-response deleted-entity))
       (is (= true @publish-called?)))
@@ -114,8 +116,8 @@
           (with-redefs [u/testing-conn (fn [] conn)]
             (resolve-input
              {"info"      {"parentTypeName"   "Query"
-                           "fieldName"        (str "get" u/rel-type)
-                           "selectionSetList" ["id" u/rel-field]}
+                           "fieldName"        (str "get" u/test-type-one)
+                           "selectionSetList" ["id" u/test-field-one]}
               "arguments" {"id" entity-id}}))]
       (is (nil? fetched-entity)))))
 
@@ -178,7 +180,8 @@
                                          "81"
                                          "82"
                                          "83"
-                                         "84"]}
+                                         "84"
+                                         "85"]}
                           {"id"         "63",
                            "name"       ":db/doc",
                            "__typename" "StringAttribute",

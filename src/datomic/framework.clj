@@ -26,7 +26,9 @@
                          [?rel :graphql.relation/attribute]
                          [?rel :graphql.relation/field]]
                        db)
-                  (map first))]
+                  (map first)
+                  (sort-by :graphql.relation/field)
+                  (sort-by #(:graphql.type/name (:graphql.relation/type %))))]
     {:list       base
      :types      (-> (group-by #(get-in % [:graphql.relation/type :graphql.type/name]) base)
                      (update-vals #(-> (group-by (fn [{:keys [graphql.relation/field]}] field) %)
@@ -50,8 +52,8 @@
 
 (deftest get-default-paths-test
   (let [schema (get-schema (u/temp-db))
-        paths  (get-default-paths schema u/rel-type)]
-    (is (contains? paths u/rel-field))))
+        paths  (get-default-paths schema u/test-type-one)]
+    (is (contains? paths u/test-field-one))))
 
 (defn resolve-input-fields [schema input-obj gql-type]
   ; TODO nested values
@@ -70,7 +72,7 @@
             (if (nil? value)
               m
               (assoc m attr value))))
-        {})))
+        {:platform/id (parse-uuid (get input-obj "id"))})))
 
 (deftest resolve-input-fields-test
   (let [conn (u/temp-conn)
@@ -78,15 +80,17 @@
                             conn
                             {:tx-data (attributes/add-value-field-tx-data
                                        "tempid"
-                                       u/rel-type
+                                       u/test-type-one
                                        "description"
                                        :platform/description)})]
-    (is (= {:platform/name "Hello"}
+    (is (= {:platform/id   #uuid "bdb1df54-7a04-4e24-bc98-6e0dc6a1bdc0"
+            :platform/name "Hello"}
            (resolve-input-fields
             (get-schema db-after)
-            {"name"        "Hello"
+            {"id"          "bdb1df54-7a04-4e24-bc98-6e0dc6a1bdc0"
+             "name"        "Hello"
              "description" nil}
-            u/rel-type)))))
+            u/test-type-one)))))
 
 (defn gen-pull-pattern [schema gql-type gql-fields]
   ; TODO nested selections
@@ -97,8 +101,8 @@
 
 (deftest gen-pull-pattern-test
   (let [schema  (get-schema (u/temp-db))
-        pattern (gen-pull-pattern schema u/rel-type #{"id" u/rel-field})]
-    (is (= [:platform/id u/rel-attribute]
+        pattern (gen-pull-pattern schema u/test-type-one #{"id" u/test-field-one})]
+    (is (= [:platform/id u/test-attribute-one]
            pattern))))
 
 (defn reverse-pull-pattern [schema gql-type gql-fields pulled-entities]
@@ -135,13 +139,13 @@
 (deftest pull-and-resolve-entity-test
   (let [conn           (u/temp-conn)
         entity-uuid    (UUID/randomUUID)
-        {:keys [db-after]} (d/transact conn {:tx-data [{:platform/id    entity-uuid
-                                                        u/rel-attribute u/rel-sample-value}]})
-        selected-paths #{"id" u/rel-field}
+        {:keys [db-after]} (d/transact conn {:tx-data [{:platform/id         entity-uuid
+                                                        u/test-attribute-one u/test-field-one-value}]})
+        selected-paths #{"id" u/test-field-one}
         schema         (get-schema db-after)
-        pulled-entity  (pull-and-resolve-entity-value schema entity-uuid db-after u/rel-type selected-paths)]
-    (is (= {"id"        (str entity-uuid)
-            u/rel-field u/rel-sample-value}
+        pulled-entity  (pull-and-resolve-entity-value schema entity-uuid db-after u/test-type-one selected-paths)]
+    (is (= {"id"             (str entity-uuid)
+            u/test-field-one u/test-field-one-value}
            pulled-entity))))
 
 (defn get-entities-sorted [db type-name]
@@ -161,7 +165,7 @@
 
 (deftest get-entities-sorted-test
   (let [example     (fn [] {:platform/id          (UUID/randomUUID)
-                            u/rel-attribute       u/rel-sample-value
+                            u/test-attribute-one  u/test-field-one-value
                             :platform/description "bla"})
         sample-data [(example) (example) (example) (example) (example)]
         conn        (u/temp-conn)
@@ -169,13 +173,13 @@
                      conn
                      {:tx-data (attributes/add-value-field-tx-data
                                 "tempid"
-                                u/rel-type
+                                u/test-type-one
                                 "description"
                                 :platform/description)})]
     (d/transact conn {:tx-data sample-data})
     (is (= (map :platform/id sample-data)
-           (get-entities-sorted (d/db conn) u/rel-type)))
-    (is (->> (get-entities-sorted (d/db conn) u/rel-type)
+           (get-entities-sorted (d/db conn) u/test-type-one)))
+    (is (->> (get-entities-sorted (d/db conn) u/test-type-one)
              (map #(d/pull (d/db conn) '[:db/id] [:platform/id %]))
              (map :db/id)
              (apply <)))))

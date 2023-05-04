@@ -107,12 +107,13 @@ type Query {
     getEntity(id: ID!): Entity
     listEntity(page: PageQuery, filter: EntityFilter): EntityListPage!
     getPlanetaryBoundary(id: ID!): PlanetaryBoundary
+    getQuantification(id: ID!): Quantification
     listPlanetaryBoundary(page: PageQuery): PlanetaryBoundaryListPage!
+    listQuantification(page: PageQuery): QuantificationListPage!
 }
 
 #generated, do not edit manually!
 type Entity {
-    context: AWSJSON
     id: ID!
     attributes: [Attribute!]!
 }
@@ -124,52 +125,88 @@ interface EntityBase {
 
 #generated, do not edit manually!
 type PlanetaryBoundary implements EntityBase {
-    context: AWSJSON
+    id: ID!
+    name: String
+    quantifications: [ID!]!
+}
+
+#generated, do not edit manually!
+type Quantification implements EntityBase {
     id: ID!
     name: String
 }
 
 #generated, do not edit manually!
 type EntityListPage {
-    context: AWSJSON
     info: PageInfo!
     values: [Entity!]!
 }
 
 #generated, do not edit manually!
 type PlanetaryBoundaryListPage {
-    context: AWSJSON
     info: PageInfo!
     values: [PlanetaryBoundary!]!
 }
 
 #generated, do not edit manually!
+type QuantificationListPage {
+    info: PageInfo!
+    values: [Quantification!]!
+}
+
+#generated, do not edit manually!
 input PlanetaryBoundaryInput {
+    id: ID!
+    name: String
+    quantifications: [ID!]!
+}
+
+#generated, do not edit manually!
+input QuantificationInput {
+    id: ID!
     name: String
 }
 
 #generated, do not edit manually!
 type Mutation {
-    publishCreatedPlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary
-    publishUpdatedPlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary
-    publishDeletedPlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary
-    createPlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary!
-    mergePlanetaryBoundary(id: ID!, value: PlanetaryBoundaryInput!): PlanetaryBoundary
+    publishCreatedPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary
+    publishCreatedQuantification(value: QuantificationInput!): Quantification
+    publishUpdatedPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary
+    publishUpdatedQuantification(value: QuantificationInput!): Quantification
+    publishDeletedPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary
+    publishDeletedQuantification(value: QuantificationInput!): Quantification
+    createPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary!
+    createQuantification(value: QuantificationInput!): Quantification!
+    mergePlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary
+    mergeQuantification(value: QuantificationInput!): Quantification
     deletePlanetaryBoundary(id: ID!): PlanetaryBoundary
+    deleteQuantification(id: ID!): Quantification
 }
 
 #generated, do not edit manually!
 type Subscription {
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
-    onCreatedPlanetaryBoundary(id: ID, name: String): PlanetaryBoundary
+    onCreatedPlanetaryBoundary(id: ID, name: String, quantifications: ID): PlanetaryBoundary
     @aws_subscribe(mutations: ["publishCreatedPlanetaryBoundary"])
 
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
-    onUpdatedPlanetaryBoundary(id: ID, name: String): PlanetaryBoundary
+    onCreatedQuantification(id: ID, name: String): Quantification
+    @aws_subscribe(mutations: ["publishCreatedQuantification"])
+
+    "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
+    onUpdatedPlanetaryBoundary(id: ID, name: String, quantifications: ID): PlanetaryBoundary
     @aws_subscribe(mutations: ["publishUpdatedPlanetaryBoundary"])
 
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
-    onDeletedPlanetaryBoundary(id: ID, name: String): PlanetaryBoundary
+    onUpdatedQuantification(id: ID, name: String): Quantification
+    @aws_subscribe(mutations: ["publishUpdatedQuantification"])
+
+    "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
+    onDeletedPlanetaryBoundary(id: ID, name: String, quantifications: ID): PlanetaryBoundary
     @aws_subscribe(mutations: ["publishDeletedPlanetaryBoundary"])
+
+    "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
+    onDeletedQuantification(id: ID, name: String): Quantification
+    @aws_subscribe(mutations: ["publishDeletedQuantification"])
 }
 

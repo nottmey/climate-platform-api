@@ -1,12 +1,10 @@
 (ns graphql.objects
   (:require
-   [graphql.fields :as fields]
    [graphql.types :as types]))
 
 (defn list-page [entity]
   {:name   (types/list-page-type entity)
-   :fields [fields/context
-            {:name           :info
+   :fields [{:name           :info
              :type           types/page-info-type
              :required-type? true}
             {:name           :values

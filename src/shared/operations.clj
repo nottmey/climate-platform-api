@@ -49,16 +49,14 @@
    ::resolver    ::datomic})
 
 (def create-op
-  {::parent-type      types/mutation-type
-   ::prefix           "create"
-   ::resolver         ::datomic
-   ::resolver-options {::requires-id? true}})
+  {::parent-type types/mutation-type
+   ::prefix      "create"
+   ::resolver    ::datomic})
 
 (def merge-op
-  {::parent-type      types/mutation-type
-   ::prefix           "merge"
-   ::resolver         ::datomic
-   ::resolver-options {::requires-id? true}})
+  {::parent-type types/mutation-type
+   ::prefix      "merge"
+   ::resolver    ::datomic})
 
 (def delete-op
   {::parent-type      types/mutation-type
@@ -119,13 +117,11 @@
       "get" (fields/get-query field-name entity-name)
       "list" (fields/list-page-query field-name entity-name)
       "create" {:name           field-name
-                :arguments      [arguments/required-id
-                                 (arguments/required-input-value entity-name)]
+                :arguments      [(arguments/required-input-value entity-name)]
                 :type           entity-name
                 :required-type? true}
       "merge" {:name      field-name
-               :arguments [arguments/required-id
-                           (arguments/required-input-value entity-name)]
+               :arguments [(arguments/required-input-value entity-name)]
                :type      entity-name}
       "delete" {:name      field-name
                 :arguments [arguments/required-id]
@@ -143,15 +139,12 @@
 (defn create-publish-definition [publish-op gql-type entity default-paths]
   (spec/mutation-definition
    {:fields [{:name      (gen-field-name publish-op gql-type)
-              :arguments (concat
-                          [{:name  :id
-                            :value (get entity "id")}]
-                          [{:name  :value
-                            :value (->> (disj default-paths "id")
-                                        (sort)
-                                        ; TODO nested values
-                                        (map #(vector % (get entity %)))
-                                        (into {}))}])
+              :arguments [{:name  :value
+                           :value (->> default-paths
+                                       (sort)
+                                       ; TODO nested values
+                                       (map #(vector % (get entity %)))
+                                       (into {}))}]
               :selection (->> (sort default-paths)
                               (into []))}]}))
 
@@ -194,8 +187,8 @@
                {:response {"info"   page-info
                            "values" entities}})
       "create" (let [input         (walk/stringify-keys value)
-                     input-data    (-> (framework/resolve-input-fields schema input entity-name)
-                                       (assoc :platform/id entity-id))
+                     input-data    (framework/resolve-input-fields schema input entity-name)
+                     entity-id     (:platform/id input-data)
                      {:keys [db-after]} (d/transact conn {:tx-data [input-data]})
                      default-paths (framework/get-default-paths schema entity-name)
                      paths         (set/union selected-paths default-paths)
@@ -207,9 +200,9 @@
                                      default-paths)]
                   :response        entity-value})
       "merge" (let [input         (walk/stringify-keys value)
-                    input-data    (-> (framework/resolve-input-fields schema input entity-name)
-                                      (assoc :db/id [:platform/id entity-id]))
-                    ; TODO validate id -> return nil if not present
+                    input-data    (framework/resolve-input-fields schema input entity-name)
+                    entity-id     (:platform/id input-data)
+                    ; TODO validate id -> return nil if entity not present
                     {:keys [db-after]} (d/transact conn {:tx-data [input-data]})
                     default-paths (framework/get-default-paths schema entity-name)
                     paths         (set/union selected-paths default-paths)
@@ -239,33 +232,33 @@
         entity-uuid (UUID/randomUUID)
         {:keys [tempids]} (d/transact
                            conn
-                           {:tx-data [{:db/id          "tempid"
-                                       :platform/id    entity-uuid
-                                       u/rel-attribute u/rel-sample-value
-                                       :db/doc         "other attr value"}]})
+                           {:tx-data [{:db/id               "tempid"
+                                       :platform/id         entity-uuid
+                                       u/test-attribute-one u/test-field-one-value
+                                       :db/doc              "other attr value"}]})
         db-id       (get tempids "tempid")
         db-value    (d/pull (d/db conn) '[*] db-id)]
-    (is (= {:db/id          db-id
-            :platform/id    entity-uuid
-            u/rel-attribute u/rel-sample-value
-            :db/doc         "other attr value"}
+    (is (= {:db/id               db-id
+            :platform/id         entity-uuid
+            u/test-attribute-one u/test-field-one-value
+            :db/doc              "other attr value"}
            db-value))
     (let [result       (resolve-field
                         merge-op
                         {:conn       conn
-                         :field-name (str "merge" u/rel-type)
-                         :arguments  {:id    (str entity-uuid)
-                                      :value {u/rel-field "123"}}})
+                         :field-name (str "merge" u/test-type-one)
+                         :arguments  {:value {"id"             (str entity-uuid)
+                                              u/test-field-one "123"}}})
           {:keys [response publish-queries]} result
           new-db-value (d/pull (d/db conn) '[*] db-id)]
-      (is (= {"id"        (str entity-uuid)
-              u/rel-field "123"}
+      (is (= {"id"             (str entity-uuid)
+              u/test-field-one "123"}
              response))
-      (is (= {:db/id          db-id
-              :platform/id    entity-uuid
-              u/rel-attribute "123"
-              :db/doc         "other attr value"}
+      (is (= {:db/id               db-id
+              :platform/id         entity-uuid
+              u/test-attribute-one "123"
+              :db/doc              "other attr value"}
              new-db-value))
-      (is (= "mutation PublishUpdatedPlanetaryBoundary {\n    publishUpdatedPlanetaryBoundary(id: <id>, value: {name: \"123\"}) { id name } \n}\n\n"
+      (is (= "mutation PublishUpdatedPlanetaryBoundary {\n    publishUpdatedPlanetaryBoundary(value: {id: <id>, name: \"123\", quantifications: null}) { id name quantifications } \n}\n\n"
              (-> (first publish-queries)
                  (str/replace (str "\"" entity-uuid "\"") "<id>")))))))

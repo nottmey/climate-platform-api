@@ -26,11 +26,14 @@
 (defn test-mode? []
   (boolean (seq *testing-vars*)))
 
-(def rel-type "PlanetaryBoundary")
-(def rel-field "name")
-(def rel-attribute :platform/name)
-(def rel-sample-value " :platform/name sample value\n")
-(def rel-sample-value-escaped " :platform/name sample value\\n")
+(def test-type-one "PlanetaryBoundary")
+(def test-type-two "Quantification")
+(def test-field-one "name")
+(def test-field-two "quantifications")
+(def test-attribute-one :platform/name)
+(def test-attribute-two :platform/quantifications)
+(def test-field-one-value " :platform/name sample value\n")
+(def test-field-one-value-escaped " :platform/name sample value\\n")
 
 (defn temp-conn
   ([] (temp-conn "testing"))
@@ -44,14 +47,25 @@
      (let [conn (d/connect client arg-map)]
        (d/transact conn {:tx-data attributes/graphql-attributes})
        (d/transact conn {:tx-data attributes/platform-attributes})
-       (d/transact conn {:tx-data (attributes/add-type-tx-data
-                                   "tempid"
-                                   rel-type)})
+       (d/transact conn {:tx-data (attributes/add-type-tx-data "tempid" test-type-one)})
+       (d/transact conn {:tx-data (attributes/add-type-tx-data "tempid" test-type-two)})
        (d/transact conn {:tx-data (attributes/add-value-field-tx-data
                                    "tempid"
-                                   rel-type
-                                   rel-field
-                                   rel-attribute)})
+                                   test-type-one
+                                   test-field-one
+                                   test-attribute-one)})
+       (d/transact conn {:tx-data (attributes/add-value-field-tx-data
+                                   "tempid"
+                                   test-type-two
+                                   test-field-one
+                                   test-attribute-one)})
+       (d/transact conn {:tx-data (attributes/add-ref-field-tx-data
+                                   "tempid"
+                                   test-type-one
+                                   test-field-two
+                                   test-attribute-two
+                                   test-type-two
+                                   true)})
        conn))))
 
 (comment
@@ -96,7 +110,7 @@
 
   (d/transact
    (access/get-connection access/dev-env-db-name)
-   {:tx-data (attributes/add-value-field-tx-data "PlanetaryBoundary" "description" :platform/description)}))
+   {:tx-data (attributes/add-value-field-tx-data "tempid" "PlanetaryBoundary" "description" :platform/description)}))
 
 (defn ensure-data
   ([tx-data db-name]
