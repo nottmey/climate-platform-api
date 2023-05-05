@@ -5,7 +5,7 @@
    [datomic.attributes :as attributes]
    [datomic.client.api :as d]
    [datomic.queries :as queries]
-   [shared.attributes :as sa]
+   [shared.mappings :as sa]
    [user :as u])
   (:import (java.util UUID)))
 

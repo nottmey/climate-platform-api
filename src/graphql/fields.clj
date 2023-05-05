@@ -2,7 +2,7 @@
   (:require
    [graphql.arguments :as arguments]
    [graphql.types :as types]
-   [shared.attributes :as attributes]))
+   [shared.mappings :as mappings]))
 
 (def required-id arguments/required-id)
 
@@ -34,10 +34,10 @@
    :name      field-name
    :arguments (concat
                [arguments/optional-id]
-               (for [[field-name {:keys [graphql.relation/attribute]}] fields]
-                 (let [{:keys [:graphql/type]}
-                       (attributes/attribute->config attribute)]
-                   {:name field-name
-                    :type type})))
+               (for [[field-name {:keys [graphql.relation/attribute]}] fields
+                     :let [value-type (-> attribute :db/valueType :db/ident)]
+                     :when (not= value-type :db.type/ref)]
+                 {:name field-name
+                  :type (mappings/value-type->field-type value-type)}))
    :type      entity
    :directive (str "@aws_subscribe(mutations: [\"" mutation-name "\"])")})

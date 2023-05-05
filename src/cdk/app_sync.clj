@@ -93,7 +93,7 @@
       ;; https://docs.aws.amazon.com/appsync/latest/devguide/utility-helpers-in-util.html
       (doseq [[parent-type-name field-name] @resolvers/resolvable-paths]
         (configure-datomic-resolver parent-type-name field-name))
-      (doseq [op           (ops/all ::ops/any)
+      (doseq [op           (ops/all-ops ::ops/any)
               graphql-type dynamic-graphql-types
               :let [type-name  (::ops/parent-type op)
                     field-name (ops/gen-field-name op graphql-type)]]

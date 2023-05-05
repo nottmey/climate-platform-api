@@ -76,7 +76,7 @@
   {::parent-type types/subscription-type
    ::prefix      "onDeleted"})
 
-(defn all [resolver-location]
+(defn all-ops [resolver-location]
   (->> [publish-created-op
         publish-updated-op
         publish-deleted-op
@@ -92,14 +92,14 @@
                     (= (::resolver %) resolver-location)))))
 
 (deftest all-test
-  (is (< 0 (count (all ::any))))
-  (is (< 0 (count (all ::datomic))))
+  (is (< 0 (count (all-ops ::any))))
+  (is (< 0 (count (all-ops ::datomic))))
   (is (every?
        #(= (::resolver %) ::datomic)
-       (all ::datomic))))
+       (all-ops ::datomic))))
 
 (comment
-  (all ::any))
+  (all-ops ::any))
 
 (defn gen-field-name [op entity-name]
   (str (::prefix op) (name entity-name)))

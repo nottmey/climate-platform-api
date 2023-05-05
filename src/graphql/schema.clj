@@ -9,38 +9,36 @@
    [graphql.objects :as objects]
    [graphql.spec :as spec]
    [graphql.types :as types]
-   [shared.attributes :as attributes]
+   [shared.mappings :as mappings]
    [shared.operations :as ops]
    [user :as u]))
 
 (defn generate-attribute-subtypes [attribute-fields]
   (str
-   (->>
-    attributes/attribute-types
-    (map
-     #(spec/object-type-definition
-       {:name       (:graphql/single-value-type-name %)
-        :interfaces [types/attribute-type]
-        :fields     (conj
-                     attribute-fields
-                     {:name           (:graphql/single-value-field-name %)
-                      :type           (:graphql/type %)
-                      :required-type? true})}))
-    s/join)
-   (->>
-    attributes/attribute-types
-    (map
-     #(spec/object-type-definition
-       {:name       (:graphql/multi-value-type-name %)
-        :interfaces [types/attribute-type]
-        :fields     (conj
-                     attribute-fields
-                     {:name           (:graphql/multi-value-field-name %)
-                      :type           (:graphql/type %)
-                      :list?          true
-                      :required-type? true
-                      :required-list? true})}))
-    s/join)))
+   (->> mappings/all-mappings
+        (map
+         #(spec/object-type-definition
+           {:name       (:graphql/single-value-type-name %)
+            :interfaces [types/attribute-type]
+            :fields     (conj
+                         attribute-fields
+                         {:name           (:graphql/single-value-field-name %)
+                          :type           (:graphql/type %)
+                          :required-type? true})}))
+        s/join)
+   (->> mappings/all-mappings
+        (map
+         #(spec/object-type-definition
+           {:name       (:graphql/multi-value-type-name %)
+            :interfaces [types/attribute-type]
+            :fields     (conj
+                         attribute-fields
+                         {:name           (:graphql/multi-value-field-name %)
+                          :type           (:graphql/type %)
+                          :list?          true
+                          :required-type? true
+                          :required-list? true})}))
+        s/join)))
 
 (comment
   (generate-attribute-subtypes [fields/required-id
@@ -48,21 +46,32 @@
                                  :type           types/string-type
                                  :required-type? true}]))
 
-(defn gen-entity-fields [fields]
+(defn gen-entity-fields [fields input?]
   (concat
    [fields/required-id]
    (for [{:keys [graphql.relation/field
-                 graphql.relation/attribute]} fields]
-     (let [{:keys [db/valueType
-                   db/cardinality]} attribute
-           {:keys [graphql/type]} (attributes/attribute->config attribute)
-           list? (= (:db/ident cardinality) :db.cardinality/many)]
-       (assert (some? type) (str "There is a GraphQL type configured for value type " valueType "."))
+                 graphql.relation/attribute
+                 graphql.relation/target]} fields]
+     (let [target-type (:graphql.type/name target)
+           value-type  (-> attribute :db/valueType :db/ident)
+           field-type  (mappings/value-type->field-type value-type)
+           list?       (= (-> attribute :db/cardinality :db/ident)
+                          :db.cardinality/many)]
+       (assert (some? field-type) (str "There is a GraphQL type configured for value type " value-type "."))
        {:name           field
-        :type           type
+        :type           (if target-type
+                          (if input?
+                            (types/input-type target-type)
+                            target-type)
+                          field-type)
         :list?          list?
         :required-list? list?
         :required-type? list?}))))
+
+(comment
+  (let [schema (framework/get-schema (u/temp-db))]
+    (for [[_ fields] (:types schema)]
+      (gen-entity-fields (vals fields) true))))
 
 (defn generate [conn]
   (let [dynamic-schema-types (:types (framework/get-schema (d/db conn)))
@@ -71,7 +80,7 @@
                               {:name           :name
                                :type           types/string-type
                                :required-type? true}]
-        all-ops              (ops/all ::ops/any)]
+        all-ops              (ops/all-ops ::ops/any)]
     (str
      ;; static (db independent) schema
      (spec/schema-definition
@@ -143,7 +152,7 @@
         (spec/object-type-definition
          {:name       entity
           :interfaces [types/entity-base-type]
-          :fields     (gen-entity-fields (vals fields))})))
+          :fields     (gen-entity-fields (vals fields) false)})))
      (spec/object-type-definition
       (objects/list-page types/entity-type))
      (s/join
@@ -157,7 +166,7 @@
         ; always generate all dynamic entity input types
         (spec/input-object-type-definition
          {:name   (types/input-type entity)
-          :fields (gen-entity-fields (vals fields))})))
+          :fields (gen-entity-fields (vals fields) true)})))
      (spec/object-type-definition
       {:name   types/mutation-type
        :fields (for [op all-ops

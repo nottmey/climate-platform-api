@@ -3,8 +3,8 @@
    [clojure.string :as str]
    [datomic.client.api :as d]
    [datomic.queries :as queries]
-   [ions.mappings :as mappings]
    [ions.utils :as utils]
+   [shared.mappings :as mappings]
    [shared.operations :as ops]
    [user :as u]))
 
@@ -19,7 +19,7 @@
 
 (defn select-and-use-correct-resolver [{:keys [parent-type-name field-name]
                                         :as   args}]
-  (if-let [op (->> (ops/all ::ops/datomic)
+  (if-let [op (->> (ops/all-ops ::ops/datomic)
                    (filter #(= (::ops/parent-type %) parent-type-name))
                    (filter #(and (not (str/includes? (name field-name) "Entity"))
                                  (ops/resolves-graphql-field? % field-name)))
