@@ -3,14 +3,20 @@
    [clojure.data.json :as json]
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]
+   [graphql.parsing :as gp]
    [ions.lambdas :refer [datomic-resolver]]
    [user :as u])
   (:import (java.util UUID)))
 
-(defn resolve-input [input]
+(defn- resolve-input [input]
   (json/read-str
    (datomic-resolver
     {:input (json/write-str input)})))
+
+(defn- expecting-query [publish-called? parsed-query]
+  (fn [q]
+    (reset! publish-called? true)
+    (is (= parsed-query (gp/parse q)))))
 
 (deftest test-get-non-existent-id
   (let [response (resolve-input
@@ -40,25 +46,28 @@
         publish-called?  (atom false)
         created-response (with-redefs
                           [u/testing-conn    (fn [] conn)
-                           u/testing-publish (fn [q]
-                                               (reset! publish-called? true)
-                                               (let [values (->> (re-seq #"(?s)\".*?\"" q)
-                                                                 (map #(str/replace % "\"" "")))
-                                                     q-norm (-> (str/replace q #"(?s)\".*?\"" "<v>")
-                                                                (str/replace u/test-type-one "<t>")
-                                                                (str/replace u/test-field-one "<f1>")
-                                                                (str/replace u/test-field-two "<f2>"))]
-                                                 (is (= "mutation PublishCreated<t> {\n    publishCreated<t>(value: {id: <v>, <f1>: <v>, <f2>: null}) { id <f1> <f2> } \n}\n\n"
-                                                        q-norm))
-                                                 (is (= [entity-id u/test-field-one-value-escaped]
-                                                        values))))]
+                           u/testing-publish (expecting-query
+                                              publish-called?
+                                              [{:name      (str "PublishCreated" u/test-type-one)
+                                                :operation :mutation,
+                                                :selection [{:name      (str "publishCreated" u/test-type-one)
+                                                             :arguments [{:name  "value"
+                                                                          :value [{:name  "id"
+                                                                                   :value entity-id}
+                                                                                  {:name  u/test-field-one
+                                                                                   :value u/test-field-one-value}
+                                                                                  {:name  u/test-field-two
+                                                                                   :value nil}]}],
+                                                             :selection [{:name "id"}
+                                                                         {:name u/test-field-one}
+                                                                         {:name u/test-field-two}]}]}])]
                            (resolve-input
                             {"info"      {"parentTypeName"   "Mutation"
                                           "fieldName"        (str "create" u/test-type-one)
                                           "selectionSetList" ["id" u/test-field-one]}
                              "arguments" {"value" {"id"             entity-id
                                                    u/test-field-one u/test-field-one-value}}}))]
-    (is (= true @publish-called?))
+    (is @publish-called?)
     (is (= {"id"             entity-id
             u/test-field-one u/test-field-one-value}
            created-response))
@@ -92,25 +101,28 @@
     (let [publish-called? (atom false)
           deleted-entity  (with-redefs
                            [u/testing-conn    (fn [] conn)
-                            u/testing-publish (fn [q]
-                                                (reset! publish-called? true)
-                                                (let [values (->> (re-seq #"(?s)\".*?\"" q)
-                                                                  (map #(str/replace % "\"" "")))
-                                                      q-norm (-> (str/replace q #"(?s)\".*?\"" "<v>")
-                                                                 (str/replace u/test-type-one "<t>")
-                                                                 (str/replace u/test-field-one "<f1>")
-                                                                 (str/replace u/test-field-two "<f2>"))]
-                                                  (is (= "mutation PublishDeleted<t> {\n    publishDeleted<t>(value: {id: <v>, <f1>: <v>, <f2>: null}) { id <f1> <f2> } \n}\n\n"
-                                                         q-norm))
-                                                  (is (= [entity-id u/test-field-one-value-escaped]
-                                                         values))))]
+                            u/testing-publish (expecting-query
+                                               publish-called?
+                                               [{:name      (str "PublishDeleted" u/test-type-one)
+                                                 :operation :mutation,
+                                                 :selection [{:name      (str "publishDeleted" u/test-type-one)
+                                                              :arguments [{:name  "value"
+                                                                           :value [{:name  "id"
+                                                                                    :value entity-id}
+                                                                                   {:name  u/test-field-one
+                                                                                    :value u/test-field-one-value}
+                                                                                   {:name  u/test-field-two
+                                                                                    :value nil}]}],
+                                                              :selection [{:name "id"}
+                                                                          {:name u/test-field-one}
+                                                                          {:name u/test-field-two}]}]}])]
                             (resolve-input
                              {"info"      {"parentTypeName"   "Mutation"
                                            "fieldName"        (str "delete" u/test-type-one)
                                            "selectionSetList" ["id" u/test-field-one]}
                               "arguments" {"id" entity-id}}))]
       (is (= created-response deleted-entity))
-      (is (= true @publish-called?)))
+      (is @publish-called?))
 
     (let [fetched-entity
           (with-redefs [u/testing-conn (fn [] conn)]

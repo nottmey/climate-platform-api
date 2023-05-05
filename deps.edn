@@ -10,6 +10,7 @@
              com.datomic/client-impl-shared          {:mvn/version "1.0.98"} ; matches version in ions
              com.datomic/ion                         {:mvn/version "1.0.59"} ; matches version in ions
              com.fasterxml.jackson.core/jackson-core {:mvn/version "2.12.3"} ; matches version in ions
+             com.graphql-java/graphql-java           {:mvn/version "20.2"}
              io.pedestal/pedestal.log                {:mvn/version "0.5.10"}
              org.clojure/clojure                     {:mvn/version "1.11.1"}
              org.clojure/data.json                   {:mvn/version "2.4.0"}
