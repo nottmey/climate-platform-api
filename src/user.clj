@@ -26,14 +26,13 @@
 (defn test-mode? []
   (boolean (seq *testing-vars*)))
 
-(def test-type-one "PlanetaryBoundary")
-(def test-type-two "Quantification")
-(def test-field-one "name")
-(def test-field-two "quantifications")
-(def test-attribute-one :platform/name)
-(def test-attribute-two :platform/quantifications)
-(def test-field-one-value " :platform/name sample value\n")
-(def test-field-one-value-escaped " :platform/name sample value\\n")
+(def test-type-planetary-boundary "PlanetaryBoundary")
+(def test-type-quantification "Quantification")
+(def test-field-name "name")
+(def test-field-name-value " :platform/name sample value\n")
+(def test-field-quantifications "quantifications")
+(def test-attribute-name :platform/name)
+(def test-attribute-quantifications :platform/quantifications)
 
 (defn temp-conn
   ([] (temp-conn "testing"))
@@ -47,24 +46,24 @@
      (let [conn (d/connect client arg-map)]
        (d/transact conn {:tx-data attributes/graphql-attributes})
        (d/transact conn {:tx-data attributes/platform-attributes})
-       (d/transact conn {:tx-data (attributes/add-type-tx-data "tempid" test-type-one)})
-       (d/transact conn {:tx-data (attributes/add-type-tx-data "tempid" test-type-two)})
+       (d/transact conn {:tx-data (attributes/add-type-tx-data "tempid" test-type-planetary-boundary)})
+       (d/transact conn {:tx-data (attributes/add-type-tx-data "tempid" test-type-quantification)})
        (d/transact conn {:tx-data (attributes/add-value-field-tx-data
                                    "tempid"
-                                   test-type-one
-                                   test-field-one
-                                   test-attribute-one)})
+                                   test-type-planetary-boundary
+                                   test-field-name
+                                   test-attribute-name)})
        (d/transact conn {:tx-data (attributes/add-value-field-tx-data
                                    "tempid"
-                                   test-type-two
-                                   test-field-one
-                                   test-attribute-one)})
+                                   test-type-quantification
+                                   test-field-name
+                                   test-attribute-name)})
        (d/transact conn {:tx-data (attributes/add-ref-field-tx-data
                                    "tempid"
-                                   test-type-one
-                                   test-field-two
-                                   test-attribute-two
-                                   test-type-two
+                                   test-type-planetary-boundary
+                                   test-field-quantifications
+                                   test-attribute-quantifications
+                                   test-type-quantification
                                    true)})
        conn))))
 

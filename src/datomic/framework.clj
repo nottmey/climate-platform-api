@@ -52,8 +52,8 @@
 
 (deftest get-default-paths-test
   (let [schema (get-schema (u/temp-db))
-        paths  (get-default-paths schema u/test-type-one)]
-    (is (contains? paths u/test-field-one))))
+        paths  (get-default-paths schema u/test-type-planetary-boundary)]
+    (is (contains? paths u/test-field-name))))
 
 (defn resolve-input-fields [schema input-obj gql-type]
   ; TODO nested values
@@ -80,7 +80,7 @@
                             conn
                             {:tx-data (attributes/add-value-field-tx-data
                                        "tempid"
-                                       u/test-type-one
+                                       u/test-type-planetary-boundary
                                        "description"
                                        :platform/description)})]
     (is (= {:platform/id   #uuid "bdb1df54-7a04-4e24-bc98-6e0dc6a1bdc0"
@@ -90,7 +90,7 @@
             {"id"          "bdb1df54-7a04-4e24-bc98-6e0dc6a1bdc0"
              "name"        "Hello"
              "description" nil}
-            u/test-type-one)))))
+            u/test-type-planetary-boundary)))))
 
 (defn gen-pull-pattern [schema gql-type gql-fields]
   ; TODO nested selections
@@ -101,8 +101,8 @@
 
 (deftest gen-pull-pattern-test
   (let [schema  (get-schema (u/temp-db))
-        pattern (gen-pull-pattern schema u/test-type-one #{"id" u/test-field-one})]
-    (is (= [:platform/id u/test-attribute-one]
+        pattern (gen-pull-pattern schema u/test-type-planetary-boundary #{"id" u/test-field-name})]
+    (is (= [:platform/id u/test-attribute-name]
            pattern))))
 
 (defn reverse-pull-pattern [schema gql-type gql-fields pulled-entities]
@@ -139,13 +139,13 @@
 (deftest pull-and-resolve-entity-test
   (let [conn           (u/temp-conn)
         entity-uuid    (UUID/randomUUID)
-        {:keys [db-after]} (d/transact conn {:tx-data [{:platform/id         entity-uuid
-                                                        u/test-attribute-one u/test-field-one-value}]})
-        selected-paths #{"id" u/test-field-one}
+        {:keys [db-after]} (d/transact conn {:tx-data [{:platform/id          entity-uuid
+                                                        u/test-attribute-name u/test-field-name-value}]})
+        selected-paths #{"id" u/test-field-name}
         schema         (get-schema db-after)
-        pulled-entity  (pull-and-resolve-entity-value schema entity-uuid db-after u/test-type-one selected-paths)]
-    (is (= {"id"             (str entity-uuid)
-            u/test-field-one u/test-field-one-value}
+        pulled-entity  (pull-and-resolve-entity-value schema entity-uuid db-after u/test-type-planetary-boundary selected-paths)]
+    (is (= {"id"              (str entity-uuid)
+            u/test-field-name u/test-field-name-value}
            pulled-entity))))
 
 (defn get-entities-sorted [db type-name]
@@ -165,7 +165,7 @@
 
 (deftest get-entities-sorted-test
   (let [example     (fn [] {:platform/id          (UUID/randomUUID)
-                            u/test-attribute-one  u/test-field-one-value
+                            u/test-attribute-name u/test-field-name-value
                             :platform/description "bla"})
         sample-data [(example) (example) (example) (example) (example)]
         conn        (u/temp-conn)
@@ -173,13 +173,13 @@
                      conn
                      {:tx-data (attributes/add-value-field-tx-data
                                 "tempid"
-                                u/test-type-one
+                                u/test-type-planetary-boundary
                                 "description"
                                 :platform/description)})]
     (d/transact conn {:tx-data sample-data})
     (is (= (map :platform/id sample-data)
-           (get-entities-sorted (d/db conn) u/test-type-one)))
-    (is (->> (get-entities-sorted (d/db conn) u/test-type-one)
+           (get-entities-sorted (d/db conn) u/test-type-planetary-boundary)))
+    (is (->> (get-entities-sorted (d/db conn) u/test-type-planetary-boundary)
              (map #(d/pull (d/db conn) '[:db/id] [:platform/id %]))
              (map :db/id)
              (apply <)))))

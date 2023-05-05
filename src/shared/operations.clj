@@ -232,32 +232,32 @@
         entity-uuid (UUID/randomUUID)
         {:keys [tempids]} (d/transact
                            conn
-                           {:tx-data [{:db/id               "tempid"
-                                       :platform/id         entity-uuid
-                                       u/test-attribute-one u/test-field-one-value
-                                       :db/doc              "other attr value"}]})
+                           {:tx-data [{:db/id                "tempid"
+                                       :platform/id          entity-uuid
+                                       u/test-attribute-name u/test-field-name-value
+                                       :db/doc               "other attr value"}]})
         db-id       (get tempids "tempid")
         db-value    (d/pull (d/db conn) '[*] db-id)]
-    (is (= {:db/id               db-id
-            :platform/id         entity-uuid
-            u/test-attribute-one u/test-field-one-value
-            :db/doc              "other attr value"}
+    (is (= {:db/id                db-id
+            :platform/id          entity-uuid
+            u/test-attribute-name u/test-field-name-value
+            :db/doc               "other attr value"}
            db-value))
     (let [result       (resolve-field
                         merge-op
                         {:conn       conn
-                         :field-name (str "merge" u/test-type-one)
-                         :arguments  {:value {"id"             (str entity-uuid)
-                                              u/test-field-one "123"}}})
+                         :field-name (str "merge" u/test-type-planetary-boundary)
+                         :arguments  {:value {"id"              (str entity-uuid)
+                                              u/test-field-name "123"}}})
           {:keys [response publish-queries]} result
           new-db-value (d/pull (d/db conn) '[*] db-id)]
-      (is (= {"id"             (str entity-uuid)
-              u/test-field-one "123"}
+      (is (= {"id"              (str entity-uuid)
+              u/test-field-name "123"}
              response))
-      (is (= {:db/id               db-id
-              :platform/id         entity-uuid
-              u/test-attribute-one "123"
-              :db/doc              "other attr value"}
+      (is (= {:db/id                db-id
+              :platform/id          entity-uuid
+              u/test-attribute-name "123"
+              :db/doc               "other attr value"}
              new-db-value))
       (is (= "mutation PublishUpdatedPlanetaryBoundary {\n    publishUpdatedPlanetaryBoundary(value: {id: <id>, name: \"123\", quantifications: null}) { id name quantifications } \n}\n\n"
              (-> (first publish-queries)
