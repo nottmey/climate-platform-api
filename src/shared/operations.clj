@@ -10,6 +10,7 @@
    [graphql.arguments :as arguments]
    [graphql.fields :as fields]
    [graphql.objects :as objects]
+   [graphql.parsing :as parsing]
    [graphql.spec :as spec]
    [graphql.types :as types]
    [ions.utils :as utils]
@@ -136,17 +137,101 @@
       "list" [(objects/list-page entity-name)]
       nil)))
 
-(defn create-publish-definition [publish-op gql-type entity default-paths]
-  (spec/mutation-definition
-   {:fields [{:name      (gen-field-name publish-op gql-type)
-              :arguments [{:name  :value
-                           :value (->> default-paths
-                                       (sort)
-                                       ; TODO nested values
-                                       (map #(vector % (get entity %)))
-                                       (into {}))}]
-              :selection (->> (sort default-paths)
-                              (into []))}]}))
+(defn- convert-to-input [entity paths]
+  (->> paths
+       (map (fn [[k v]]
+              (let [entity-value (get entity k)]
+                (cond
+                  (nil? entity-value) nil
+                  (empty? v) [k entity-value]
+                  (sequential? entity-value) [k (map #(convert-to-input % v) entity-value)]
+                  :else [k (convert-to-input entity-value v)]))))
+       (into {})))
+
+(comment
+  (convert-to-input
+   {"id" "123"}
+   {"id" {},
+    "x" {},
+    "y" {"id" {}}}))
+
+(deftest convert-to-input-test
+  (is (= {"id" "123"}
+         (convert-to-input
+          {"id" "123"}
+          {"id" {},
+           "x" {},
+           "y" {"id" {}}})))
+  (is (= {"id" "123",
+          "x" "abc",
+          "y" [{"id" "456"}]}
+         (convert-to-input
+          {"id" "123"
+           "x"  "abc"
+           "z"  "hidden"
+           "y"  [{"id" "456"
+                  "z"  "hidden"}]}
+          {"id" {},
+           "x" {},
+           "y" {"id" {}}}))))
+
+(defn- convert-to-selection [paths]
+  (->> paths
+       (walk/postwalk
+        (fn [x]
+          (if (map? x)
+            (->> x (mapcat identity) (filter not-empty))
+            x)))))
+
+(deftest convert-to-selection-test
+  (is (= ["x" "y" "z"]
+         (convert-to-selection {"x" {},
+                                "y" {},
+                                "z" {}})))
+  (is (= ["x" "y" ["id"] "z"]
+         (convert-to-selection {"x" {},
+                                "y" {"id" {}},
+                                "z" {}})))
+  (is (= ["x" "y" ["id" "z" ["id"]]]
+         (convert-to-selection {"x" {},
+                                "y" {"id" {},
+                                     "z" {"id" {}}}}))))
+
+(defn create-publish-definition [publish-op gql-type entity paths]
+  (let [prepared-paths (->> paths
+                            (map #(str/split % #"/"))
+                            (reduce (fn [m segments] (assoc-in m segments {})) {}))]
+    (spec/mutation-definition
+     {:fields [{:name      (gen-field-name publish-op gql-type)
+                :arguments [{:name  :value
+                             :value (convert-to-input entity prepared-paths)}]
+                :selection (convert-to-selection prepared-paths)}]})))
+
+(deftest create-publish-definition-test
+  (let [schema        (framework/get-schema (u/temp-db))
+        default-paths (framework/get-default-paths schema u/test-type-planetary-boundary)]
+    (is (= [{:name      (str "PublishCreated" u/test-type-planetary-boundary),
+             :operation :mutation,
+             :selection [{:name      (str "publishCreated" u/test-type-planetary-boundary),
+                          :arguments [{:name  "value",
+                                       :value [{:name "id",
+                                                :value "123"}
+                                               {:name "name",
+                                                :value "n"}
+                                               {:name  "quantifications",
+                                                :value [[{:name "id",
+                                                          :value "456"}]]}]}],
+                          :selection [{:name "id"}
+                                      {:name "name"}
+                                      {:name "quantifications",
+                                       :selection [{:name "id"}]}]}]}]
+           (parsing/parse (create-publish-definition
+                           publish-created-op
+                           u/test-type-planetary-boundary
+                           {"id"              "123"
+                            "name"            "n"
+                            "quantifications" [{"id" "456"}]}
+                           default-paths))))))
 
 (defn resolves-graphql-field? [op field-name]
   (str/starts-with? (name field-name) (::prefix op)))
@@ -187,9 +272,9 @@
                {:response {"info"   page-info
                            "values" entities}})
       "create" (let [input         (walk/stringify-keys value)
+                     entity-id     (parse-uuid (get input "id"))
                      input-data    (framework/resolve-input-fields schema input entity-name)
-                     entity-id     (:platform/id input-data)
-                     {:keys [db-after]} (d/transact conn {:tx-data [input-data]})
+                     {:keys [db-after]} (d/transact conn {:tx-data input-data})
                      default-paths (framework/get-default-paths schema entity-name)
                      paths         (set/union selected-paths default-paths)
                      entity-value  (framework/pull-and-resolve-entity-value schema entity-id db-after entity-name paths)]
@@ -200,10 +285,10 @@
                                      default-paths)]
                   :response        entity-value})
       "merge" (let [input         (walk/stringify-keys value)
+                    entity-id     (parse-uuid (get input "id"))
                     input-data    (framework/resolve-input-fields schema input entity-name)
-                    entity-id     (:platform/id input-data)
                     ; TODO validate id -> return nil if entity not present
-                    {:keys [db-after]} (d/transact conn {:tx-data [input-data]})
+                    {:keys [db-after]} (d/transact conn {:tx-data input-data})
                     default-paths (framework/get-default-paths schema entity-name)
                     paths         (set/union selected-paths default-paths)
                     entity-value  (framework/pull-and-resolve-entity-value schema entity-id db-after entity-name paths)]
@@ -234,13 +319,13 @@
                            conn
                            {:tx-data [{:db/id                "tempid"
                                        :platform/id          entity-uuid
-                                       u/test-attribute-name u/test-field-name-value
+                                       u/test-attribute-name u/test-field-name-value-1
                                        :db/doc               "other attr value"}]})
         db-id       (get tempids "tempid")
         db-value    (d/pull (d/db conn) '[*] db-id)]
     (is (= {:db/id                db-id
             :platform/id          entity-uuid
-            u/test-attribute-name u/test-field-name-value
+            u/test-attribute-name u/test-field-name-value-1
             :db/doc               "other attr value"}
            db-value))
     (let [result       (resolve-field
@@ -259,6 +344,20 @@
               u/test-attribute-name "123"
               :db/doc               "other attr value"}
              new-db-value))
-      (is (= "mutation PublishUpdatedPlanetaryBoundary {\n    publishUpdatedPlanetaryBoundary(value: {id: <id>, name: \"123\", quantifications: null}) { id name quantifications } \n}\n\n"
-             (-> (first publish-queries)
-                 (str/replace (str "\"" entity-uuid "\"") "<id>")))))))
+      (is (= [{:name      (str "PublishUpdated" u/test-type-planetary-boundary)
+               :operation :mutation
+               :selection [{:arguments [{:name  "value"
+                                         :value [{:name  "id"
+                                                  :value (str entity-uuid)}
+                                                 {:name  "name"
+                                                  :value "123"}
+                                                 ; TODO nested pull pattern
+                                                 #_{:name  u/test-field-quantifications
+                                                    :value [{:name  "id"
+                                                             :value quantification-id}]}]}]
+                            :name      (str "publishUpdated" u/test-type-planetary-boundary)
+                            :selection [{:name "id"}
+                                        {:name "name"}
+                                        {:name      "quantifications"
+                                         :selection [{:name "id"}]}]}]}]
+             (parsing/parse (first publish-queries)))))))

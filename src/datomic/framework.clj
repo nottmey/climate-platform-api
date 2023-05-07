@@ -43,54 +43,89 @@
   (get-schema (u/temp-db)))
 
 (defn get-default-paths [schema gql-type]
-  ; TODO nested fields
-  (-> schema
-      (get-in [:types gql-type])
-      keys
-      set
-      (conj "id")))
+  (->> (vals (get-in schema [:types gql-type]))
+       (map (fn [{:keys [graphql.relation/field
+                         graphql.relation/target]}]
+              (if target
+                (str field "/id")
+                field)))
+       (concat ["id"])))
+
+(comment
+  (get-default-paths (get-schema (u/temp-db)) u/test-type-planetary-boundary))
 
 (deftest get-default-paths-test
   (let [schema (get-schema (u/temp-db))
         paths  (get-default-paths schema u/test-type-planetary-boundary)]
-    (is (contains? paths u/test-field-name))))
+    (is (= ["id" u/test-field-name (str u/test-field-quantifications "/id")]
+           paths))))
 
 (defn resolve-input-fields [schema input-obj gql-type]
-  ; TODO nested values
-  (->> input-obj
-       (map
-        (fn [[field value]]
-          (let [rel (get-in schema [:types gql-type field])
-                {:keys [graphql.relation/attribute]} rel]
-            [(:db/ident attribute) value])))
-       (filter (fn [[ident]] (not (nil? ident))))
-       (reduce
-        (fn [m [attr value]]
-          (if (contains? m attr)
-            ; TODO describe cause more in detail (fields + value, not attr)
-            (throw (ex-info (str "InputDataConflict: " attr " already set by other input field.") {}))
-            (if (nil? value)
-              m
-              (assoc m attr value))))
-        {:platform/id (parse-uuid (get input-obj "id"))})))
+  (let [temp-id   (get input-obj "id")
+        uuid      (parse-uuid temp-id)
+        input-obj (dissoc input-obj "id")]
+    (concat
+     ; always add id
+     [[:db/add temp-id :platform/id uuid]]
+     ; generate adds for input-obj
+     (for [[field value] input-obj
+           :when (not (nil? value))
+           :let [values      (if (sequential? value) value [value])
+                 rel         (get-in schema [:types gql-type field])
+                 {:keys [graphql.relation/attribute
+                         graphql.relation/target
+                         graphql.relation/forward?]} rel
+                 attr-ident  (:db/ident attribute)
+                 target-name (:graphql.type/name target)]
+           :when (not (nil? attr-ident))
+           value values]
+       (if (and target-name (map? value))
+         (if forward?
+           [:db/add temp-id attr-ident (get value "id")]
+           [:db/add (get value "id") attr-ident temp-id])
+         [:db/add temp-id attr-ident value]))
+     ; generate next level, if available
+     (apply
+      concat
+      (for [[field value] input-obj
+            :when (not (nil? value))
+            :let [values      (if (sequential? value) value [value])
+                  rel         (get-in schema [:types gql-type field])
+                  {:keys [graphql.relation/target]} rel
+                  target-name (:graphql.type/name target)]
+            value values
+            :when (and target-name (map? value))]
+        (resolve-input-fields schema value target-name))))))
 
 (deftest resolve-input-fields-test
-  (let [conn (u/temp-conn)
-        {:keys [db-after]} (d/transact
-                            conn
-                            {:tx-data (attributes/add-value-field-tx-data
-                                       "tempid"
-                                       u/test-type-planetary-boundary
-                                       "description"
-                                       :platform/description)})]
-    (is (= {:platform/id   #uuid "bdb1df54-7a04-4e24-bc98-6e0dc6a1bdc0"
-            :platform/name "Hello"}
-           (resolve-input-fields
-            (get-schema db-after)
-            {"id"          "bdb1df54-7a04-4e24-bc98-6e0dc6a1bdc0"
-             "name"        "Hello"
-             "description" nil}
-            u/test-type-planetary-boundary)))))
+  (let [conn     (u/temp-conn)
+        resolved (resolve-input-fields
+                  (get-schema (d/db conn))
+                  {"id"              "00000000-0000-0000-0000-000000000001"
+                   u/test-field-name "PlanetaryBoundary"}
+                  u/test-type-planetary-boundary)]
+    (d/transact conn {:tx-data resolved})
+    (is (= [[:db/add "00000000-0000-0000-0000-000000000001" :platform/id #uuid"00000000-0000-0000-0000-000000000001"]
+            [:db/add "00000000-0000-0000-0000-000000000001" u/test-attribute-name "PlanetaryBoundary"]]
+           resolved)))
+
+  (is (= [[:db/add "00000000-0000-0000-0000-000000000001" :platform/id #uuid"00000000-0000-0000-0000-000000000001"]
+          [:db/add "00000000-0000-0000-0000-000000000001" u/test-attribute-name "PlanetaryBoundary"]
+          [:db/add "00000000-0000-0000-0000-000000000001" u/test-attribute-quantifications "00000000-0000-0000-0000-000000000002"]
+          [:db/add "00000000-0000-0000-0000-000000000001" u/test-attribute-quantifications "00000000-0000-0000-0000-000000000003"]
+          [:db/add "00000000-0000-0000-0000-000000000002" :platform/id #uuid"00000000-0000-0000-0000-000000000002"]
+          [:db/add "00000000-0000-0000-0000-000000000002" u/test-attribute-name "Quantification"]
+          [:db/add "00000000-0000-0000-0000-000000000003" :platform/id #uuid"00000000-0000-0000-0000-000000000003"]
+          [:db/add "00000000-0000-0000-0000-000000000003" u/test-attribute-name "Quantification2"]]
+         (resolve-input-fields
+          (get-schema (u/temp-db))
+          {"id"                         "00000000-0000-0000-0000-000000000001"
+           u/test-field-name            "PlanetaryBoundary"
+           u/test-field-quantifications [{"id"              "00000000-0000-0000-0000-000000000002"
+                                          u/test-field-name "Quantification"}
+                                         {"id"              "00000000-0000-0000-0000-000000000003"
+                                          u/test-field-name "Quantification2"}]}
+          u/test-type-planetary-boundary))))
 
 (defn gen-pull-pattern [schema gql-type gql-fields]
   ; TODO nested selections
@@ -140,12 +175,12 @@
   (let [conn           (u/temp-conn)
         entity-uuid    (UUID/randomUUID)
         {:keys [db-after]} (d/transact conn {:tx-data [{:platform/id          entity-uuid
-                                                        u/test-attribute-name u/test-field-name-value}]})
+                                                        u/test-attribute-name u/test-field-name-value-1}]})
         selected-paths #{"id" u/test-field-name}
         schema         (get-schema db-after)
         pulled-entity  (pull-and-resolve-entity-value schema entity-uuid db-after u/test-type-planetary-boundary selected-paths)]
     (is (= {"id"              (str entity-uuid)
-            u/test-field-name u/test-field-name-value}
+            u/test-field-name u/test-field-name-value-1}
            pulled-entity))))
 
 (defn get-entities-sorted [db type-name]
@@ -163,9 +198,21 @@
        (map second)
        (distinct)))
 
+(comment
+  (let [conn (u/temp-conn)
+        {:keys [db-after]} (d/transact
+                            conn
+                            {:tx-data [{:platform/id   (UUID/randomUUID)
+                                        :platform/name "123"}
+                                       {:platform/id              (UUID/randomUUID)
+                                        :platform/name            "456"
+                                        :platform/quantifications [{:platform/id   (UUID/randomUUID)
+                                                                    :platform/name "abc"}]}]})]
+    (get-entities-sorted db-after u/test-type-planetary-boundary)))
+
 (deftest get-entities-sorted-test
   (let [example     (fn [] {:platform/id          (UUID/randomUUID)
-                            u/test-attribute-name u/test-field-name-value
+                            u/test-attribute-name u/test-field-name-value-1
                             :platform/description "bla"})
         sample-data [(example) (example) (example) (example) (example)]
         conn        (u/temp-conn)

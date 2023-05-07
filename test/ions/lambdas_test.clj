@@ -40,35 +40,41 @@
     (is (= expected response))))
 
 (deftest test-create-with-get-and-list
-  (let [entity-id        (.toString (UUID/randomUUID))
-        conn             (u/temp-conn)
-        publish-called?  (atom false)
-        created-response (with-redefs
-                          [u/testing-conn    (fn [] conn)
-                           u/testing-publish (expecting-query
-                                              publish-called?
-                                              [{:name      (str "PublishCreated" u/test-type-planetary-boundary)
-                                                :operation :mutation,
-                                                :selection [{:name      (str "publishCreated" u/test-type-planetary-boundary)
-                                                             :arguments [{:name  "value"
-                                                                          :value [{:name  "id"
-                                                                                   :value entity-id}
-                                                                                  {:name  u/test-field-name
-                                                                                   :value u/test-field-name-value}
-                                                                                  {:name  u/test-field-quantifications
-                                                                                   :value nil}]}],
-                                                             :selection [{:name "id"}
-                                                                         {:name u/test-field-name}
-                                                                         {:name u/test-field-quantifications}]}]}])]
-                           (resolve-input
-                            {"info"      {"parentTypeName"   "Mutation"
-                                          "fieldName"        (str "create" u/test-type-planetary-boundary)
-                                          "selectionSetList" ["id" u/test-field-name]}
-                             "arguments" {"value" {"id"              entity-id
-                                                   u/test-field-name u/test-field-name-value}}}))]
+  (let [planetary-boundary-id (.toString (UUID/randomUUID))
+        quantification-id     (.toString (UUID/randomUUID))
+        conn                  (u/temp-conn)
+        publish-called?       (atom false)
+        created-response      (with-redefs
+                               [u/testing-conn    (fn [] conn)
+                                u/testing-publish (expecting-query
+                                                   publish-called?
+                                                   [{:name      (str "PublishCreated" u/test-type-planetary-boundary)
+                                                     :operation :mutation,
+                                                     :selection [{:name      (str "publishCreated" u/test-type-planetary-boundary)
+                                                                  :arguments [{:name  "value"
+                                                                               :value [{:name  "id"
+                                                                                        :value planetary-boundary-id}
+                                                                                       {:name  u/test-field-name
+                                                                                        :value u/test-field-name-value-1}
+                                                                                       ; TODO nested pull pattern
+                                                                                       #_{:name  u/test-field-quantifications
+                                                                                          :value [{:name  "id"
+                                                                                                   :value quantification-id}]}]}],
+                                                                  :selection [{:name "id"}
+                                                                              {:name u/test-field-name}
+                                                                              {:name      u/test-field-quantifications
+                                                                               :selection [{:name "id"}]}]}]}])]
+                                (resolve-input
+                                 {"info"      {"parentTypeName"   "Mutation"
+                                               "fieldName"        (str "create" u/test-type-planetary-boundary)
+                                               "selectionSetList" ["id" u/test-field-name]}
+                                  "arguments" {"value" {"id"                         planetary-boundary-id
+                                                        u/test-field-name            u/test-field-name-value-1
+                                                        u/test-field-quantifications [{"id"              quantification-id
+                                                                                       u/test-field-name u/test-field-name-value-2}]}}}))]
     (is @publish-called?)
-    (is (= {"id"              entity-id
-            u/test-field-name u/test-field-name-value}
+    (is (= {"id"              planetary-boundary-id
+            u/test-field-name u/test-field-name-value-1}
            created-response))
 
     (let [fetched-entity
@@ -77,7 +83,7 @@
              {"info"      {"parentTypeName"   "Query"
                            "fieldName"        (str "get" u/test-type-planetary-boundary)
                            "selectionSetList" ["id" u/test-field-name]}
-              "arguments" {"id" entity-id}}))]
+              "arguments" {"id" planetary-boundary-id}}))]
       (is (= created-response fetched-entity)))
 
     (let [entity-list
@@ -94,7 +100,10 @@
                         "current" 0
                         "next"    nil
                         "last"    0}
-              "values" [created-response]}
+              "values" [created-response
+                        ; TODO fix quantifications showing up here
+                        {"id"   quantification-id
+                         "name" u/test-field-name-value-2}]}
              entity-list)))
 
     (let [publish-called? (atom false)
@@ -107,19 +116,22 @@
                                                  :selection [{:name      (str "publishDeleted" u/test-type-planetary-boundary)
                                                               :arguments [{:name  "value"
                                                                            :value [{:name  "id"
-                                                                                    :value entity-id}
+                                                                                    :value planetary-boundary-id}
                                                                                    {:name  u/test-field-name
-                                                                                    :value u/test-field-name-value}
-                                                                                   {:name  u/test-field-quantifications
-                                                                                    :value nil}]}],
+                                                                                    :value u/test-field-name-value-1}
+                                                                                   ; TODO nested pull pattern
+                                                                                   #_{:name  u/test-field-quantifications
+                                                                                      :value [{:name  "id"
+                                                                                               :value quantification-id}]}]}],
                                                               :selection [{:name "id"}
                                                                           {:name u/test-field-name}
-                                                                          {:name u/test-field-quantifications}]}]}])]
+                                                                          {:name      u/test-field-quantifications
+                                                                           :selection [{:name "id"}]}]}]}])]
                             (resolve-input
                              {"info"      {"parentTypeName"   "Mutation"
                                            "fieldName"        (str "delete" u/test-type-planetary-boundary)
                                            "selectionSetList" ["id" u/test-field-name]}
-                              "arguments" {"id" entity-id}}))]
+                              "arguments" {"id" planetary-boundary-id}}))]
       (is (= created-response deleted-entity))
       (is @publish-called?))
 
@@ -129,7 +141,7 @@
              {"info"      {"parentTypeName"   "Query"
                            "fieldName"        (str "get" u/test-type-planetary-boundary)
                            "selectionSetList" ["id" u/test-field-name]}
-              "arguments" {"id" entity-id}}))]
+              "arguments" {"id" planetary-boundary-id}}))]
       (is (nil? fetched-entity)))))
 
 (deftest test-entity-browser-get

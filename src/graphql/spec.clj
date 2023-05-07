@@ -67,14 +67,25 @@
              (int? value)
              (double? value)
              (string? value)
-             (map? value))]}
+             (map? value)
+             (sequential? value))]}
   (cond
     (nil? value) "null"
     (string? value) (escape-str value)
-    (map? value) (str "{" (->> value
-                               (map (fn [[k v]] (str (k-name k) ": " (value-definition v))))
-                               (str/join ", ")) "}")
+    (map? value) (str "{"
+                      (->> value
+                           (map (fn [[k v]] (str (k-name k) ": " (value-definition v))))
+                           (str/join ", "))
+                      "}")
+    (sequential? value) (str "["
+                             (->> value
+                                  (map value-definition)
+                                  (str/join ", "))
+                             "]")
     :else value))
+
+(comment
+  (value-definition []))
 
 (deftest value-definition-test
   (is (= "\"text with\\nline breaks and\\t tabs!\""
@@ -162,6 +173,10 @@
        (when directive
          ; clearly separated to the next field with an additional \n
          (str "\n" tab-spaces directive))))
+
+(comment
+  (field-definition {:name      "x"
+                     :selection ["y"]}))
 
 (deftest field-definition-test
   (is (= "get(id: Int! = 1, database: String): Result"
