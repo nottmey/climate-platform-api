@@ -278,6 +278,7 @@
                      default-paths (framework/get-default-paths schema entity-name)
                      paths         (set/union selected-paths default-paths)
                      entity-value  (framework/pull-and-resolve-entity-value schema entity-id db-after entity-name paths)]
+                 ; TODO don't allow creation of entities without any attributes -> would not show up in list
                  {:publish-queries [(create-publish-definition
                                      publish-created-op
                                      entity-name

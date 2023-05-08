@@ -1,5 +1,7 @@
 (ns user
   (:require
+   [clojure.java.io :as io]
+   [clojure.pprint :as pprint]
    [clojure.set :as set]
    [clojure.test :refer [*testing-vars*]]
    [datomic.access :as access]
@@ -177,3 +179,48 @@
 
 (comment
   (get-db-stats access/dev-env-db-name))
+
+(defn download-framework-data []
+  (let [conn (access/get-connection access/dev-env-db-name)
+        db   (d/db conn)
+        data (vec
+              (concat
+               (->> (d/q '[:find (pull ?attr [*])
+                           :where [_ :graphql.relation/attribute ?attr]]
+                         db)
+                    (map first)
+                    (map #(dissoc % :db/id))
+                    (map #(update % :db/cardinality get :db/ident))
+                    (map #(update % :db/valueType get :db/ident)))
+               (->> (d/q '[:find (pull ?type [*])
+                           :where [?type :graphql.type/name]]
+                         db)
+                    (map first)
+                    (map #(assoc % :db/id (:graphql.type/name %))))
+               (->> (d/q '[:find (pull ?rel [* {:graphql.relation/type [*]}])
+                           :where [?rel :graphql.relation/type]]
+                         db)
+                    (map first)
+                    (map #(dissoc % :db/id :graphql.relation/type+field))
+                    (map #(update % :graphql.relation/attribute get :db/ident))
+                    (map #(update % :graphql.relation/type get :graphql.type/name)))))]
+    (->> (with-out-str (pprint/pprint data))
+         (spit (io/resource "datomic/framework-data.edn")))))
+
+(comment
+  (download-framework-data))
+
+(defn download-example-data []
+  (let [conn (access/get-connection access/dev-env-db-name)
+        data (->> (d/q '[:find (pull ?e [*])
+                         :where [?e :platform/id]]
+                       (d/db conn))
+                  (map first)
+                  (map #(dissoc % :db/id))
+                  (vec))]
+    (->> (with-out-str (pprint/pprint data))
+         (spit (io/resource "datomic/example-data.edn")))))
+
+(comment
+  (download-example-data))
+

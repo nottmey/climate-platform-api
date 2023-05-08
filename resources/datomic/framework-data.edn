@@ -1,0 +1,19 @@
+[#:db{:ident :platform/name,
+      :valueType :db.type/string,
+      :cardinality :db.cardinality/one,
+      :doc "Name of any non-user platform entity."}
+ #:db{:ident :platform/description,
+      :valueType :db.type/string,
+      :cardinality :db.cardinality/one,
+      :doc "Description of any non-user platform entity."}
+ {:db/id "PlanetaryBoundary", :graphql.type/name "PlanetaryBoundary"}
+ {:db/id "Quantification", :graphql.type/name "Quantification"}
+ #:graphql.relation{:type "PlanetaryBoundary",
+                    :field "description",
+                    :attribute :platform/description}
+ #:graphql.relation{:type "PlanetaryBoundary",
+                    :field "name",
+                    :attribute :platform/name}
+ #:graphql.relation{:type "Quantification",
+                    :field "name",
+                    :attribute :platform/name}]
