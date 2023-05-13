@@ -1,3 +1,10 @@
 {:app-name "climate-platform"
- :lambdas  {:datomic-resolver {:fn          ions.lambdas/datomic-resolver
-                               :description "Resolves all GraphQL requests to the datomic data source."}}}
+ :allow    [;; transaction functions
+            datomic.tx-fns/create-type
+            datomic.tx-fns/add-field
+            ;; query functions
+            ; -- currently none --
+            ]
+ :lambdas  {:datomic-resolver
+            {:fn          ions.lambdas/datomic-resolver
+             :description "Resolves all GraphQL requests to the datomic data source."}}}

@@ -6,7 +6,9 @@
    [clojure.test :refer [*testing-vars*]]
    [datomic.access :as access]
    [datomic.attributes :as attributes]
-   [datomic.client.api :as d])
+   [datomic.client.api :as d]
+   [datomic.temp :as temp]
+   [datomic.tx-fns :as tx-fns])
   (:import
    (clojure.lang ExceptionInfo)))
 
@@ -37,51 +39,43 @@
 (def test-attribute-name :platform/name)
 (def test-attribute-quantifications :platform/quantifications)
 
-(defn temp-conn
-  ([] (temp-conn "testing"))
-  ([db-name]
-   (let [client  (d/client {:server-type :dev-local
-                            :storage-dir :mem
-                            :system      db-name})
-         arg-map {:db-name db-name}]
-     (d/delete-database client arg-map)
-     (d/create-database client arg-map)
-     (let [conn (d/connect client arg-map)]
-       (d/transact conn {:tx-data attributes/graphql-attributes})
-       (d/transact conn {:tx-data attributes/platform-attributes})
-       (d/transact conn {:tx-data (attributes/add-type-tx-data "tempid" test-type-planetary-boundary)})
-       (d/transact conn {:tx-data (attributes/add-type-tx-data "tempid" test-type-quantification)})
-       (d/transact conn {:tx-data (attributes/add-value-field-tx-data
-                                   "tempid"
-                                   test-type-planetary-boundary
-                                   test-field-name
-                                   test-attribute-name)})
-       (d/transact conn {:tx-data (attributes/add-value-field-tx-data
-                                   "tempid"
-                                   test-type-quantification
-                                   test-field-name
-                                   test-attribute-name)})
-       (d/transact conn {:tx-data (attributes/add-ref-field-tx-data
-                                   "tempid"
-                                   test-type-planetary-boundary
-                                   test-field-quantifications
-                                   test-attribute-quantifications
-                                   test-type-quantification
-                                   true)})
-       conn))))
+(defn temp-conn []
+  (let [conn (temp/conn)]
+    (d/transact conn {:tx-data attributes/graphql-attributes})
+    (d/transact conn {:tx-data attributes/platform-attributes})
+    (d/transact conn {:tx-data (tx-fns/create-type (d/db conn) test-type-planetary-boundary)})
+    (d/transact conn {:tx-data (tx-fns/create-type (d/db conn) test-type-quantification)})
+    (d/transact conn {:tx-data (tx-fns/add-field
+                                (d/db conn)
+                                [:graphql.type/name test-type-planetary-boundary]
+                                test-field-name
+                                test-attribute-name)})
+    (d/transact conn {:tx-data (tx-fns/add-field
+                                (d/db conn)
+                                [:graphql.type/name test-type-quantification]
+                                test-field-name
+                                test-attribute-name)})
+    (d/transact conn {:tx-data (tx-fns/add-field
+                                (d/db conn)
+                                [:graphql.type/name test-type-planetary-boundary]
+                                test-field-quantifications
+                                test-attribute-quantifications
+                                [:graphql.type/name test-type-quantification])})
+    conn))
 
 (comment
   (temp-conn))
 
-(defn temp-db
-  ([] (d/db (temp-conn)))
-  ([db-name] (d/db (temp-conn db-name))))
+(defn temp-db []
+  (d/db (temp-conn)))
 
-(defn testing-conn
+(comment
+  (temp-db))
+
+(def testing-conn
   "default conn to be used in testing,
    or to be redefined when a different scenario is needed"
-  []
-  (temp-conn))
+  temp-conn)
 
 (defn testing-publish
   "default publish callback used in testing,
@@ -108,11 +102,7 @@
        (d/transact conn {:tx-data tx-data})))))
 
 (comment
-  (ensure-schema attributes/platform-attributes access/dev-env-db-name)
-
-  (d/transact
-   (access/get-connection access/dev-env-db-name)
-   {:tx-data (attributes/add-value-field-tx-data "tempid" "PlanetaryBoundary" "description" :platform/description)}))
+  (ensure-schema attributes/platform-attributes access/dev-env-db-name))
 
 (defn ensure-data
   ([tx-data db-name]
