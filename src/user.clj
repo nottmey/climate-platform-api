@@ -83,6 +83,13 @@
   []
   (throw (AssertionError. "no call to publish expected")))
 
+(defn test-collection [conn entity-type]
+  (-> (d/pull (d/db conn) '[:graphql.type/collection] [:graphql.type/name entity-type])
+      (get-in [:graphql.type/collection :db/id])))
+
+(comment
+  (test-collection (temp-conn) test-type-planetary-boundary))
+
 (defn empty-tx-result [conn reason]
   (let [db (d/db conn)]
     {:db-before    db

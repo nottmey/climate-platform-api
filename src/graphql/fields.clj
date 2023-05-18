@@ -34,8 +34,8 @@
    :name      field-name
    :arguments (concat
                [arguments/optional-id]
-               (for [[field-name {:keys [graphql.relation/attribute]}] fields
-                     :let [value-type (-> attribute :db/valueType :db/ident)]
+               (for [[field-name {:keys [graphql.field/attribute]}] fields
+                     :let [value-type (get-in attribute [:db/valueType :db/ident])]
                      :when (not= value-type :db.type/ref)]
                  {:name field-name
                   :type (mappings/value-type->field-type value-type)}))

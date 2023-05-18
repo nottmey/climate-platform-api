@@ -26,13 +26,12 @@
 
 ; Docs: https://docs.aws.amazon.com/cdk/api/v2/docs/aws-construct-library.html
 (defn app-sync [^Stack stack]
-  (let [conn                  (access/get-connection access/dev-env-db-name)
-        dynamic-graphql-types (-> (framework/get-schema (d/db conn)) :types keys)
-        api                   (-> (CfnGraphQLApi$Builder/create stack "climate-platform-api")
-                                  (.name "climate-platform-api")
-                                  (.authenticationType "API_KEY")
-                                  (.build))
-        api-id                (-> api (.getAttrApiId))]
+  (let [conn   (access/get-connection access/dev-env-db-name)
+        api    (-> (CfnGraphQLApi$Builder/create stack "climate-platform-api")
+                   (.name "climate-platform-api")
+                   (.authenticationType "API_KEY")
+                   (.build))
+        api-id (-> api (.getAttrApiId))]
     (-> (CfnApiKey$Builder/create stack "climate-platform-api-key")
         (.apiId api-id)
         (.build))
@@ -93,10 +92,10 @@
       ;; https://docs.aws.amazon.com/appsync/latest/devguide/utility-helpers-in-util.html
       (doseq [[parent-type-name field-name] @resolvers/resolvable-paths]
         (configure-datomic-resolver parent-type-name field-name))
-      (doseq [op           (ops/all-ops ::ops/any)
-              graphql-type dynamic-graphql-types
+      (doseq [op          (ops/all-ops ::ops/any)
+              entity-type (framework/get-entity-types (d/db conn))
               :let [type-name  (::ops/parent-type op)
-                    field-name (ops/gen-field-name op graphql-type)]]
+                    field-name (ops/gen-field-name op entity-type)]]
         (case (::ops/resolver op)
           ::ops/datomic (configure-datomic-resolver
                          type-name

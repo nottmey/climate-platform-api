@@ -100,10 +100,7 @@
                         "current" 0
                         "next"    nil
                         "last"    0}
-              "values" [created-response
-                        ; TODO fix quantifications showing up here
-                        {"id"   quantification-id
-                         "name" u/test-field-name-value-2}]}
+              "values" [created-response]}
              entity-list)))
 
     (let [publish-called? (atom false)
@@ -204,7 +201,8 @@
                                          "82"
                                          "83"
                                          "84"
-                                         "85"]}
+                                         "85"
+                                         "86"]}
                           {"id"         "63",
                            "name"       ":db/doc",
                            "__typename" "StringAttribute",

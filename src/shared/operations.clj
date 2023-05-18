@@ -102,39 +102,39 @@
 (comment
   (all-ops ::any))
 
-(defn gen-field-name [op entity-name]
-  (str (::prefix op) (name entity-name)))
+(defn gen-field-name [op entity-type]
+  (str (::prefix op) (name entity-type)))
 
-(defn gen-entity-name [op field-name]
+(defn extract-entity-type [op field-name]
   (str/replace (name field-name) (::prefix op) ""))
 
-(defn gen-graphql-field [op entity-name fields]
+(defn gen-graphql-field [op entity-type fields]
   (let [{:keys [shared.operations/prefix]} op
-        field-name (gen-field-name op entity-name)]
+        field-name (gen-field-name op entity-type)]
     (case prefix
-      "publishCreated" (fields/publish-mutation field-name entity-name)
-      "publishUpdated" (fields/publish-mutation field-name entity-name)
-      "publishDeleted" (fields/publish-mutation field-name entity-name)
-      "get" (fields/get-query field-name entity-name)
-      "list" (fields/list-page-query field-name entity-name)
+      "publishCreated" (fields/publish-mutation field-name entity-type)
+      "publishUpdated" (fields/publish-mutation field-name entity-type)
+      "publishDeleted" (fields/publish-mutation field-name entity-type)
+      "get" (fields/get-query field-name entity-type)
+      "list" (fields/list-page-query field-name entity-type)
       "create" {:name           field-name
-                :arguments      [(arguments/required-input-value entity-name)]
-                :type           entity-name
+                :arguments      [(arguments/required-input-value entity-type)]
+                :type           entity-type
                 :required-type? true}
       "merge" {:name      field-name
-               :arguments [(arguments/required-input-value entity-name)]
-               :type      entity-name}
+               :arguments [(arguments/required-input-value entity-type)]
+               :type      entity-type}
       "delete" {:name      field-name
                 :arguments [arguments/required-id]
-                :type      entity-name}
-      "onCreated" (fields/subscription field-name entity-name fields (gen-field-name publish-created-op entity-name))
-      "onUpdated" (fields/subscription field-name entity-name fields (gen-field-name publish-updated-op entity-name))
-      "onDeleted" (fields/subscription field-name entity-name fields (gen-field-name publish-deleted-op entity-name)))))
+                :type      entity-type}
+      "onCreated" (fields/subscription field-name entity-type fields (gen-field-name publish-created-op entity-type))
+      "onUpdated" (fields/subscription field-name entity-type fields (gen-field-name publish-updated-op entity-type))
+      "onDeleted" (fields/subscription field-name entity-type fields (gen-field-name publish-deleted-op entity-type)))))
 
-(defn gen-graphql-object-types [op entity-name]
+(defn gen-graphql-object-types [op entity-type]
   (let [{:keys [shared.operations/prefix]} op]
     (case prefix
-      "list" [(objects/list-page entity-name)]
+      "list" [(objects/list-page entity-type)]
       nil)))
 
 (defn- convert-to-input [entity paths]
@@ -152,19 +152,19 @@
   (convert-to-input
    {"id" "123"}
    {"id" {},
-    "x" {},
-    "y" {"id" {}}}))
+    "x"  {},
+    "y"  {"id" {}}}))
 
 (deftest convert-to-input-test
   (is (= {"id" "123"}
          (convert-to-input
           {"id" "123"}
           {"id" {},
-           "x" {},
-           "y" {"id" {}}})))
+           "x"  {},
+           "y"  {"id" {}}})))
   (is (= {"id" "123",
-          "x" "abc",
-          "y" [{"id" "456"}]}
+          "x"  "abc",
+          "y"  [{"id" "456"}]}
          (convert-to-input
           {"id" "123"
            "x"  "abc"
@@ -172,8 +172,8 @@
            "y"  [{"id" "456"
                   "z"  "hidden"}]}
           {"id" {},
-           "x" {},
-           "y" {"id" {}}}))))
+           "x"  {},
+           "y"  {"id" {}}}))))
 
 (defn- convert-to-selection [paths]
   (->> paths
@@ -195,14 +195,14 @@
   (is (= ["x" "y" ["id" "z" ["id"]]]
          (convert-to-selection {"x" {},
                                 "y" {"id" {},
-                                     "z" {"id" {}}}}))))
+                                     "z"  {"id" {}}}}))))
 
-(defn create-publish-definition [publish-op gql-type entity paths]
+(defn create-publish-definition [publish-op entity-type entity paths]
   (let [prepared-paths (->> paths
                             (map #(str/split % #"/"))
                             (reduce (fn [m segments] (assoc-in m segments {})) {}))]
     (spec/mutation-definition
-     {:fields [{:name      (gen-field-name publish-op gql-type)
+     {:fields [{:name      (gen-field-name publish-op entity-type)
                 :arguments [{:name  :value
                              :value (convert-to-input entity prepared-paths)}]
                 :selection (convert-to-selection prepared-paths)}]})))
@@ -214,16 +214,16 @@
              :operation :mutation,
              :selection [{:name      (str "publishCreated" u/test-type-planetary-boundary),
                           :arguments [{:name  "value",
-                                       :value [{:name "id",
+                                       :value [{:name  "id",
                                                 :value "123"}
-                                               {:name "name",
+                                               {:name  "name",
                                                 :value "n"}
                                                {:name  "quantifications",
-                                                :value [[{:name "id",
+                                                :value [[{:name  "id",
                                                           :value "456"}]]}]}],
                           :selection [{:name "id"}
                                       {:name "name"}
-                                      {:name "quantifications",
+                                      {:name      "quantifications",
                                        :selection [{:name "id"}]}]}]}]
            (parsing/parse (create-publish-definition
                            publish-created-op
@@ -249,66 +249,67 @@
         {:keys [conn field-name selected-paths arguments]} args
         {:keys [id page value]} (or arguments {})
         entity-id   (when id (parse-uuid id))
-        entity-name (gen-entity-name op field-name)
+        entity-type (extract-entity-type op field-name)
         db-before   (d/db conn)
-        schema      (framework/get-schema db-before)]
+        schema      (framework/get-schema db-before)
+        collection  (framework/get-collection schema entity-type)]
     (when (and requires-id? (nil? entity-id))
       (throw (graphql-error "`id` is missing or not a valid UUID")))
     (case prefix
-      "get" {:response (framework/pull-and-resolve-entity-value schema entity-id db-before entity-name selected-paths)}
-      "list" (let [gql-fields (->> selected-paths
-                                   (filter #(str/starts-with? % "values/"))
-                                   (map #(str/replace % #"^values/" ""))
-                                   (filter #(not (str/includes? % "/")))
-                                   set)
-                   entities   (framework/get-entities-sorted db-before entity-name)
-                   page-info  (utils/page-info page (count entities))
-                   pattern    (framework/gen-pull-pattern schema entity-name gql-fields)
-                   entities   (->> entities
-                                   (drop (get page-info "offset"))
-                                   (take (get page-info "size"))
-                                   (queries/pull-platform-entities db-before pattern)
-                                   (framework/reverse-pull-pattern schema entity-name gql-fields))]
+      "get" {:response (framework/pull-and-resolve-entity-value schema entity-id db-before entity-type selected-paths)}
+      "list" (let [fields    (->> selected-paths
+                                  (filter #(str/starts-with? % "values/"))
+                                  (map #(str/replace % #"^values/" ""))
+                                  (filter #(not (str/includes? % "/")))
+                                  set)
+                   entities  (queries/get-entities-sorted db-before collection)
+                   page-info (utils/page-info page (count entities))
+                   pattern   (framework/gen-pull-pattern schema entity-type fields)
+                   entities  (->> entities
+                                  (drop (get page-info "offset"))
+                                  (take (get page-info "size"))
+                                  (queries/pull-platform-entities db-before pattern)
+                                  (framework/reverse-pull-pattern schema entity-type fields))]
                {:response {"info"   page-info
                            "values" entities}})
       "create" (let [input         (walk/stringify-keys value)
                      entity-id     (parse-uuid (get input "id"))
-                     input-data    (framework/resolve-input-fields schema input entity-name)
+                     input-data    (framework/resolve-input-fields schema input entity-type)
                      {:keys [db-after]} (d/transact conn {:tx-data input-data})
-                     default-paths (framework/get-default-paths schema entity-name)
+                     default-paths (framework/get-default-paths schema entity-type)
                      paths         (set/union selected-paths default-paths)
-                     entity-value  (framework/pull-and-resolve-entity-value schema entity-id db-after entity-name paths)]
+                     entity-value  (framework/pull-and-resolve-entity-value schema entity-id db-after entity-type paths)]
                  ; TODO don't allow creation of entities without any attributes -> would not show up in list
                  {:publish-queries [(create-publish-definition
                                      publish-created-op
-                                     entity-name
+                                     entity-type
                                      entity-value
                                      default-paths)]
                   :response        entity-value})
       "merge" (let [input         (walk/stringify-keys value)
                     entity-id     (parse-uuid (get input "id"))
-                    input-data    (framework/resolve-input-fields schema input entity-name)
+                    input-data    (framework/resolve-input-fields schema input entity-type)
                     ; TODO validate id -> return nil if entity not present
                     {:keys [db-after]} (d/transact conn {:tx-data input-data})
-                    default-paths (framework/get-default-paths schema entity-name)
+                    default-paths (framework/get-default-paths schema entity-type)
                     paths         (set/union selected-paths default-paths)
-                    entity-value  (framework/pull-and-resolve-entity-value schema entity-id db-after entity-name paths)]
+                    entity-value  (framework/pull-and-resolve-entity-value schema entity-id db-after entity-type paths)]
                 {:publish-queries [(create-publish-definition
                                     publish-updated-op
-                                    entity-name
+                                    entity-type
                                     entity-value
                                     default-paths)]
                  :response        entity-value})
-      "delete" (let [default-paths (framework/get-default-paths schema entity-name)
+      "delete" (let [default-paths (framework/get-default-paths schema entity-type)
                      paths         (set/union selected-paths default-paths)
-                     entity-value  (framework/pull-and-resolve-entity-value schema entity-id db-before entity-name paths)]
+                     entity-value  (framework/pull-and-resolve-entity-value schema entity-id db-before entity-type paths)]
                  (if (nil? entity-value)
                    nil
                    (do
                      (d/transact conn {:tx-data [[:db/retractEntity [:platform/id entity-id]]]})
                      {:publish-queries [(create-publish-definition
                                          publish-deleted-op
-                                         entity-name
+                                         entity-type
                                          entity-value
                                          default-paths)]
                       :response        entity-value}))))))

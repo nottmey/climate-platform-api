@@ -23,7 +23,7 @@
 (deftest create-type-test
   (let [conn     (temp/conn)
         selector '[{:graphql.type/collection [:db/doc
-                                              {:collection/entities [:db/doc]}]}
+                                              {:graphql.collection/entities [:db/doc]}]}
                    {:graphql.field/_target [:db/doc]}]]
     (d/transact conn {:tx-data attributes/graphql-attributes})
 
@@ -38,12 +38,12 @@
                              (create-type (d/db conn) "SomeType" "type-tid" "collection-tid")
                              [{:graphql.field/target "type-tid"
                                :db/doc               "some field"}
-                              {:db/id               "collection-tid"
-                               :collection/entities [{:db/id  "some entity"
-                                                      :db/doc "some entity"}]}])})]
+                              {:db/id                       "collection-tid"
+                               :graphql.collection/entities [{:db/id  "some entity"
+                                                              :db/doc "some entity"}]}])})]
       (is (= 8 (count (:tx-data result)))))
-    (is (= {:graphql.type/collection {:db/doc              "Entity collection of initial type 'SomeType'."
-                                      :collection/entities [{:db/doc "some entity"}]},
+    (is (= {:graphql.type/collection {:db/doc                      "Entity collection of initial type 'SomeType'."
+                                      :graphql.collection/entities [{:db/doc "some entity"}]},
             :graphql.field/_target   [{:db/doc "some field"}]}
            (d/pull (d/db conn) selector [:graphql.type/name "SomeType"])))))
 
@@ -143,10 +143,10 @@
                                     :graphql.field/backwards-ref?
                                     {:graphql.type/_fields [:graphql.type/name]}] (get tempids "tempid"))
                  (update :graphql.type/_fields set))
-             {:graphql.field/name "otherDoc"
+             {:graphql.field/name      "otherDoc"
               :graphql.field/attribute {:db/ident :db/doc}
-              :graphql.type/_fields #{{:graphql.type/name "SomeType"}
-                                      {:graphql.type/name "OtherType"}}})))))
+              :graphql.type/_fields    #{{:graphql.type/name "SomeType"}
+                                         {:graphql.type/name "OtherType"}}})))))
 
 ; TODO
 (defn deprecate-type [db])

@@ -37,7 +37,7 @@
   (str "Stored GraphQL Schema: " text))
 
 (def graphql-attributes
-  [{:db/ident       :collection/entities
+  [{:db/ident       :graphql.collection/entities
     :db/valueType   :db.type/ref
     :db/cardinality :db.cardinality/many
     :db/doc         (doc "Entities which are part of this entity group, used for abstracting entities away from GraphQL types.")}

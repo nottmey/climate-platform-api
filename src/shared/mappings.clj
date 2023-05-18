@@ -162,8 +162,7 @@
                                              :ident :db.part/tx}
                                         #:db{:id    4
                                              :ident :db.part/user}] attribute-index)
-    #_(map-value :db/doc "some docs" attribute-index)
-    (map-value :graphql.relation/type+field [87960930222163 "name"] attribute-index)))
+    #_(map-value :db/doc "some docs" attribute-index)))
 
 (defn map-entity [entity attribute-index]
   {"id"         (str (get entity :db/id))

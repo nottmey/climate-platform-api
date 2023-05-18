@@ -49,16 +49,17 @@
 (defn gen-entity-fields [fields input?]
   (concat
    [fields/required-id]
-   (for [{:keys [graphql.relation/field
-                 graphql.relation/attribute
-                 graphql.relation/target]} fields]
-     (let [target-type (:graphql.type/name target)
-           value-type  (-> attribute :db/valueType :db/ident)
+   (for [{:keys [graphql.field/name
+                 graphql.field/attribute
+                 graphql.field/target]} (->> (vals fields)
+                                             (sort-by :graphql.field/name))]
+     (let [target-type (get target :graphql.type/name)
+           value-type  (get-in attribute [:db/valueType :db/ident])
            field-type  (mappings/value-type->field-type value-type)
-           list?       (= (-> attribute :db/cardinality :db/ident)
+           list?       (= (get-in attribute [:db/cardinality :db/ident])
                           :db.cardinality/many)]
-       (assert (some? field-type) (str "There is a GraphQL type configured for value type " value-type "."))
-       {:name           field
+       (assert (some? field-type) (str "There has to be a GraphQL type configured for value type " value-type "."))
+       {:name           name
         :type           (if target-type
                           (if input?
                             (types/input-type target-type)
@@ -70,11 +71,11 @@
 
 (comment
   (let [schema (framework/get-schema (u/temp-db))]
-    (for [[_ fields] (:types schema)]
-      (gen-entity-fields (vals fields) true))))
+    (for [[_ {:keys [graphql.type/fields]}] (::framework/types schema)]
+      (gen-entity-fields fields true))))
 
 (defn generate [conn]
-  (let [dynamic-schema-types (:types (framework/get-schema (d/db conn)))
+  (let [dynamic-schema-types (sort-by first (::framework/types (framework/get-schema (d/db conn))))
         entity-filter-type   (keyword (str (name types/entity-type) "Filter"))
         attribute-fields     [fields/required-id
                               {:name           :name
@@ -133,8 +134,8 @@
                  (fields/list-page-query (str "list" (name types/entity-type)) types/entity-type entity-filter-type)]
                 (for [op all-ops
                       :when (= (::ops/parent-type op) types/query-type)
-                      [entity fields] dynamic-schema-types]
-                  (ops/gen-graphql-field op entity fields)))})
+                      [entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
+                  (ops/gen-graphql-field op entity-type fields)))})
      (spec/object-type-definition
       {:name   types/entity-type
        :fields [fields/required-id
@@ -147,39 +148,39 @@
       {:name   types/entity-base-type
        :fields [fields/required-id]})
      (s/join
-      (for [[entity fields] dynamic-schema-types]
+      (for [[entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
         ; always generate all dynamic entity types
         (spec/object-type-definition
-         {:name       entity
+         {:name       entity-type
           :interfaces [types/entity-base-type]
-          :fields     (gen-entity-fields (vals fields) false)})))
+          :fields     (gen-entity-fields fields false)})))
      (spec/object-type-definition
       (objects/list-page types/entity-type))
      (s/join
       (for [op          all-ops
-            entity      (keys dynamic-schema-types)
-            object-type (ops/gen-graphql-object-types op entity)]
+            entity-type (keys dynamic-schema-types)
+            object-type (ops/gen-graphql-object-types op entity-type)]
         (spec/object-type-definition object-type)))
      ;; entity framework & dynamic schema: mutation inputs & results
      (s/join
-      (for [[entity fields] dynamic-schema-types]
+      (for [[entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
         ; always generate all dynamic entity input types
         (spec/input-object-type-definition
-         {:name   (types/input-type entity)
-          :fields (gen-entity-fields (vals fields) true)})))
+         {:name   (types/input-type entity-type)
+          :fields (gen-entity-fields fields true)})))
      (spec/object-type-definition
       {:name   types/mutation-type
        :fields (for [op all-ops
                      :when (= (::ops/parent-type op) types/mutation-type)
-                     [entity fields] dynamic-schema-types]
-                 (ops/gen-graphql-field op entity fields))})
+                     [entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
+                 (ops/gen-graphql-field op entity-type fields))})
      (spec/object-type-definition
       {:name           types/subscription-type
        :spaced-fields? true
        :fields         (for [op all-ops
                              :when (= (::ops/parent-type op) types/subscription-type)
-                             [entity fields] dynamic-schema-types]
-                         (ops/gen-graphql-field op entity fields))}))))
+                             [entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
+                         (ops/gen-graphql-field op entity-type fields))}))))
 
 (comment
   (let [schema (str (generate (u/temp-conn)))]
