@@ -36,6 +36,7 @@
 (def test-field-name-value-1 " :platform/name sample value\n")
 (def test-field-name-value-2 " some other \n value")
 (def test-field-quantifications "quantifications")
+(def test-field-planetary-boundaries "planetaryBoundaries")
 (def test-attribute-name :platform/name)
 (def test-attribute-quantifications :platform/quantifications)
 
@@ -61,6 +62,13 @@
                                 test-field-quantifications
                                 test-attribute-quantifications
                                 [:graphql.type/name test-type-quantification])})
+    (d/transact conn {:tx-data (tx-fns/add-field
+                                (d/db conn)
+                                [:graphql.type/name test-type-quantification]
+                                test-field-planetary-boundaries
+                                test-attribute-quantifications
+                                [:graphql.type/name test-type-planetary-boundary]
+                                true)})
     conn))
 
 (comment
