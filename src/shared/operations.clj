@@ -260,7 +260,6 @@
       "list" (let [selected-paths (->> selected-paths
                                        (filter #(str/starts-with? % "values/"))
                                        (map #(str/replace % #"^values/" ""))
-                                       (filter #(not (str/includes? % "/")))
                                        set)
                    entities       (queries/get-entities-sorted db-before collection)
                    page-info      (utils/page-info page (count entities))

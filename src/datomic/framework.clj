@@ -206,6 +206,7 @@
                   (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/id")
                   (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/" u/test-field-name)}
         pattern (gen-pull-pattern schema u/test-type-planetary-boundary paths)]
+    ; TODO use u/* symbols
     (d/transact conn {:tx-data (resolve-input-fields schema {"id"              "00000000-0000-0000-0000-000000000000"
                                                              "name"            "pb1"
                                                              "quantifications" [{"id"   "00000000-0000-0000-0000-000000000001"
@@ -267,6 +268,7 @@
 (deftest reverse-pull-pattern-test
   (let [conn   (u/temp-conn)
         schema (get-schema (d/db conn))]
+    ; TODO use u/* symbols
     (is (= {"id"              "00000000-0000-0000-0000-000000000000"
             "name"            "pb1"
             "quantifications" [{"name"                "q1",
@@ -286,6 +288,7 @@
               (str u/test-field-quantifications "/" u/test-field-name)
               (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/id")
               (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/" u/test-field-name)}
+            ; TODO use u/* symbols
             #:platform{:id              #uuid"00000000-0000-0000-0000-000000000000",
                        :name            "pb1",
                        :quantifications [#:platform{:name             "q1",
@@ -298,23 +301,37 @@
                                                                                   :name "pb1"}]}]})))))
 
 (defn pull-and-resolve-entity-value [schema entity-uuid db entity-type selected-paths]
-  ; TODO nested fields
-  ; TODO continue using entity-uuid
-  (let [selected-paths (set (filter #(not (str/includes? % "/")) selected-paths))
-        pattern        (gen-pull-pattern schema entity-type selected-paths)]
-    (->> [entity-uuid]
-         (queries/pull-platform-entities db pattern)
-         (map #(reverse-pull-pattern schema entity-type selected-paths %))
-         first)))
+  (let [pattern       (gen-pull-pattern schema entity-type selected-paths)
+        pulled-entity (d/pull db pattern [:platform/id entity-uuid])]
+    (if (empty? pulled-entity)
+      nil
+      (reverse-pull-pattern schema entity-type selected-paths pulled-entity))))
 
 (deftest pull-and-resolve-entity-test
-  (let [conn           (u/temp-conn)
-        entity-uuid    (UUID/randomUUID)
-        {:keys [db-after]} (d/transact conn {:tx-data [{:platform/id          entity-uuid
-                                                        u/test-attribute-name u/test-field-name-value-1}]})
-        selected-paths #{"id" u/test-field-name}
+  ; TODO use u/* symbols
+  (let [data           #:platform{:id              #uuid"00000000-0000-0000-0000-000000000000"
+                                  :name            "pb1"
+                                  :quantifications [#:platform{:name "q1"
+                                                               :id   #uuid"00000000-0000-0000-0000-000000000001"}
+                                                    #:platform{:name "q2"
+                                                               :id   #uuid"00000000-0000-0000-0000-000000000002"}]}
+        {:keys [db-after]} (d/transact (u/temp-conn) {:tx-data [data]})
+        selected-paths #{"id"
+                         u/test-field-name
+                         (str u/test-field-quantifications "/id")
+                         (str u/test-field-quantifications "/" u/test-field-name)
+                         (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/id")
+                         (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/" u/test-field-name)}
         schema         (get-schema db-after)
-        pulled-entity  (pull-and-resolve-entity-value schema entity-uuid db-after u/test-type-planetary-boundary selected-paths)]
-    (is (= {"id"              (str entity-uuid)
-            u/test-field-name u/test-field-name-value-1}
+        pulled-entity  (pull-and-resolve-entity-value schema #uuid"00000000-0000-0000-0000-000000000000" db-after u/test-type-planetary-boundary selected-paths)]
+    (is (= {"id"              "00000000-0000-0000-0000-000000000000"
+            "name"            "pb1"
+            "quantifications" [{"name"                "q1",
+                                "id"                  "00000000-0000-0000-0000-000000000001"
+                                "planetaryBoundaries" [{"id"   "00000000-0000-0000-0000-000000000000"
+                                                        "name" "pb1"}]}
+                               {"name"                "q2"
+                                "id"                  "00000000-0000-0000-0000-000000000002"
+                                "planetaryBoundaries" [{"id"   "00000000-0000-0000-0000-000000000000"
+                                                        "name" "pb1"}]}]}
            pulled-entity))))
