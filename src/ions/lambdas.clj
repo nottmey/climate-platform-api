@@ -120,8 +120,9 @@
         parent-type-name (keyword (get-in app-sync-context ["info" "parentTypeName"]))
         field-name       (keyword (get-in app-sync-context ["info" "fieldName"]))
         ; TODO adapt to use selectionSetGraphQL, so renamed fields are answered correctly
-        selection-set    (set (get-in app-sync-context ["info" "selectionSetList"]))
-        selected-paths   (disj selection-set "context")
+        ; TODO rename selected paths to show that it is a set
+        selected-paths   (set (get-in app-sync-context ["info" "selectionSetList"]))
+        ; TODO rework keywordizing inputs
         arguments        (walk/keywordize-keys (get app-sync-context "arguments"))
         parent-value     (walk/keywordize-keys (get app-sync-context "source"))
         conn             (if (u/test-mode?)

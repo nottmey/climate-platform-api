@@ -257,19 +257,19 @@
       (throw (graphql-error "`id` is missing or not a valid UUID")))
     (case prefix
       "get" {:response (framework/pull-and-resolve-entity-value schema entity-id db-before entity-type selected-paths)}
-      "list" (let [fields    (->> selected-paths
-                                  (filter #(str/starts-with? % "values/"))
-                                  (map #(str/replace % #"^values/" ""))
-                                  (filter #(not (str/includes? % "/")))
-                                  set)
-                   entities  (queries/get-entities-sorted db-before collection)
-                   page-info (utils/page-info page (count entities))
-                   pattern   (framework/gen-pull-pattern schema entity-type fields)
-                   entities  (->> entities
-                                  (drop (get page-info "offset"))
-                                  (take (get page-info "size"))
-                                  (queries/pull-platform-entities db-before pattern)
-                                  (framework/reverse-pull-pattern schema entity-type fields))]
+      "list" (let [selected-paths (->> selected-paths
+                                       (filter #(str/starts-with? % "values/"))
+                                       (map #(str/replace % #"^values/" ""))
+                                       (filter #(not (str/includes? % "/")))
+                                       set)
+                   entities       (queries/get-entities-sorted db-before collection)
+                   page-info      (utils/page-info page (count entities))
+                   pattern        (framework/gen-pull-pattern schema entity-type selected-paths)
+                   entities       (->> entities
+                                       (drop (get page-info "offset"))
+                                       (take (get page-info "size"))
+                                       (queries/pull-platform-entities db-before pattern)
+                                       (map #(framework/reverse-pull-pattern schema entity-type selected-paths %)))]
                {:response {"info"   page-info
                            "values" entities}})
       "create" (let [input         (walk/stringify-keys value)

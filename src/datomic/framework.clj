@@ -2,11 +2,17 @@
   (:require
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]
+   [clojure.walk :as walk]
    [datomic.client.api :as d]
    [datomic.queries :as queries]
    [shared.mappings :as sa]
    [user :as u])
-  (:import (java.util Set UUID)))
+  (:import (java.util UUID)))
+
+(defn- apply-backwards-ref? [kw backref?]
+  (if backref?
+    (keyword (namespace kw) (str "_" (name kw)))
+    kw))
 
 (defn get-schema [db]
   (let [base (->> (d/q '[:find (pull ?type [* {:graphql.type/fields [*
@@ -18,11 +24,11 @@
     {::types      (->> base
                        (map (fn [m] (update m :graphql.type/fields #(->> %
                                                                          (map (fn [{:keys [graphql.field/name]
-                                                                                    :as field}]
+                                                                                    :as   field}]
                                                                                 [name field]))
                                                                          (into {})))))
                        (map (fn [{:keys [graphql.type/name]
-                                  :as type}]
+                                  :as   type}]
                               [name type]))
                        (into {}))
      ::attributes (->> base
@@ -30,14 +36,16 @@
                                          graphql.type/fields]}]
                               [name
                                (reduce
-                                (fn [m {:keys [graphql.field/attribute]
-                                        :as field}]
-                                  (-> m
-                                      (assoc (:db/ident attribute) attribute)
-                                      (update-in
-                                       [(:db/ident attribute) :graphql.field/_attribute]
-                                       conj
-                                       (dissoc field :graphql.field/attribute))))
+                                (fn [m {:keys [graphql.field/attribute
+                                               graphql.field/backwards-ref?]
+                                        :as   field}]
+                                  (let [attr-ident (apply-backwards-ref? (:db/ident attribute) backwards-ref?)]
+                                    (-> m
+                                        (assoc attr-ident attribute)
+                                        (update-in
+                                         [attr-ident :graphql.field/_attribute]
+                                         conj
+                                         (dissoc field :graphql.field/attribute)))))
                                 {}
                                 fields)]))
                        (into {}))}))
@@ -151,60 +159,152 @@
                                             u/test-field-name "Quantification2"}]}
             u/test-type-planetary-boundary)))))
 
-(defn gen-pull-pattern [schema entity-type fields]
-  ; TODO nested selections
-  (-> (->> (disj fields "id")
-           (map (fn [field] (get-in schema [::types entity-type :graphql.type/fields field :graphql.field/attribute :db/ident])))
-           (distinct))
-      (conj :platform/id)))
+(defn gen-pull-pattern [schema entity-type selected-paths]
+  (->> selected-paths
+       ; assoc-in all paths as attribute seq into a map, with empty maps as leafs
+       (reduce
+        (fn [m p]
+          (let [as (loop [[current-field & next-fields] (str/split p #"/")
+                          current-type entity-type
+                          result       []]
+                     (if (nil? current-field)
+                       result
+                       (let [{:keys [graphql.field/target
+                                     graphql.field/attribute
+                                     graphql.field/backwards-ref?]}
+                             (get-in schema [::types current-type :graphql.type/fields current-field])
+                             attr-ident (:db/ident attribute)]
+                         (recur
+                          next-fields
+                          (:graphql.type/name target)
+                          (conj
+                           result
+                           (if (= current-field "id")
+                             :platform/id
+                             (apply-backwards-ref? attr-ident backwards-ref?)))))))]
+            (assoc-in m as {})))
+        {})
+       ; cleanup empty maps by moving respective entry into a list next to the filled maps
+       (walk/postwalk
+        (fn [form]
+          (if (and (map? form) (seq form))
+            (let [{value-attributes true
+                   ref-attributes   false} (group-by #(empty? (second %)) form)]
+              (concat
+               (map first value-attributes)
+               (when (some? ref-attributes)
+                 [(into {} ref-attributes)])))
+            form)))))
 
 (deftest gen-pull-pattern-test
-  (let [schema  (get-schema (u/temp-db))
-        pattern (gen-pull-pattern schema u/test-type-planetary-boundary #{"id" u/test-field-name})]
-    (is (= [:platform/id u/test-attribute-name]
-           pattern))))
+  (let [conn    (u/temp-conn)
+        schema  (get-schema (d/db conn))
+        paths   #{"id"
+                  u/test-field-name
+                  (str u/test-field-quantifications "/id")
+                  (str u/test-field-quantifications "/" u/test-field-name)
+                  (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/id")
+                  (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/" u/test-field-name)}
+        pattern (gen-pull-pattern schema u/test-type-planetary-boundary paths)]
+    (d/transact conn {:tx-data (resolve-input-fields schema {"id"              "00000000-0000-0000-0000-000000000000"
+                                                             "name"            "pb1"
+                                                             "quantifications" [{"id"   "00000000-0000-0000-0000-000000000001"
+                                                                                 "name" "q1"}
+                                                                                {"id"   "00000000-0000-0000-0000-000000000002"
+                                                                                 "name" "q2"}]} u/test-type-planetary-boundary)})
+    (is (= #:platform{:id              #uuid"00000000-0000-0000-0000-000000000000",
+                      :name            "pb1",
+                      :quantifications [#:platform{:name             "q1",
+                                                   :id               #uuid"00000000-0000-0000-0000-000000000001",
+                                                   :_quantifications [#:platform{:id   #uuid"00000000-0000-0000-0000-000000000000",
+                                                                                 :name "pb1"}]}
+                                        #:platform{:name             "q2",
+                                                   :id               #uuid"00000000-0000-0000-0000-000000000002",
+                                                   :_quantifications [#:platform{:id   #uuid"00000000-0000-0000-0000-000000000000",
+                                                                                 :name "pb1"}]}]}
+           (d/pull (d/db conn) pattern [:platform/id #uuid "00000000-0000-0000-0000-000000000000"])))))
 
-(defn reverse-pull-pattern [schema entity-type fields-set pulled-entities]
-  ; TODO reverse nested values
-  (map
-   (fn [entity]
-     (-> (->> entity
-              (mapcat
-               (fn [[attribute datomic-value]]
-                 (->> (get-in schema [::attributes entity-type attribute :graphql.field/_attribute])
-                      (filter (fn [{:keys [graphql.field/name]}]
-                                (contains? fields-set name)))
-                      (map (fn [{:keys [graphql.field/name]}]
-                             (let [value-type  (get-in schema [::attributes entity-type attribute :db/valueType :db/ident])
-                                   cardinality (get-in schema [::attributes entity-type attribute :db/cardinality :db/ident])]
-                               ; TODO reverse backref attributes
-                               [name
-                                (sa/->gql-value
-                                 datomic-value
-                                 value-type
-                                 cardinality)]))))))
-              (into {}))
-         (assoc "id" (str (:platform/id entity)))))
-   pulled-entities))
+(defn reverse-pull-pattern [schema entity-type selected-paths pulled-entity]
+  (let [current-paths (->> selected-paths
+                           (map #(first (str/split % #"/")))
+                           (set))]
+    (->> pulled-entity
+         (mapcat
+          (fn [[attribute datomic-value]]
+            (if (= attribute :platform/id)
+              [["id" (str datomic-value)]]
+              (let [{:keys [graphql.field/_attribute
+                            db/valueType
+                            db/cardinality]} (get-in schema [::attributes entity-type attribute])
+                    value-type  (:db/ident valueType)
+                    cardinality (:db/ident cardinality)]
+                (->> _attribute
+                     (filter (fn [{:keys [graphql.field/name]}]
+                               (contains? current-paths name)))
+                     (map (fn [{:keys [graphql.field/name
+                                       graphql.field/target]}]
+                            [name
+                             (if (= value-type :db.type/ref)
+                               (let [target-type          (:graphql.type/name target)
+                                     sub-selected-paths   (->> selected-paths
+                                                               (filter #(str/starts-with? % name))
+                                                               (map #(str/join "/" (rest (str/split % #"/"))))
+                                                               (set))
+                                     apply-nested-reverse #(reverse-pull-pattern
+                                                            schema
+                                                            target-type
+                                                            sub-selected-paths
+                                                            %)]
+                                 (if (= cardinality :db.cardinality/many)
+                                   (map apply-nested-reverse datomic-value)
+                                   (apply-nested-reverse datomic-value)))
+                               (sa/->gql-value
+                                datomic-value
+                                value-type
+                                cardinality))])))))))
+         (into {}))))
 
 (deftest reverse-pull-pattern-test
-  (is (= [{"id"   "00000000-0000-0000-0000-000000000000"
-           "name" "x"}]
-         (reverse-pull-pattern
-          (get-schema (u/temp-db))
-          u/test-type-planetary-boundary
-          #{u/test-field-name}
-          [{:platform/name "x"
-            :platform/id #uuid "00000000-0000-0000-0000-000000000000"}]))))
+  (let [conn   (u/temp-conn)
+        schema (get-schema (d/db conn))]
+    (is (= {"id"              "00000000-0000-0000-0000-000000000000"
+            "name"            "pb1"
+            "quantifications" [{"name"                "q1",
+                                "id"                  "00000000-0000-0000-0000-000000000001"
+                                "planetaryBoundaries" [{"id"   "00000000-0000-0000-0000-000000000000"
+                                                        "name" "pb1"}]}
+                               {"name"                "q2"
+                                "id"                  "00000000-0000-0000-0000-000000000002"
+                                "planetaryBoundaries" [{"id"   "00000000-0000-0000-0000-000000000000"
+                                                        "name" "pb1"}]}]}
+           (reverse-pull-pattern
+            schema
+            u/test-type-planetary-boundary
+            #{"id"
+              u/test-field-name
+              (str u/test-field-quantifications "/id")
+              (str u/test-field-quantifications "/" u/test-field-name)
+              (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/id")
+              (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/" u/test-field-name)}
+            #:platform{:id              #uuid"00000000-0000-0000-0000-000000000000",
+                       :name            "pb1",
+                       :quantifications [#:platform{:name             "q1",
+                                                    :id               #uuid"00000000-0000-0000-0000-000000000001",
+                                                    :_quantifications [#:platform{:id   #uuid"00000000-0000-0000-0000-000000000000",
+                                                                                  :name "pb1"}]}
+                                         #:platform{:name             "q2",
+                                                    :id               #uuid"00000000-0000-0000-0000-000000000002",
+                                                    :_quantifications [#:platform{:id   #uuid"00000000-0000-0000-0000-000000000000",
+                                                                                  :name "pb1"}]}]})))))
 
 (defn pull-and-resolve-entity-value [schema entity-uuid db entity-type selected-paths]
   ; TODO nested fields
   ; TODO continue using entity-uuid
-  (let [fields  (set (filter #(not (str/includes? % "/")) selected-paths))
-        pattern (gen-pull-pattern schema entity-type fields)]
+  (let [selected-paths (set (filter #(not (str/includes? % "/")) selected-paths))
+        pattern        (gen-pull-pattern schema entity-type selected-paths)]
     (->> [entity-uuid]
          (queries/pull-platform-entities db pattern)
-         (reverse-pull-pattern schema entity-type fields)
+         (map #(reverse-pull-pattern schema entity-type selected-paths %))
          first)))
 
 (deftest pull-and-resolve-entity-test
