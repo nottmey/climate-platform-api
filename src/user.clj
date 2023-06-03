@@ -175,7 +175,7 @@
                  %))))))
 
 (comment
-  (get-tx-log 3 access/dev-env-db-name))
+  (get-tx-log 1 access/dev-env-db-name))
 
 (defn get-db-stats
   ([db-name]

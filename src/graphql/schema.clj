@@ -3,6 +3,7 @@
    [clojure.java.io :as io]
    [clojure.string :as s]
    [clojure.test :refer [deftest is]]
+   [datomic.access :as access]
    [datomic.attributes :as attributes]
    [datomic.client.api :as d]
    [datomic.framework :as framework]
@@ -193,10 +194,10 @@
          :fields         subscription-fields})))))
 
 (comment
-  (let [schema (str (generate (u/temp-conn)))]
-    schema)
-  (let [schema (str (generate (u/temp-conn)))]
-    (printf schema))
+  (generate (access/get-connection access/dev-env-db-name))
+
+  (generate (u/temp-conn))
+  (printf (generate (u/temp-conn)))
   ; re-gen golden snapshot
   (spit (io/resource "cdk/schema.graphql") (str (generate (u/temp-conn)))))
 

@@ -1,5 +1,6 @@
 (ns datomic.tx-fns
   (:require [clojure.test :refer [deftest is]]
+            [datomic.access :as access]
             [datomic.attributes :as attributes]
             [datomic.client.api :as d]
             [datomic.ion :as ion]
@@ -15,10 +16,15 @@
   ([db type-name] (create-type db type-name (str "type-" type-name)))
   ([db type-name type-tid] (create-type db type-name type-tid (str "collection-" type-name)))
   ([_ type-name type-tid collection-tid]
+   ; TODO cancel with conflict on already existing type-name
    [{:db/id                   type-tid
      :graphql.type/name       type-name
      :graphql.type/collection {:db/id  collection-tid
                                :db/doc (str "Entity collection of initial type '" type-name "'.")}}]))
+
+(comment
+  (d/transact (access/get-connection access/dev-env-db-name)
+              {:tx-data ['(datomic.tx-fns/create-type "PlanetaryBoundary")]}))
 
 (deftest create-type-test
   (let [conn     (temp/conn)
@@ -62,6 +68,7 @@
    (let [attr-map   (d/pull db '[:db/ident :db/valueType] attribute)
          attr-ident (get attr-map :db/ident)
          attr-type  (get-in attr-map [:db/valueType :db/ident])]
+     ; TODO cancel with conflict on already existing field-name on type
      (cond
        (and (= attr-type :db.type/ref) (nil? target-type))
        (cancel {:cognitect.anomalies/category :cognitect.anomalies/incorrect
@@ -82,6 +89,10 @@
             :graphql.field/backwards-ref? (if (nil? backwards-ref?)
                                             false
                                             backwards-ref?)}))]))))
+
+(comment
+  (d/transact (access/get-connection access/dev-env-db-name)
+              {:tx-data ['(datomic.tx-fns/add-field [:graphql.type/name "PlanetaryBoundary"] "description" :platform/description)]}))
 
 (declare thrown-with-msg?)
 (deftest add-field-test
