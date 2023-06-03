@@ -3,10 +3,13 @@
    [clojure.java.io :as io]
    [clojure.string :as s]
    [clojure.test :refer [deftest is]]
+   [datomic.attributes :as attributes]
    [datomic.client.api :as d]
    [datomic.framework :as framework]
+   [datomic.temp :as temp]
    [graphql.fields :as fields]
    [graphql.objects :as objects]
+   [graphql.parsing :as parsing]
    [graphql.spec :as spec]
    [graphql.types :as types]
    [shared.mappings :as mappings]
@@ -80,8 +83,7 @@
         attribute-fields     [fields/required-id
                               {:name           :name
                                :type           types/string-type
-                               :required-type? true}]
-        all-ops              (ops/all-ops ::ops/any)]
+                               :required-type? true}]]
     (str
      ;; static (db independent) schema
      (spec/schema-definition
@@ -132,7 +134,7 @@
        :fields (concat
                 [(fields/get-query (str "get" (name types/entity-type)) types/entity-type)
                  (fields/list-page-query (str "list" (name types/entity-type)) types/entity-type entity-filter-type)]
-                (for [op all-ops
+                (for [op ops/all-operations
                       :when (= (::ops/parent-type op) types/query-type)
                       [entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
                   (ops/gen-graphql-field op entity-type fields)))})
@@ -157,7 +159,7 @@
      (spec/object-type-definition
       (objects/list-page types/entity-type))
      (s/join
-      (for [op          all-ops
+      (for [op          ops/all-operations
             entity-type (keys dynamic-schema-types)
             object-type (ops/gen-graphql-object-types op entity-type)]
         (spec/object-type-definition object-type)))
@@ -168,19 +170,21 @@
         (spec/input-object-type-definition
          {:name   (types/input-type entity-type)
           :fields (gen-entity-fields fields true)})))
-     (spec/object-type-definition
-      {:name   types/mutation-type
-       :fields (for [op all-ops
-                     :when (= (::ops/parent-type op) types/mutation-type)
-                     [entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
-                 (ops/gen-graphql-field op entity-type fields))})
-     (spec/object-type-definition
-      {:name           types/subscription-type
-       :spaced-fields? true
-       :fields         (for [op all-ops
-                             :when (= (::ops/parent-type op) types/subscription-type)
-                             [entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
-                         (ops/gen-graphql-field op entity-type fields))}))))
+     (when-let [fields (seq (for [op ops/all-operations
+                                  :when (= (::ops/parent-type op) types/mutation-type)
+                                  [entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
+                              (ops/gen-graphql-field op entity-type fields)))]
+       (spec/object-type-definition
+        {:name   types/mutation-type
+         :fields fields}))
+     (when-let [fields (seq (for [op ops/all-operations
+                                  :when (= (::ops/parent-type op) types/subscription-type)
+                                  [entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
+                              (ops/gen-graphql-field op entity-type fields)))]
+       (spec/object-type-definition
+        {:name           types/subscription-type
+         :spaced-fields? true
+         :fields         fields})))))
 
 (comment
   (let [schema (str (generate (u/temp-conn)))]
@@ -188,11 +192,17 @@
   (let [schema (str (generate (u/temp-conn)))]
     (printf schema))
   ; re-gen golden snapshot
-  (let [schema (str (generate (u/temp-conn)))]
-    (spit (io/resource "cdk/schema.graphql") schema)))
+  (spit (io/resource "cdk/schema.graphql") (str (generate (u/temp-conn)))))
 
 (deftest generate-schema-test
+  (let [empty-temp-conn (temp/conn)]
+    (d/transact empty-temp-conn {:tx-data attributes/graphql-attributes})
+    (d/transact empty-temp-conn {:tx-data attributes/platform-attributes})
+    (let [generated-schema (generate empty-temp-conn)]
+      (is (parsing/valid? generated-schema))))
+
   (let [golden-snapshot  (slurp (io/resource "cdk/schema.graphql"))
         generated-schema (str (generate (u/temp-conn)))]
+    (is (parsing/valid? generated-schema))
     (is (string? golden-snapshot))
     (is (= generated-schema golden-snapshot))))

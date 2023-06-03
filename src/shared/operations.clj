@@ -77,30 +77,25 @@
   {::parent-type types/subscription-type
    ::prefix      "onDeleted"})
 
-(defn all-ops [resolver-location]
-  (->> [publish-created-op
-        publish-updated-op
-        publish-deleted-op
-        get-op
-        list-op
-        create-op
-        merge-op
-        delete-op
-        on-created-op
-        on-updated-op
-        on-deleted-op]
-       (filter #(or (= resolver-location ::any)
-                    (= (::resolver %) resolver-location)))))
+(def all-operations
+  [publish-created-op
+   publish-updated-op
+   publish-deleted-op
+   get-op
+   list-op
+   create-op
+   merge-op
+   delete-op
+   on-created-op
+   on-updated-op
+   on-deleted-op])
 
-(deftest all-test
-  (is (< 0 (count (all-ops ::any))))
-  (is (< 0 (count (all-ops ::datomic))))
-  (is (every?
-       #(= (::resolver %) ::datomic)
-       (all-ops ::datomic))))
-
-(comment
-  (all-ops ::any))
+(defn select-datomic-field-operation [parent-type field]
+  (->> all-operations
+       (filter #(= (::resolver %) ::datomic))
+       (filter #(= (name (::parent-type %)) (name parent-type)))
+       (filter #(str/starts-with? (name field) (name (::prefix %))))
+       first))
 
 (defn gen-field-name [op entity-type]
   (str (::prefix op) (name entity-type)))
@@ -232,9 +227,6 @@
                             "name"            "n"
                             "quantifications" [{"id" "456"}]}
                            default-paths))))))
-
-(defn resolves-graphql-field? [op field-name]
-  (str/starts-with? (name field-name) (::prefix op)))
 
 (defn graphql-error [^String msg]
   ; TODO find better way to report errors in resolver lambdas for appsync (throwing seems to be the only way)

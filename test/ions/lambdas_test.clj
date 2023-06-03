@@ -2,7 +2,7 @@
   (:require
    [clojure.data.json :as json]
    [clojure.test :refer [deftest is]]
-   [graphql.parsing :as gp]
+   [graphql.parsing :as parsing]
    [ions.lambdas :refer [datomic-resolver]]
    [user :as u])
   (:import (java.util UUID)))
@@ -15,7 +15,7 @@
 (defn- expecting-query [publish-called? parsed-query]
   (fn [q]
     (reset! publish-called? true)
-    (is (= parsed-query (gp/parse q)))))
+    (is (= parsed-query (parsing/parse q)))))
 
 (deftest test-get-non-existent-id
   (let [response (resolve-input

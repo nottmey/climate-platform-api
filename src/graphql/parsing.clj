@@ -1,6 +1,16 @@
 (ns graphql.parsing
   (:require [clojure.test :refer [deftest is]])
-  (:import (graphql.language Argument ArrayValue Document Field NullValue ObjectField ObjectValue OperationDefinition SelectionSet StringValue)
+  (:import (graphql.language
+            Argument
+            ArrayValue
+            Document
+            Field
+            NullValue
+            ObjectField
+            ObjectValue
+            OperationDefinition
+            SelectionSet
+            StringValue)
            (graphql.parser Parser)
            (java.util List Map)))
 
@@ -69,8 +79,8 @@
   nil
   (extract [n] n))
 
-(defn parse [^String query]
-  (extract (Parser/parse query)))
+(defn parse [^String document]
+  (extract (Parser/parse document)))
 
 (deftest parse-test
   (is (= (parse "mutation PublishCreatedPlanetaryBoundary {
@@ -90,3 +100,7 @@
                         :selection [{:name "id"}
                                     {:name "name"}
                                     {:name "quantifications"}]}]}])))
+
+(defn valid? [^String document]
+  (Parser/parse document)
+  true)

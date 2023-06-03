@@ -92,7 +92,7 @@
       ;; https://docs.aws.amazon.com/appsync/latest/devguide/utility-helpers-in-util.html
       (doseq [[parent-type-name field-name] @resolvers/resolvable-paths]
         (configure-datomic-resolver parent-type-name field-name))
-      (doseq [op          (ops/all-ops ::ops/any)
+      (doseq [op          ops/all-operations
               entity-type (framework/get-entity-types (d/db conn))
               :let [type-name  (::ops/parent-type op)
                     field-name (ops/gen-field-name op entity-type)]]

@@ -19,13 +19,11 @@
 
 (defn select-and-use-correct-resolver [{:keys [parent-type-name field-name]
                                         :as   args}]
-  (if-let [op (->> (ops/all-ops ::ops/datomic)
-                   (filter #(= (::ops/parent-type %) parent-type-name))
-                   (filter #(and (not (str/includes? (name field-name) "Entity"))
-                                 (ops/resolves-graphql-field? % field-name)))
-                   first)]
-    (ops/resolve-field op args)
-    (resolve-static-type-field args)))
+  (let [op (ops/select-datomic-field-operation parent-type-name field-name)]
+    (if (and (some? op)
+             (not (str/includes? (name field-name) "Entity")))
+      (ops/resolve-field op args)
+      (resolve-static-type-field args))))
 
 (comment
   (let [args {:conn             (u/temp-conn)
