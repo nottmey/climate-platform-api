@@ -4,10 +4,8 @@
    [clojure.test :refer [deftest is]]
    [clojure.walk :as walk]
    [datomic.client.api :as d]
-   [datomic.queries :as queries]
    [shared.mappings :as sa]
-   [user :as u])
-  (:import (java.util UUID)))
+   [user :as u]))
 
 (defn- apply-backwards-ref? [kw backref?]
   (if backref?
