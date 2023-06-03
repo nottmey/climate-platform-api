@@ -83,13 +83,28 @@
         attribute-fields     [fields/required-id
                               {:name           :name
                                :type           types/string-type
-                               :required-type? true}]]
+                               :required-type? true}]
+        query-fields         (seq (for [op ops/all-operations
+                                        :when (= (::ops/parent-type op) types/query-type)
+                                        [entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
+                                    (ops/gen-graphql-field op entity-type fields)))
+        mutation-fields      (seq (for [op ops/all-operations
+                                        :when (= (::ops/parent-type op) types/mutation-type)
+                                        [entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
+                                    (ops/gen-graphql-field op entity-type fields)))
+        subscription-fields  (seq (for [op ops/all-operations
+                                        :when (= (::ops/parent-type op) types/subscription-type)
+                                        [entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
+                                    (ops/gen-graphql-field op entity-type fields)))]
     (str
      ;; static (db independent) schema
      (spec/schema-definition
-      {:root-ops {:query        types/query-type
-                  :mutation     types/mutation-type
-                  :subscription types/subscription-type}})
+      {:root-ops (merge
+                  {:query types/query-type}
+                  (when mutation-fields
+                    {:mutation types/mutation-type})
+                  (when subscription-fields
+                    {:subscription types/subscription-type}))})
      (spec/interface-type-definition
       {:name   types/attribute-type
        :fields attribute-fields})
@@ -134,10 +149,7 @@
        :fields (concat
                 [(fields/get-query (str "get" (name types/entity-type)) types/entity-type)
                  (fields/list-page-query (str "list" (name types/entity-type)) types/entity-type entity-filter-type)]
-                (for [op ops/all-operations
-                      :when (= (::ops/parent-type op) types/query-type)
-                      [entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
-                  (ops/gen-graphql-field op entity-type fields)))})
+                query-fields)})
      (spec/object-type-definition
       {:name   types/entity-type
        :fields [fields/required-id
@@ -170,21 +182,15 @@
         (spec/input-object-type-definition
          {:name   (types/input-type entity-type)
           :fields (gen-entity-fields fields true)})))
-     (when-let [fields (seq (for [op ops/all-operations
-                                  :when (= (::ops/parent-type op) types/mutation-type)
-                                  [entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
-                              (ops/gen-graphql-field op entity-type fields)))]
+     (when mutation-fields
        (spec/object-type-definition
         {:name   types/mutation-type
-         :fields fields}))
-     (when-let [fields (seq (for [op ops/all-operations
-                                  :when (= (::ops/parent-type op) types/subscription-type)
-                                  [entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
-                              (ops/gen-graphql-field op entity-type fields)))]
+         :fields mutation-fields}))
+     (when subscription-fields
        (spec/object-type-definition
         {:name           types/subscription-type
          :spaced-fields? true
-         :fields         fields})))))
+         :fields         subscription-fields})))))
 
 (comment
   (let [schema (str (generate (u/temp-conn)))]
