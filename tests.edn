@@ -2,8 +2,9 @@
                          :cloverage/opts {:codecov?         true
                                           :exclude-call     [clojure.test/deftest]
                                           :ns-exclude-regex ["user"
+                                                             "ai.*"
                                                              "cdk.*"
-                                                             "ai.*"]}
+                                                             "datomic.cloud-import"]}
                          :tests          [{:id          :unit
                                            :ns-patterns [""]
                                            :test-paths  ["src"
