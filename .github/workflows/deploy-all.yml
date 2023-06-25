@@ -82,7 +82,7 @@ jobs:
           key: cljdeps-${{ hashFiles('deps.edn') }}
           restore-keys: cljdeps-
       - name: Push code to AWS CodeDeploy
-        run: echo "PUSH_RESULT=$(clojure -A:ion-dev '{:op :push}' | tail -6 | jet --no-pretty)" >> $GITHUB_ENV
+        run: echo "PUSH_RESULT=$(clojure -M:ion-dev '{:op :push}' | tail -6 | jet --no-pretty)" >> $GITHUB_ENV
       - name: Display push result
         run: echo "$PUSH_RESULT"
       - name: Extract deploy command
