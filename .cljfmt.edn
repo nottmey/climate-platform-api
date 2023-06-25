@@ -1,6 +1,6 @@
 ;; cljfmt configuration - https://github.com/weavejester/cljfmt
-;; check with `clojure -Sdeps '{:deps {cljfmt {:mvn/version "0.9.2"}}}' -M -m cljfmt.main check`
-;; run with `clojure -Sdeps '{:deps {cljfmt {:mvn/version "0.9.2"}}}' -M -m cljfmt.main fix`
+;; check with `clojure -M:format check`
+;; run with `clojure -M:format fix`
 ;; for reference see https://guide.clojure.style/
 ;; TODO integrate into intellij workflow like https://github.com/cursive-ide/cursive/issues/1403#issuecomment-1213449367
 {:split-keypairs-over-multiple-lines? true

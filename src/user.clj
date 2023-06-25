@@ -7,6 +7,7 @@
    [datomic.access :as access]
    [datomic.attributes :as attributes]
    [datomic.client.api :as d]
+   [datomic.dev-local :as dev-local]
    [datomic.temp :as temp]
    [datomic.tx-fns :as tx-fns])
   (:import
@@ -14,10 +15,10 @@
 
 (comment
   ; doesn't seem to work :(
-  #_(datomic.dev-local/divert-system {:system "climate-platform"})
+  (dev-local/divert-system {:system "climate-platform"})
 
-  ; only shows "development" when not using divert-system...
-  (d/list-databases (d/client (access/load-config)) {}))
+  ; only errors when using divert-system...
+  (d/connect (d/client (access/load-config)) {:db-name access/dev-env-db-name}))
 
 (comment
   ; example of historic values

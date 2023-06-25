@@ -20,7 +20,12 @@
              :ion-dev {:extra-deps {com.datomic/ion-dev {:mvn/version "1.0.306"
                                                          :exclusions  [org.slf4j/slf4j-simple]}}
                        :main-opts  ["-m" "datomic.ion.dev"]}
-             :repl    {:extra-deps {com.datomic/dev-local {:mvn/version "1.0.243"}}}
+             :repl    {:extra-paths ["test"]
+                       :extra-deps  {com.datomic/dev-local {:mvn/version "1.0.243"}}}
+             :format  {:extra-paths ["test"]
+                       :extra-deps  {com.datomic/dev-local {:mvn/version "1.0.243"}
+                                     cljfmt/cljfmt         {:mvn/version "0.9.2"}}
+                       :main-opts   ["-m" "cljfmt.main"]}
              :test    {:extra-paths ["test"]
                        :extra-deps  {com.datomic/dev-local         {:mvn/version "1.0.243"}
                                      lambdaisland/kaocha           {:mvn/version "1.71.1119"}

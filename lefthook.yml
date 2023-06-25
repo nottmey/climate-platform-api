@@ -6,11 +6,11 @@ pre-commit:
     format:
       glob: "*.clj"
       files: git diff --name-only --cached
-      run: clojure -Sdeps '{:deps {cljfmt {:mvn/version "0.9.2"}}}' -M -m cljfmt.main fix {staged_files} && git add {staged_files}
+      run: clojure -M:format fix {staged_files} && git add {staged_files}
     test:
       glob: "*.clj"
       files: git diff --name-only --cached
-      run: bin/kaocha --fail-fast
+      run: clojure -M:test --fail-fast
 
 commit-msg:
   commands:

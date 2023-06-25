@@ -38,8 +38,10 @@ jobs:
       - uses: s4u/maven-settings-action@v2.8.0
         with:
           servers: '[{"id": "cognitect-dev-tools", "username": "${{ secrets.DEV_TOOLS_USERNAME }}", "password": "${{ secrets.DEV_TOOLS_PASSWORD }}"}]'
+      - name: Run format check
+        run: clojure -M:format check
       - name: Run tests
-        run: bin/kaocha --plugin cloverage
+        run: clojure -M:test --plugin cloverage
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         with:
