@@ -12,3 +12,5 @@ cdk.out
 
 # Builds & coverage reports
 target
+
+.DS_Store
