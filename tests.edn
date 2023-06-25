@@ -3,8 +3,7 @@
                                           :exclude-call     [clojure.test/deftest]
                                           :ns-exclude-regex ["user"
                                                              "ai.*"
-                                                             "cdk.*"
-                                                             "datomic.cloud-import"]}
+                                                             "cdk.*"]}
                          :tests          [{:id          :unit
                                            :ns-patterns [""]
                                            :test-paths  ["src"

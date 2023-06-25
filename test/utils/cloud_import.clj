@@ -1,4 +1,4 @@
-(ns datomic.cloud-import
+(ns utils.cloud-import
   (:require [clojure.java.io :as io]
             [datomic.access :as access]
             [datomic.client.api :as d]
