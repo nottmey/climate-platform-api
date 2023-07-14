@@ -1,0 +1,46 @@
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  deploy-cdk:
+    name: "Deploy API via CDK"
+    needs: test-code
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::118776085668:role/github-actions-cdk-deployment
+          aws-region: eu-central-1
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin' # preinstalled
+          java-version-file: ./.java-version
+      - name: Setup Clojure
+        uses: DeLaGuardo/setup-clojure@10.1
+        with:
+          cli: 'latest'
+      - name: Cache Clojure Dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gitlibs
+            ~/.deps.clj
+          key: cljdeps-${{ hashFiles('deps.edn') }}
+          restore-keys: cljdeps-
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Setup CDK
+        run: npm install -g aws-cdk
+      - name: Deploy via CDK
+        run: cdk deploy --strict --ci --concurrency 8
