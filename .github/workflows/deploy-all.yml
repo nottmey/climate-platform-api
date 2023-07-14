@@ -1,6 +1,6 @@
 on: push
 
-name: "Deploy All"
+name: "Deploy Ions and API"
 
 jobs:
   test-code:
@@ -106,6 +106,6 @@ jobs:
           done
           echo "finished: $state"
   call-deploy-cdk:
-    name: "Call CDK Deploy Workflow"
+    name: "Deploy API"
     needs: test-code
     uses: nottmey/climate-platform-api/.github/workflows/deploy-cdk.yml@main

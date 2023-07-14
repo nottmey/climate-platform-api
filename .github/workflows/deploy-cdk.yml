@@ -2,9 +2,11 @@ on:
   workflow_dispatch:
   workflow_call:
 
+name: "Deploy API via CDK"
+
 jobs:
   deploy-cdk:
-    name: "Deploy API via CDK"
+    name: "CDK Deploy"
     runs-on: ubuntu-latest
     permissions:
       id-token: write
