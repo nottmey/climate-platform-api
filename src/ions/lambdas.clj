@@ -133,7 +133,7 @@
                            ; making sure never to publish to the real system in tests
                            u/testing-publish
                            (build-publish (get-in app-sync-context ["request" "headers"])))
-        resolve-result   (resolvers/select-and-use-correct-resolver
+        resolve-result   (resolvers/select-and-use-resolver
                           {:conn             conn
                            :parent-type-name parent-type-name
                            :field-name       field-name

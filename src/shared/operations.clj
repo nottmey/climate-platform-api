@@ -235,7 +235,7 @@
     ; https://stackoverflow.com/questions/11434431/exception-without-stack-trace-in-java
     (.setStackTrace (make-array StackTraceElement 0))))
 
-(defn resolve-field [op args]
+(defn resolve-dynamic [op args]
   (let [{:keys [shared.operations/prefix shared.operations/resolver-options]} op
         {:keys [shared.operations/requires-id?]} resolver-options
         {:keys [conn field-name selected-paths arguments]} args
@@ -321,7 +321,7 @@
             u/test-attribute-name u/test-field-name-value-1
             :db/doc               "other attr value"}
            db-value))
-    (let [result       (resolve-field
+    (let [result       (resolve-dynamic
                         merge-op
                         {:conn       conn
                          :field-name (str "merge" u/test-type-planetary-boundary)

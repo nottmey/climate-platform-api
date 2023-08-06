@@ -20,6 +20,14 @@
 
   (get-attribute-index (u/temp-db)))
 
+(defn recently-updated-entities [db as]
+  (->> (d/q '[:find ?e (max ?t)
+              :in $ [?as ...]
+              :where [?e ?as _ ?t]] db as)
+       (sort-by second)
+       (reverse)
+       (map first)))
+
 (defn pull-entities [db pattern entity-ids]
   (->> entity-ids
        (map-indexed vector)
