@@ -68,7 +68,6 @@
    (let [attr-map   (d/pull db '[:db/ident :db/valueType] attribute)
          attr-ident (get attr-map :db/ident)
          attr-type  (get-in attr-map [:db/valueType :db/ident])]
-     ; TODO cancel with conflict on already existing field-name on type
      (cond
        (and (= attr-type :db.type/ref) (nil? target-type))
        (cancel {:cognitect.anomalies/category :cognitect.anomalies/incorrect
@@ -76,7 +75,14 @@
 
        (and (not (nil? target-type)) (not= attr-type :db.type/ref))
        (cancel {:cognitect.anomalies/category :cognitect.anomalies/incorrect
-                :cognitect.anomalies/message  (str "When providing a target-type " target-type ", the attribute " attr-ident " needs to be of type ref.")})
+                :cognitect.anomalies/message  (str "When providing a target-type, the attribute " attr-ident " needs to be of type ref.")})
+
+       (->> (-> (d/pull db '[{:graphql.type/fields [:graphql.field/name]}] type)
+                :graphql.type/fields)
+            (filter (fn [{:keys [:graphql.field/name]}] (= name field-name)))
+            (first))
+       (cancel {:cognitect.anomalies/category :cognitect.anomalies/conflict
+                :cognitect.anomalies/message  (str "Field " field-name " already exists on given type.")})
 
        :else
        [[:db/add type :graphql.type/fields field-tid]
@@ -128,6 +134,10 @@
       (is (= (pull-fields db-after some-type)
              {:graphql.type/fields [{:graphql.field/name      "doc"
                                      :graphql.field/attribute {:db/ident :db/doc}}]})))
+
+    (is (thrown-with-msg?
+         ExceptionInfo #"Field doc already exists on given type"
+         (add-field (d/db conn) some-type "doc" :db/doc)))
 
     (let [tx-data (add-field (d/db conn) some-type "ref" :example-ref other-type)
           {:keys [db-after]} (d/transact conn {:tx-data tx-data})]
