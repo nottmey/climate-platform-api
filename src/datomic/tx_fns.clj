@@ -96,11 +96,12 @@
 
 (declare thrown-with-msg?)
 (deftest add-field-test
-  (let [conn     (temp/conn)
-        selector '[{:graphql.type/fields [:graphql.field/name
-                                          {:graphql.field/attribute [:db/ident]}
-                                          {:graphql.field/target [:graphql.type/name]}
-                                          :graphql.field/backwards-ref?]}]]
+  (let [conn        (temp/conn)
+        pull-fields (fn [db type]
+                      (d/pull db '[{:graphql.type/fields [:graphql.field/name
+                                                          {:graphql.field/attribute [:db/ident]}
+                                                          {:graphql.field/target [:graphql.type/name]}
+                                                          :graphql.field/backwards-ref?]}] type))]
     (d/transact conn {:tx-data attributes/graphql-attributes})
     (d/transact conn {:tx-data (create-type (d/db conn) "SomeType")})
     (d/transact conn {:tx-data (create-type (d/db conn) "OtherType")})
@@ -122,13 +123,13 @@
 
     (let [tx-data (add-field (d/db conn) [:graphql.type/name "SomeType"] "doc" :db/doc)
           {:keys [db-after]} (d/transact conn {:tx-data tx-data})]
-      (is (= (d/pull db-after selector [:graphql.type/name "SomeType"])
+      (is (= (pull-fields db-after [:graphql.type/name "SomeType"])
              {:graphql.type/fields [{:graphql.field/name      "doc"
                                      :graphql.field/attribute {:db/ident :db/doc}}]})))
 
     (let [tx-data (add-field (d/db conn) [:graphql.type/name "SomeType"] "ref" :example-ref [:graphql.type/name "OtherType"])
           {:keys [db-after]} (d/transact conn {:tx-data tx-data})]
-      (is (= (-> (d/pull db-after selector [:graphql.type/name "SomeType"])
+      (is (= (-> (pull-fields db-after [:graphql.type/name "SomeType"])
                  (update :graphql.type/fields #(filter (fn [{:keys [graphql.field/name]}] (= name "ref")) %)))
              {:graphql.type/fields [{:graphql.field/name           "ref"
                                      :graphql.field/attribute      {:db/ident :example-ref}
@@ -137,7 +138,7 @@
 
     (let [tx-data (add-field (d/db conn) [:graphql.type/name "SomeType"] "backRef" :example-ref [:graphql.type/name "OtherType"] true)
           {:keys [db-after]} (d/transact conn {:tx-data tx-data})]
-      (is (= (-> (d/pull db-after selector [:graphql.type/name "SomeType"])
+      (is (= (-> (pull-fields db-after [:graphql.type/name "SomeType"])
                  (update :graphql.type/fields #(filter (fn [{:keys [graphql.field/name]}] (= name "backRef")) %)))
              {:graphql.type/fields [{:graphql.field/name           "backRef"
                                      :graphql.field/attribute      {:db/ident :example-ref}
