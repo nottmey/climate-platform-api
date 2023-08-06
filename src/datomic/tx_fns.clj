@@ -101,7 +101,9 @@
                       (d/pull db '[{:graphql.type/fields [:graphql.field/name
                                                           {:graphql.field/attribute [:db/ident]}
                                                           {:graphql.field/target [:graphql.type/name]}
-                                                          :graphql.field/backwards-ref?]}] type))]
+                                                          :graphql.field/backwards-ref?]}] type))
+        some-type   [:graphql.type/name "SomeType"]
+        other-type  [:graphql.type/name "OtherType"]]
     (d/transact conn {:tx-data attributes/graphql-attributes})
     (d/transact conn {:tx-data (create-type (d/db conn) "SomeType")})
     (d/transact conn {:tx-data (create-type (d/db conn) "OtherType")})
@@ -115,30 +117,30 @@
 
     (is (thrown-with-msg?
          ExceptionInfo #"target-type needs to be not nil"
-         (add-field (d/db conn) [:graphql.type/name "SomeType"] "ref" :example-ref)))
+         (add-field (d/db conn) some-type "ref" :example-ref)))
 
     (is (thrown-with-msg?
          ExceptionInfo #"attribute :db/doc needs to be of type ref"
-         (add-field (d/db conn) [:graphql.type/name "SomeType"] "nonRef" :db/doc [:graphql.type/name "OtherType"])))
+         (add-field (d/db conn) some-type "nonRef" :db/doc other-type)))
 
-    (let [tx-data (add-field (d/db conn) [:graphql.type/name "SomeType"] "doc" :db/doc)
+    (let [tx-data (add-field (d/db conn) some-type "doc" :db/doc)
           {:keys [db-after]} (d/transact conn {:tx-data tx-data})]
-      (is (= (pull-fields db-after [:graphql.type/name "SomeType"])
+      (is (= (pull-fields db-after some-type)
              {:graphql.type/fields [{:graphql.field/name      "doc"
                                      :graphql.field/attribute {:db/ident :db/doc}}]})))
 
-    (let [tx-data (add-field (d/db conn) [:graphql.type/name "SomeType"] "ref" :example-ref [:graphql.type/name "OtherType"])
+    (let [tx-data (add-field (d/db conn) some-type "ref" :example-ref other-type)
           {:keys [db-after]} (d/transact conn {:tx-data tx-data})]
-      (is (= (-> (pull-fields db-after [:graphql.type/name "SomeType"])
+      (is (= (-> (pull-fields db-after some-type)
                  (update :graphql.type/fields #(filter (fn [{:keys [graphql.field/name]}] (= name "ref")) %)))
              {:graphql.type/fields [{:graphql.field/name           "ref"
                                      :graphql.field/attribute      {:db/ident :example-ref}
                                      :graphql.field/target         {:graphql.type/name "OtherType"}
                                      :graphql.field/backwards-ref? false}]})))
 
-    (let [tx-data (add-field (d/db conn) [:graphql.type/name "SomeType"] "backRef" :example-ref [:graphql.type/name "OtherType"] true)
+    (let [tx-data (add-field (d/db conn) some-type "backRef" :example-ref other-type true)
           {:keys [db-after]} (d/transact conn {:tx-data tx-data})]
-      (is (= (-> (pull-fields db-after [:graphql.type/name "SomeType"])
+      (is (= (-> (pull-fields db-after some-type)
                  (update :graphql.type/fields #(filter (fn [{:keys [graphql.field/name]}] (= name "backRef")) %)))
              {:graphql.type/fields [{:graphql.field/name           "backRef"
                                      :graphql.field/attribute      {:db/ident :example-ref}
@@ -146,8 +148,8 @@
                                      :graphql.field/backwards-ref? true}]})))
 
     (let [tx-data (concat
-                   [[:db/add [:graphql.type/name "OtherType"] :graphql.type/fields "tempid"]]
-                   (add-field (d/db conn) [:graphql.type/name "SomeType"] "otherDoc" :db/doc nil nil "tempid"))
+                   [[:db/add other-type :graphql.type/fields "tempid"]]
+                   (add-field (d/db conn) some-type "otherDoc" :db/doc nil nil "tempid"))
           {:keys [db-after tempids]} (d/transact conn {:tx-data tx-data})]
       (is (= (-> (d/pull db-after '[:graphql.field/name
                                     {:graphql.field/attribute [:db/ident]}
