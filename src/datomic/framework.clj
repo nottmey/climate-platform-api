@@ -3,6 +3,7 @@
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]
    [clojure.walk :as walk]
+   [datomic.access :as access]
    [datomic.client.api :as d]
    [shared.mappings :as sa]
    [user :as u]))
@@ -49,6 +50,8 @@
                        (into {}))}))
 
 (comment
+  (get-schema (d/db (access/get-connection access/dev-env-db-name)))
+
   (get-schema (u/temp-db)))
 
 (defn get-entity-types [db]

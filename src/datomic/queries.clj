@@ -1,5 +1,6 @@
 (ns datomic.queries
   (:require [clojure.test :refer [deftest is]]
+            [datomic.access :as access]
             [datomic.client.api :as d]
             [user :as u]))
 
@@ -13,6 +14,10 @@
        (into {})))
 
 (comment
+  (->> (get-attribute-index (d/db (access/get-connection access/dev-env-db-name)))
+       (sort-by first)
+       (map last))
+
   (get-attribute-index (u/temp-db)))
 
 (defn pull-entities [db pattern entity-ids]
@@ -48,6 +53,13 @@
        (sort)
        (map second)
        (distinct)))
+
+(comment
+  (let [db (d/db (access/get-connection access/dev-env-db-name))]
+    (->> (d/q '[:find ?c :where [?c :graphql.collection/entities]] db)
+         (map first)
+         (map #(get-entities-sorted db %))
+         (map #(pull-platform-entities db '[*] %)))))
 
 (deftest get-entities-sorted-test
   (let [conn             (u/temp-conn)
