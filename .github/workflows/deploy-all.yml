@@ -99,7 +99,7 @@ jobs:
         run: |
           while
             state=$(eval "$STATUS_COMMAND" | tail -1)
-            echo "$state" | jet --query ':code-deploy-status println' | grep -x -F 'RUNNING'
+            echo "$state" | jet --query ':deploy-status println' | grep -x -F 'RUNNING'
           do
             echo "running: $state"
             sleep 1
