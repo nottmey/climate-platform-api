@@ -3,9 +3,14 @@
 .cpcache/
 .datomic-ions/
 .datomic-local/
-.idea/
 .nrepl-port
+
+# IntelliJ related
+*.ipr
+*.iws
 *.iml
+.idea/*
+!.idea/runConfigurations
 
 # CDK asset staging directory
 .cdk.staging
