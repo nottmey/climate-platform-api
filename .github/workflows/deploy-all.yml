@@ -108,4 +108,4 @@ jobs:
   call-deploy-cdk:
     name: "Deploy API"
     needs: test-code
-    uses: ./.github/workflows/deploy-cdk.yml@main
+    uses: ./.github/workflows/deploy-cdk.yml
