@@ -146,29 +146,51 @@
            (empty-tx-result conn "conflict")
            (throw e)))))))
 
+; TODO add to db browser
 (defn get-tx-log
   ([n db-name]
-   (let [conn     (access/get-connection db-name)
-         db       (d/db conn)
-         start    (->> (d/qseq '[:find ?tx :where [?tx :db/txInstant]] db)
-                       (map first)
-                       sort
-                       reverse
-                       (drop (dec n))
-                       (first))
-         idents   (->> (d/q '[:find ?e ?ident
-                              :where [?e :db/ident ?ident]] db)
-                       (into {}))
-         identify #(get idents % %)]
+   (let [conn       (access/get-connection db-name)
+         db         (d/db conn)
+         history    (d/history db)
+         start      (->> (d/qseq '[:find ?tx :where [?tx :db/txInstant]] db)
+                         (map first)
+                         sort
+                         reverse
+                         (drop (dec n))
+                         (first))
+         idents     (->> (d/q '[:find ?e ?ident
+                                :where [?e :db/ident ?ident]] db)
+                         (into {}))
+         names      (->> (d/q '[:find ?e ?name
+                                :where [?e :platform/name ?name]] db)
+                         (into {}))
+         hist-names (->> (d/q '[:find ?e ?name
+                                :where [?e :platform/name ?name]] history)
+                         (into {}))
+         identify   #(get idents % (get names % (get hist-names % %)))]
      (->> (d/tx-range conn {:start start})
           (map :data)
           (map #(map
-                 (fn [[e a v add? tx]]
-                   [(identify e) (identify a) (identify v) add? tx])
+                 (fn [[e a v _ add?]]
+                   [(identify e) (identify a) (identify v) (if add? :added :removed)])
                  %))))))
 
 (comment
-  (get-tx-log 1 access/dev-env-db-name))
+  (get-tx-log 12 access/dev-env-db-name))
+
+; TODO add to db browser
+(defn revert-txs [tx-t db-name]
+  (let [conn     (access/get-connection db-name)
+        tx-data  (-> conn (d/tx-range {:start tx-t
+                                       :end (inc tx-t)}) vec first :data)
+        new-data (->> tx-data
+                      (remove #(= (:e %) tx-t))
+                      (map #(vector (if (:added %) :db/retract :db/add) (:e %) (:a %) (:v %))))]
+    (when (not-empty new-data)
+      (d/transact conn {:tx-data new-data}))))
+
+(comment
+  (revert-txs 13194139533395 access/dev-env-db-name))
 
 (defn get-db-stats
   ([db-name]
