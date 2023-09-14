@@ -13,7 +13,7 @@
   ; only errors when using divert-system...
   (d/connect (d/client (access/load-config)) {:db-name access/dev-env-db-name}))
 
-; this works though, and could be filtered if it is to intensive
+; the approach below works though, and could be filtered if it is to intensive
 ; no other connection can be started, so it's best to do this once at process startup, or use unique names
 ; once new things are transacted to local, you need to remove the data before importing, or choose a new name
 
@@ -38,7 +38,9 @@
   local-conn
   (do
     (try
+      (log/info :message "Starting import of test data")
       (import-cloud import-config)
+      (log/info :message "Finished import of test data")
       (catch OverlappingFileLockException e
         (throw e))
       (catch RuntimeException e

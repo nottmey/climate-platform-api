@@ -126,15 +126,14 @@ interface EntityBase {
 #generated, do not edit manually!
 type PlanetaryBoundary implements EntityBase {
     id: ID!
+    description: String
     name: String
-    quantifications: [Quantification!]!
 }
 
 #generated, do not edit manually!
 type Quantification implements EntityBase {
     id: ID!
     name: String
-    planetaryBoundaries: [PlanetaryBoundary!]!
 }
 
 #generated, do not edit manually!
@@ -158,15 +157,14 @@ type QuantificationListPage {
 #generated, do not edit manually!
 input PlanetaryBoundaryInput {
     id: ID!
+    description: String
     name: String
-    quantifications: [QuantificationInput!]!
 }
 
 #generated, do not edit manually!
 input QuantificationInput {
     id: ID!
     name: String
-    planetaryBoundaries: [PlanetaryBoundaryInput!]!
 }
 
 #generated, do not edit manually!
@@ -188,7 +186,7 @@ type Mutation {
 #generated, do not edit manually!
 type Subscription {
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
-    onCreatedPlanetaryBoundary(id: ID, name: String): PlanetaryBoundary
+    onCreatedPlanetaryBoundary(id: ID, description: String, name: String): PlanetaryBoundary
     @aws_subscribe(mutations: ["publishCreatedPlanetaryBoundary"])
 
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
@@ -196,7 +194,7 @@ type Subscription {
     @aws_subscribe(mutations: ["publishCreatedQuantification"])
 
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
-    onUpdatedPlanetaryBoundary(id: ID, name: String): PlanetaryBoundary
+    onUpdatedPlanetaryBoundary(id: ID, description: String, name: String): PlanetaryBoundary
     @aws_subscribe(mutations: ["publishUpdatedPlanetaryBoundary"])
 
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
@@ -204,7 +202,7 @@ type Subscription {
     @aws_subscribe(mutations: ["publishUpdatedQuantification"])
 
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
-    onDeletedPlanetaryBoundary(id: ID, name: String): PlanetaryBoundary
+    onDeletedPlanetaryBoundary(id: ID, description: String, name: String): PlanetaryBoundary
     @aws_subscribe(mutations: ["publishDeletedPlanetaryBoundary"])
 
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."

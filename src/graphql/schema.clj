@@ -1,16 +1,10 @@
 (ns graphql.schema
   (:require
-   [clojure.java.io :as io]
    [clojure.string :as s]
-   [clojure.test :refer [deftest is]]
-   [datomic.access :as access]
-   [datomic.attributes :as attributes]
    [datomic.client.api :as d]
    [datomic.framework :as framework]
-   [datomic.temp :as temp]
    [graphql.fields :as fields]
    [graphql.objects :as objects]
-   [graphql.parsing :as parsing]
    [graphql.spec :as spec]
    [graphql.types :as types]
    [shared.mappings :as mappings]
@@ -192,24 +186,3 @@
         {:name           types/subscription-type
          :spaced-fields? true
          :fields         subscription-fields})))))
-
-(comment
-  (generate (access/get-connection access/dev-env-db-name))
-
-  (generate (u/temp-conn))
-  (printf (generate (u/temp-conn)))
-  ; re-gen golden snapshot
-  (spit (io/resource "cdk/schema.graphql") (str (generate (u/temp-conn)))))
-
-(deftest generate-schema-test
-  (let [empty-temp-conn (temp/conn)]
-    (d/transact empty-temp-conn {:tx-data attributes/graphql-attributes})
-    (d/transact empty-temp-conn {:tx-data attributes/platform-attributes})
-    (let [generated-schema (generate empty-temp-conn)]
-      (is (parsing/valid? generated-schema))))
-
-  (let [golden-snapshot  (slurp (io/resource "cdk/schema.graphql"))
-        generated-schema (str (generate (u/temp-conn)))]
-    (is (parsing/valid? generated-schema))
-    (is (string? golden-snapshot))
-    (is (= generated-schema golden-snapshot))))
