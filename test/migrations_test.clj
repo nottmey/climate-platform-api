@@ -6,8 +6,33 @@
             [datomic.client.api :as d]
             [datomic.temp :as temp]
             [migrations :as migrations])
-  (:import (java.nio.file Files)
+  (:import (clojure.lang ExceptionInfo)
+           (java.nio.file Files)
            (java.nio.file.attribute FileAttribute)))
+
+(declare thrown?)
+(deftest dont-apply-if-migration-invalid
+  (let [conn (temp/conn)]
+    (d/transact conn {:tx-data [{:db/ident       :migration/id
+                                 :db/valueType   :db.type/keyword
+                                 :db/cardinality :db.cardinality/one
+                                 :db/unique      :db.unique/value
+                                 :db/doc         "Unique migration ID that identifies a transaction and indicates that the migration has already been performed."}]})
+
+    (is (thrown? AssertionError (migrations/apply-migration! conn nil true)))
+    (is (thrown? AssertionError (migrations/apply-migration! conn {} true)))
+    (is (thrown? AssertionError (migrations/apply-migration! conn {:tx-data []} true)))
+    (is (thrown? AssertionError (migrations/apply-migration! conn {:tx-id :123} true)))
+    (is (thrown? AssertionError (migrations/apply-migration! conn {:tx-id   :123
+                                                                   :tx-data []} true)))
+    (is (thrown? ExceptionInfo (migrations/apply-migration! conn {:tx-id   :123
+                                                                  :tx-data [:invalid-data]} true)))
+
+    (is (some? (migrations/apply-migration! conn {:tx-id   :123
+                                                  :tx-data [{:db/doc "123"}]} true)))
+    ; same id again should throw
+    (is (thrown? ExceptionInfo (migrations/apply-migration! conn {:tx-id   :123
+                                                                  :tx-data [{:db/doc "123"}]} true)))))
 
 (defn custom-tx-fn [_db message] [{:db/doc message}])
 
