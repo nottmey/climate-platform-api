@@ -8,6 +8,7 @@
              com.datomic/client-api                  {:mvn/version "1.0.58"} ; matches version in ions
              com.datomic/client-cloud                {:mvn/version "1.0.120"} ; matches version in ions
              com.datomic/client-impl-shared          {:mvn/version "1.0.98"} ; matches version in ions
+             ; TODO use https://mvnrepository.com/artifact/com.datomic/ion
              com.datomic/ion                         {:mvn/version "1.0.59"} ; matches version in ions
              com.fasterxml.jackson.core/jackson-core {:mvn/version "2.12.3"} ; matches version in ions
              com.graphql-java/graphql-java           {:mvn/version "20.2"}
@@ -20,7 +21,9 @@
              :ion-dev {:extra-deps {com.datomic/ion-dev {:mvn/version "1.0.306"
                                                          :exclusions  [org.slf4j/slf4j-simple]}}
                        :main-opts  ["-m" "datomic.ion.dev"]}
+             :migrate {:main-opts ["-m" "migrations"]}
              :repl    {:extra-paths ["test"]
+                       ; TODO use https://blog.datomic.com/2023/08/datomic-local-is-released.html
                        :extra-deps  {com.datomic/dev-local {:mvn/version "1.0.243"}}}
              :format  {:extra-paths ["test"]
                        :extra-deps  {com.datomic/dev-local  {:mvn/version "1.0.243"}

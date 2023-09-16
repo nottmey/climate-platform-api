@@ -1,0 +1,12 @@
+{:tx-data
+ [(datomic.tx-fns/add-field
+      [:graphql.type/name "PlanetaryBoundary"]
+      "quantifications"
+      :platform/quantifications
+      [:graphql.type/name "Quantification"])
+  (datomic.tx-fns/add-field
+      [:graphql.type/name "Quantification"]
+      "planetaryBoundaries"
+      :platform/quantifications
+      [:graphql.type/name "PlanetaryBoundary"]
+      true)]}

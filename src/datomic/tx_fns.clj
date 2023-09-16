@@ -56,7 +56,6 @@
 ; TODO reuses collection of other type, but doesn't have any fields (besides id)
 (defn create-type-alias [db])
 
-; TODO error if type would have fields with same name
 (defn add-field
   ([db type field-name attribute]
    (add-field db type field-name attribute nil))

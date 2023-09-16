@@ -20,3 +20,5 @@ cdk.out
 target
 
 .DS_Store
+
+tx-log.edn

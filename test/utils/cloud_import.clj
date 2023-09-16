@@ -3,7 +3,8 @@
             [datomic.access :as access]
             [datomic.client.api :as d]
             [datomic.dev-local :as dl]
-            [io.pedestal.log :as log])
+            [io.pedestal.log :as log]
+            [migrations :as m])
   (:import (java.nio.channels OverlappingFileLockException)))
 
 (comment
@@ -40,7 +41,6 @@
     (try
       (log/info :message "Starting import of test data")
       (import-cloud import-config)
-      (log/info :message "Finished import of test data")
       (catch OverlappingFileLockException e
         (throw e))
       (catch RuntimeException e
@@ -49,9 +49,17 @@
         (run! io/delete-file (reverse (file-seq local-storage-dir)))
         (import-cloud import-config))
       (catch Exception e
-        (throw e)))
-    (d/connect (d/client destination-client-config)
-               {:db-name access/dev-env-db-name})))
+        (throw e))
+      (finally
+        (log/info :message "Finished import of test data")))
+    (let [conn (d/connect (d/client destination-client-config)
+                          {:db-name access/dev-env-db-name})]
+      (log/info :message "Started applying migrations for testing")
+      (m/apply-migrations-from-resources! conn true)
+      (log/info :message "Finished applying migrations for testing")
+      conn)))
 
 (comment
-  (d/db local-conn))
+  (d/tx-range local-conn {})
+
+  (d/pull (d/db local-conn) '[*] 0))
