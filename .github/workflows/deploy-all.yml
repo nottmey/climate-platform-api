@@ -52,7 +52,7 @@ jobs:
       - name: "Run format check"
         run: clojure -M:format check
       - name: "Run tests"
-        run: clojure -M:test --plugin cloverage
+        run: clojure -M:test
       - name: "Upload coverage reports to Codecov"
         uses: codecov/codecov-action@v3
         with:

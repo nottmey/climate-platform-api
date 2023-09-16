@@ -14,13 +14,15 @@
   (assert (not-empty tx-data) "migration requires :tx-data to not be empty")
   (let [resolved-tx-fns (if with-local-tx-fns?
                           (let [db (d/db conn)]
-                            (mapcat
-                             (fn [assertion]
-                               (if (and (list? assertion) (symbol? (first assertion)))
-                                 (let [[fn-symbol & rest] assertion]
-                                   (apply (resolve fn-symbol) (conj rest db)))
-                                 [assertion]))
-                             tx-data))
+                            (->>
+                             tx-data
+                             (mapcat
+                              (fn [assertion]
+                                (if (and (list? assertion) (symbol? (first assertion)))
+                                  (let [[fn-symbol & rest] assertion]
+                                    (apply (resolve fn-symbol) (conj rest db)))
+                                  [assertion])))
+                             (vec)))
                           tx-data)
         ; simply transact including id, and if id is not unique, an error is thrown anyway
         arg-map         {:tx-data (conj resolved-tx-fns
@@ -54,15 +56,3 @@
 ; entry point to perform all pending migrations
 (defn -main []
   (apply-migrations-from-resources! (access/get-connection access/dev-env-db-name) false))
-
-(comment
-  (let [conn (u/temp-conn)]
-    (d/transact conn {:tx-data [{:db/ident       :migration/id
-                                 :db/valueType   :db.type/keyword
-                                 :db/cardinality :db.cardinality/one
-                                 :db/unique      :db.unique/value
-                                 :db/doc         "Unique migration ID that identifies a transaction and indicates that the migration has already been performed."}]})
-    (d/transact conn {:tx-data [{:db/doc "123"}
-                                {:db/id        "datomic.tx"
-                                 :migration/id :0001-link-planetary-boundaries-and-quantifications}]})
-    (apply-migrations-from-resources! conn true)))
