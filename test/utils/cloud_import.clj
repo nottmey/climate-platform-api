@@ -2,7 +2,7 @@
   (:require [clojure.java.io :as io]
             [datomic.access :as access]
             [datomic.client.api :as d]
-            [datomic.dev-local :as dl]
+            [datomic.local :as dl]
             [io.pedestal.log :as log]
             [migrations :as m])
   (:import (java.nio.channels OverlappingFileLockException)))
@@ -32,7 +32,7 @@
                         :dest   (-> destination-client-config
                                     (assoc :db-name access/dev-env-db-name))})
 
-; https://docs.datomic.com/cloud/dev-local.html#import-cloud
+; https://docs.datomic.com/cloud/datomic-local.html#import-cloud
 (def import-cloud dl/import-cloud)
 
 (defonce
