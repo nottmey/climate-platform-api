@@ -132,8 +132,10 @@
             [:db/add "00000000-0000-0000-0000-000000000001" u/test-attribute-name "PlanetaryBoundary"]]
            (resolve-input-fields
             (get-schema (d/db conn))
-            {"id"              "00000000-0000-0000-0000-000000000001"
-             u/test-field-name "PlanetaryBoundary"}
+            {"id"                        "00000000-0000-0000-0000-000000000001"
+             u/test-field-name           "PlanetaryBoundary"
+             "anyNilFieldDoesntShowUp"   nil
+             "anyEmptyFieldDoesntShowUp" []}
             u/test-type-planetary-boundary))))
 
   (let [conn   (u/temp-conn)

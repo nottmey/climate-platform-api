@@ -64,7 +64,6 @@
                             target-type)
                           field-type)
         :list?          list?
-        :required-list? list?
         :required-type? list?}))))
 
 (comment
