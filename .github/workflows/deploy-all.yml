@@ -1,4 +1,5 @@
 on:
+  workflow_dispatch:
   push:
     paths: # don't deploy on renovate merge, so deps files are not included
       - "resources/**"
