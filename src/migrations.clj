@@ -4,8 +4,7 @@
             [clojure.string :as str]
             [datomic.access :as access]
             [datomic.client.api :as d]
-            [io.pedestal.log :as log]
-            [user :as u]))
+            [io.pedestal.log :as log]))
 
 (defn apply-migration! [conn {:keys [tx-id tx-data]} with-local-tx-fns?]
   (assert (some? tx-id) "migration requires :tx-id")
