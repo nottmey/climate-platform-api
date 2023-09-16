@@ -17,23 +17,23 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - name: Checkout
+      - name: "Checkout"
         uses: actions/checkout@v3
-      - name: Configure AWS Credentials
+      - name: "Configure AWS credentials"
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::118776085668:role/github-actions-ions-testing
           aws-region: eu-central-1
-      - name: Setup Java
+      - name: "Setup Java"
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin' # preinstalled
           java-version-file: ./.java-version
-      - name: Setup Clojure
+      - name: "Setup Clojure"
         uses: DeLaGuardo/setup-clojure@10.1
         with:
           cli: 'latest'
-      - name: Cache Clojure Dependencies
+      - name: "Cache Clojure dependencies"
         uses: actions/cache@v3
         with:
           path: |
@@ -42,14 +42,15 @@ jobs:
             ~/.deps.clj
           key: cljdeps-${{ hashFiles('deps.edn') }}
           restore-keys: cljdeps-
-      - uses: s4u/maven-settings-action@v2.8.0
+      - name: "Provide credentials to maven"
+        uses: s4u/maven-settings-action@v2.8.0
         with:
           servers: '[{"id": "cognitect-dev-tools", "username": "${{ secrets.DEV_TOOLS_USERNAME }}", "password": "${{ secrets.DEV_TOOLS_PASSWORD }}"}]'
-      - name: Run format check
+      - name: "Run format check"
         run: clojure -M:format check
-      - name: Run tests
+      - name: "Run tests"
         run: clojure -M:test --plugin cloverage
-      - name: Upload coverage reports to Codecov
+      - name: "Upload coverage reports to Codecov"
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -63,25 +64,25 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - name: Checkout
+      - name: "Checkout"
         uses: actions/checkout@v3
-      - name: Setup borkdude/jet
+      - name: "Setup borkdude/jet"
         run: bash <(curl -s https://raw.githubusercontent.com/borkdude/jet/master/install)
-      - name: Configure AWS Credentials
+      - name: "Configure AWS credentials"
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::118776085668:role/github-actions-ions-deployment
           aws-region: eu-central-1
-      - name: Setup Java
+      - name: "Setup Java"
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin' # preinstalled
           java-version-file: ./.java-version
-      - name: Setup Clojure
+      - name: "Setup Clojure"
         uses: DeLaGuardo/setup-clojure@10.1
         with:
           cli: 'latest'
-      - name: Cache Clojure Dependencies
+      - name: "Cache Clojure dependencies"
         uses: actions/cache@v3
         with:
           path: |
@@ -90,19 +91,19 @@ jobs:
             ~/.deps.clj
           key: cljdeps-${{ hashFiles('deps.edn') }}
           restore-keys: cljdeps-
-      - name: Push code to AWS CodeDeploy
+      - name: "Push code to AWS CodeDeploy"
         run: echo "PUSH_RESULT=$(clojure -M:ion-dev '{:op :push}' | tail -6 | jet --no-pretty)" >> $GITHUB_ENV
-      - name: Display push result
+      - name: "Display push result"
         run: echo "$PUSH_RESULT"
-      - name: Extract deploy command
+      - name: "Extract deploy command"
         run: echo "DEPLOY_COMMAND=$(echo "$PUSH_RESULT" | jet --query ':deploy-command println')" >> $GITHUB_ENV
-      - name: Deploy revision to Datomic via AWS Step Functions
+      - name: "Deploy revision to Datomic via AWS Step Functions"
         run: echo "DEPLOY_RESULT=$(eval "$DEPLOY_COMMAND" | tail -6 | jet --no-pretty)" >> $GITHUB_ENV
-      - name: Display deploy result
+      - name: "Display deploy result"
         run: echo "$DEPLOY_RESULT"
-      - name: Extract status command
+      - name: "Extract status command"
         run: echo "STATUS_COMMAND=$(echo "$DEPLOY_RESULT" | jet --query ':status-command println')" >> $GITHUB_ENV
-      - name: Wait until any final status is reached
+      - name: "Wait until any final status is reached"
         run: |
           while
             state=$(eval "$STATUS_COMMAND" | tail -1)
@@ -120,23 +121,23 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - name: Checkout
+      - name: "Checkout"
         uses: actions/checkout@v3
-      - name: Configure AWS Credentials
+      - name: "Configure AWS credentials"
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::118776085668:role/github-actions-ions-testing
           aws-region: eu-central-1
-      - name: Setup Java
+      - name: "Setup Java"
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin' # preinstalled
           java-version-file: ./.java-version
-      - name: Setup Clojure
+      - name: "Setup Clojure"
         uses: DeLaGuardo/setup-clojure@10.1
         with:
           cli: 'latest'
-      - name: Cache Clojure Dependencies
+      - name: "Cache Clojure dependencies"
         uses: actions/cache@v3
         with:
           path: |
@@ -145,12 +146,13 @@ jobs:
             ~/.deps.clj
           key: cljdeps-${{ hashFiles('deps.edn') }}
           restore-keys: cljdeps-
-      - uses: s4u/maven-settings-action@v2.8.0
+      - name: "Provide credentials to maven"
+        uses: s4u/maven-settings-action@v2.8.0
         with:
           servers: '[{"id": "cognitect-dev-tools", "username": "${{ secrets.DEV_TOOLS_USERNAME }}", "password": "${{ secrets.DEV_TOOLS_PASSWORD }}"}]'
-      - name: Run migrate
+      - name: "Run migrate"
         run: clojure -M:migrate
   call-deploy-cdk:
-    name: "Deploy API"
-    needs: test-code
+    name: "Deploy latest API"
+    needs: apply-migrations
     uses: ./.github/workflows/deploy-cdk.yml

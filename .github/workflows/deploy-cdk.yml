@@ -12,23 +12,23 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - name: Checkout
+      - name: "Checkout"
         uses: actions/checkout@v3
-      - name: Configure AWS Credentials
+      - name: "Configure AWS credentials"
         uses: aws-actions/configure-aws-credentials@v2
         with:
           role-to-assume: arn:aws:iam::118776085668:role/github-actions-cdk-deployment
           aws-region: eu-central-1
-      - name: Setup Java
+      - name: "Setup Java"
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin' # preinstalled
           java-version-file: ./.java-version
-      - name: Setup Clojure
+      - name: "Setup Clojure"
         uses: DeLaGuardo/setup-clojure@10.1
         with:
           cli: 'latest'
-      - name: Cache Clojure Dependencies
+      - name: "Cache Clojure dependencies"
         uses: actions/cache@v3
         with:
           path: |
@@ -37,11 +37,11 @@ jobs:
             ~/.deps.clj
           key: cljdeps-${{ hashFiles('deps.edn') }}
           restore-keys: cljdeps-
-      - name: Setup Node
+      - name: "Setup Node"
         uses: actions/setup-node@v3
         with:
           node-version: 18
-      - name: Setup CDK
+      - name: "Setup CDK"
         run: npm install -g aws-cdk
-      - name: Deploy via CDK
+      - name: "Deploy via CDK"
         run: cdk deploy --strict --ci --concurrency 8
