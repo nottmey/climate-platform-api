@@ -22,6 +22,7 @@
     (is (thrown? AssertionError (migrations/apply-migration! conn nil true)))
     (is (thrown? AssertionError (migrations/apply-migration! conn {} true)))
     (is (thrown? AssertionError (migrations/apply-migration! conn {:tx-data []} true)))
+    (is (thrown? AssertionError (migrations/apply-migration! conn {:tx-id "123"} true)))
     (is (thrown? AssertionError (migrations/apply-migration! conn {:tx-id :123} true)))
     (is (thrown? AssertionError (migrations/apply-migration! conn {:tx-id   :123
                                                                    :tx-data []} true)))
