@@ -1,0 +1,35 @@
+{
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":semanticCommitScopeDisabled",
+    ":semanticCommitTypeAll(chore)"
+  ],
+  "enabledManagers": [
+    "github-actions"
+  ],
+  "automerge": true,
+  "assignees": [
+    "nottmey"
+  ],
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 1,
+  "branchPrefix": "deps/",
+  "packageRules": [
+    {
+      "matchUpdateTypes": [
+        "minor"
+      ],
+      "minimumReleaseAge": "7 days",
+      "prPriority": -1
+    },
+    {
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "minimumReleaseAge": "21 days",
+      "prPriority": -2
+    }
+  ]
+}
