@@ -5,6 +5,10 @@ on:
 
 name: "Deploy Ions and API"
 
+concurrency:
+  group: "deployment"
+  cancel-in-progress: false
+
 jobs:
   test-code:
     name: "Test code"
