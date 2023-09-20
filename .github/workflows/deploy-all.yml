@@ -157,6 +157,6 @@ jobs:
       - name: "Run migrate"
         run: clojure -M:migrate
   call-deploy-cdk:
-    name: "Deploy latest API"
+    name: "Update API"
     needs: apply-migrations
     uses: ./.github/workflows/deploy-cdk.yml

@@ -6,7 +6,7 @@ name: "Deploy API via CDK"
 
 jobs:
   deploy-cdk:
-    name: "CDK Deploy"
+    name: "Deploy CDK"
     runs-on: ubuntu-latest
     permissions:
       id-token: write
