@@ -199,7 +199,7 @@
                 %)))))
 
 (comment
-  (get-human-readable-tx-log 2 access/dev-env-db-name))
+  (get-human-readable-tx-log 3 access/dev-env-db-name))
 
 ; TODO add to db browser
 (defn revert-txs [tx-t db-name]
@@ -213,7 +213,9 @@
       (d/transact conn {:tx-data new-data}))))
 
 (comment
-  (revert-txs 13194139533395 access/dev-env-db-name))
+  (revert-txs 13194139533424 access/dev-env-db-name)
+
+  (revert-txs 13194139533425 access/dev-env-db-name))
 
 (defn get-db-stats
   ([db-name]

@@ -1,0 +1,12 @@
+{:tx-data
+ [(datomic.tx-fns/add-field
+    [:graphql.type/name "Quantification"]
+    "dataPoints"
+    :platform/data-points
+    [:graphql.type/name "DataPoint"])
+  (datomic.tx-fns/add-field
+    [:graphql.type/name "DataPoint"]
+    "quantifications"
+    :platform/data-points
+    [:graphql.type/name "Quantification"]
+    true)]}

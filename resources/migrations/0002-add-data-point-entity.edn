@@ -1,0 +1,2 @@
+{:tx-data
+ [(datomic.tx-fns/create-type "DataPoint")]}

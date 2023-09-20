@@ -1,6 +1,5 @@
 (ns datomic.tx-fns
   (:require [clojure.test :refer [deftest is]]
-            [datomic.access :as access]
             [datomic.attributes :as attributes]
             [datomic.client.api :as d]
             [datomic.ion :as ion]
@@ -12,19 +11,21 @@
 (defn cancel [args]
   (ion/cancel args))
 
+(declare thrown-with-msg?)
+
+; DISCLAIMER: use these only via migrations!
+
 (defn create-type
   ([db type-name] (create-type db type-name (str "type-" type-name)))
   ([db type-name type-tid] (create-type db type-name type-tid (str "collection-" type-name)))
-  ([_ type-name type-tid collection-tid]
-   ; TODO cancel with conflict on already existing type-name
-   [{:db/id                   type-tid
-     :graphql.type/name       type-name
-     :graphql.type/collection {:db/id  collection-tid
-                               :db/doc (str "Entity collection of initial type '" type-name "'.")}}]))
-
-(comment
-  (d/transact (access/get-connection access/dev-env-db-name)
-              {:tx-data ['(datomic.tx-fns/create-type "PlanetaryBoundary")]}))
+  ([db type-name type-tid collection-tid]
+   (if (some? (d/pull db '[:graphql.type/name] [:graphql.type/name type-name]))
+     (cancel {:cognitect.anomalies/category :cognitect.anomalies/conflict
+              :cognitect.anomalies/message  (str "Type " type-name " already exists.")})
+     [{:db/id                   type-tid
+       :graphql.type/name       type-name
+       :graphql.type/collection {:db/id  collection-tid
+                                 :db/doc (str "Entity collection of initial type '" type-name "'.")}}])))
 
 (deftest create-type-test
   (let [conn     (temp/conn)
@@ -37,6 +38,10 @@
       (is (= 4 (count (:tx-data result)))))
     (is (= {:graphql.type/collection #:db{:doc "Entity collection of initial type 'LonelyType'."}}
            (d/pull (d/db conn) selector [:graphql.type/name "LonelyType"])))
+
+    (is (thrown-with-msg?
+         ExceptionInfo #"Type LonelyType already exists"
+         (d/transact conn {:tx-data (create-type (d/db conn) "LonelyType")})))
 
     (let [result (d/transact
                   conn
@@ -95,11 +100,6 @@
                                             false
                                             backwards-ref?)}))]))))
 
-(comment
-  (d/transact (access/get-connection access/dev-env-db-name)
-              {:tx-data ['(datomic.tx-fns/add-field [:graphql.type/name "PlanetaryBoundary"] "description" :platform/description)]}))
-
-(declare thrown-with-msg?)
 (deftest add-field-test
   (let [conn        (temp/conn)
         pull-fields (fn [db type]

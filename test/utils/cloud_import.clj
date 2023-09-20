@@ -5,7 +5,8 @@
             [datomic.local :as dl]
             [io.pedestal.log :as log]
             [migrations :as m])
-  (:import (java.nio.channels OverlappingFileLockException)))
+  (:import (java.io StringWriter)
+           (java.nio.channels OverlappingFileLockException)))
 
 (comment
   ; doesn't seem to work :(
@@ -33,7 +34,12 @@
                                     (assoc :db-name access/dev-env-db-name))})
 
 ; https://docs.datomic.com/cloud/datomic-local.html#import-cloud
-(def import-cloud dl/import-cloud)
+(defn import-cloud [config]
+  (let [err-out (new StringWriter)]
+    (binding [*err* err-out]
+      ; uses *err* to communicate, but it's not an error
+      (dl/import-cloud config)
+      (log/info :message (str err-out)))))
 
 (defonce
   local-conn

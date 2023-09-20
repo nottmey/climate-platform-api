@@ -59,6 +59,15 @@
    :datomic/type                    #{:db.type/ref}
    :datomic/->gql                   (fn [ref] (str (:db/id ref)))})
 
+(def float-mapping
+  {:graphql/type                    types/float-type
+   :graphql/single-value-field-name :float
+   :graphql/multi-value-field-name  :floats
+   :graphql/single-value-type-name  (single-value-type "Float")
+   :graphql/multi-value-type-name   (multi-value-type "Float")
+   :datomic/type                    #{:db.type/double :db.type/float}
+   :datomic/->gql                   identity})
+
 (def datetime-mapping
   {:graphql/type                    types/date-time-type
    :graphql/single-value-field-name :dateTime
@@ -85,6 +94,7 @@
   [string-mapping
    boolean-mapping
    ref-mapping
+   float-mapping
    datetime-mapping
    tuple-mapping])
 

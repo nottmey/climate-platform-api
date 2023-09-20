@@ -42,7 +42,8 @@
                                       (file-seq))
         edn-files                 (->> migrations-folder-content
                                        (filter #(.isFile %))
-                                       (filter #(str/ends-with? (.getName %) ".edn")))]
+                                       (filter #(str/ends-with? (.getName %) ".edn"))
+                                       (sort-by #(.getName %)))]
     (doall
      (for [edn-file edn-files
            :let [file-name (.getName edn-file)

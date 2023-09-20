@@ -33,6 +33,13 @@ type ReferenceAttribute implements Attribute {
 }
 
 #generated, do not edit manually!
+type FloatAttribute implements Attribute {
+    id: ID!
+    name: String!
+    float: Float!
+}
+
+#generated, do not edit manually!
 type DateTimeAttribute implements Attribute {
     id: ID!
     name: String!
@@ -65,6 +72,13 @@ type MultiReferenceAttribute implements Attribute {
     id: ID!
     name: String!
     refs: [ID!]!
+}
+
+#generated, do not edit manually!
+type MultiFloatAttribute implements Attribute {
+    id: ID!
+    name: String!
+    floats: [Float!]!
 }
 
 #generated, do not edit manually!
@@ -106,8 +120,10 @@ input EntityFilter {
 type Query {
     getEntity(id: ID!): Entity
     listEntity(page: PageQuery, filter: EntityFilter): EntityListPage!
+    getDataPoint(id: ID!): DataPoint
     getPlanetaryBoundary(id: ID!): PlanetaryBoundary
     getQuantification(id: ID!): Quantification
+    listDataPoint(page: PageQuery): DataPointListPage!
     listPlanetaryBoundary(page: PageQuery): PlanetaryBoundaryListPage!
     listQuantification(page: PageQuery): QuantificationListPage!
 }
@@ -124,6 +140,13 @@ interface EntityBase {
 }
 
 #generated, do not edit manually!
+type DataPoint implements EntityBase {
+    id: ID!
+    quantifications: [Quantification!]
+    value: Float
+}
+
+#generated, do not edit manually!
 type PlanetaryBoundary implements EntityBase {
     id: ID!
     description: String
@@ -134,6 +157,7 @@ type PlanetaryBoundary implements EntityBase {
 #generated, do not edit manually!
 type Quantification implements EntityBase {
     id: ID!
+    dataPoints: [DataPoint!]
     name: String
     planetaryBoundaries: [PlanetaryBoundary!]
 }
@@ -142,6 +166,12 @@ type Quantification implements EntityBase {
 type EntityListPage {
     info: PageInfo!
     values: [Entity!]!
+}
+
+#generated, do not edit manually!
+type DataPointListPage {
+    info: PageInfo!
+    values: [DataPoint!]!
 }
 
 #generated, do not edit manually!
@@ -157,6 +187,13 @@ type QuantificationListPage {
 }
 
 #generated, do not edit manually!
+input DataPointInput {
+    id: ID!
+    quantifications: [QuantificationInput!]
+    value: Float
+}
+
+#generated, do not edit manually!
 input PlanetaryBoundaryInput {
     id: ID!
     description: String
@@ -167,28 +204,39 @@ input PlanetaryBoundaryInput {
 #generated, do not edit manually!
 input QuantificationInput {
     id: ID!
+    dataPoints: [DataPointInput!]
     name: String
     planetaryBoundaries: [PlanetaryBoundaryInput!]
 }
 
 #generated, do not edit manually!
 type Mutation {
+    publishCreatedDataPoint(value: DataPointInput!): DataPoint
     publishCreatedPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary
     publishCreatedQuantification(value: QuantificationInput!): Quantification
+    publishUpdatedDataPoint(value: DataPointInput!): DataPoint
     publishUpdatedPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary
     publishUpdatedQuantification(value: QuantificationInput!): Quantification
+    publishDeletedDataPoint(value: DataPointInput!): DataPoint
     publishDeletedPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary
     publishDeletedQuantification(value: QuantificationInput!): Quantification
+    createDataPoint(value: DataPointInput!): DataPoint!
     createPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary!
     createQuantification(value: QuantificationInput!): Quantification!
+    mergeDataPoint(value: DataPointInput!): DataPoint
     mergePlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary
     mergeQuantification(value: QuantificationInput!): Quantification
+    deleteDataPoint(id: ID!): DataPoint
     deletePlanetaryBoundary(id: ID!): PlanetaryBoundary
     deleteQuantification(id: ID!): Quantification
 }
 
 #generated, do not edit manually!
 type Subscription {
+    "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
+    onCreatedDataPoint(id: ID, value: Float): DataPoint
+    @aws_subscribe(mutations: ["publishCreatedDataPoint"])
+
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
     onCreatedPlanetaryBoundary(id: ID, description: String, name: String): PlanetaryBoundary
     @aws_subscribe(mutations: ["publishCreatedPlanetaryBoundary"])
@@ -198,12 +246,20 @@ type Subscription {
     @aws_subscribe(mutations: ["publishCreatedQuantification"])
 
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
+    onUpdatedDataPoint(id: ID, value: Float): DataPoint
+    @aws_subscribe(mutations: ["publishUpdatedDataPoint"])
+
+    "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
     onUpdatedPlanetaryBoundary(id: ID, description: String, name: String): PlanetaryBoundary
     @aws_subscribe(mutations: ["publishUpdatedPlanetaryBoundary"])
 
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
     onUpdatedQuantification(id: ID, name: String): Quantification
     @aws_subscribe(mutations: ["publishUpdatedQuantification"])
+
+    "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
+    onDeletedDataPoint(id: ID, value: Float): DataPoint
+    @aws_subscribe(mutations: ["publishDeletedDataPoint"])
 
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
     onDeletedPlanetaryBoundary(id: ID, description: String, name: String): PlanetaryBoundary

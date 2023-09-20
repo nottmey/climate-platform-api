@@ -1,0 +1,4 @@
+{:tx-data
+ [{:db/ident       :platform/value
+   :db/valueType   :db.type/double
+   :db/cardinality :db.cardinality/one}]}

@@ -1,0 +1,5 @@
+{:tx-data
+ [(datomic.tx-fns/add-field
+    [:graphql.type/name "DataPoint"]
+    "value"
+    :platform/value)]}
