@@ -34,7 +34,7 @@ jobs:
           distribution: 'temurin' # preinstalled
           java-version-file: ./.java-version
       - name: "Setup Clojure"
-        uses: DeLaGuardo/setup-clojure@11.0
+        uses: DeLaGuardo/setup-clojure@12.1
         with:
           cli: 'latest'
       - name: "Cache Clojure dependencies"
@@ -83,7 +83,7 @@ jobs:
           distribution: 'temurin' # preinstalled
           java-version-file: ./.java-version
       - name: "Setup Clojure"
-        uses: DeLaGuardo/setup-clojure@11.0
+        uses: DeLaGuardo/setup-clojure@12.1
         with:
           cli: 'latest'
       - name: "Cache Clojure dependencies"
@@ -138,7 +138,7 @@ jobs:
           distribution: 'temurin' # preinstalled
           java-version-file: ./.java-version
       - name: "Setup Clojure"
-        uses: DeLaGuardo/setup-clojure@11.0
+        uses: DeLaGuardo/setup-clojure@12.1
         with:
           cli: 'latest'
       - name: "Cache Clojure dependencies"
