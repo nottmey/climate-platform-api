@@ -246,7 +246,8 @@
                      (filter (fn [{:keys [graphql.field/name]}]
                                (contains? current-paths name)))
                      (map (fn [{:keys [graphql.field/name
-                                       graphql.field/target]}]
+                                       graphql.field/target
+                                       graphql.field/backwards-ref?]}]
                             [name
                              (if (= value-type :db.type/ref)
                                (let [target-type          (:graphql.type/name target)
@@ -259,7 +260,9 @@
                                                             target-type
                                                             sub-selected-paths
                                                             %)]
-                                 (if (= cardinality :db.cardinality/many)
+                                 (if (or (= cardinality :db.cardinality/many)
+                                         (and (= cardinality :db.cardinality/one)
+                                              backwards-ref?))
                                    (map apply-nested-reverse datomic-value)
                                    (apply-nested-reverse datomic-value)))
                                (sa/->gql-value

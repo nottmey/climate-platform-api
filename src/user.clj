@@ -3,7 +3,7 @@
    [clojure.java.io :as io]
    [clojure.pprint :as pprint]
    [clojure.set :as set]
-   [clojure.test :refer [*testing-vars*]]
+   [clojure.test :refer [*testing-vars* deftest is]]
    [datomic.access :as access]
    [datomic.attributes :as attributes]
    [datomic.client.api :as d]
@@ -22,6 +22,9 @@
 
 (defn test-mode? []
   (boolean (seq *testing-vars*)))
+
+(deftest is-test-mode-on-test
+  (is (test-mode?)))
 
 (def test-type-planetary-boundary "PlanetaryBoundary")
 (def test-type-quantification "Quantification")
@@ -81,7 +84,7 @@
 (defn testing-publish
   "default publish callback used in testing,
    or to be redefined when a different scenario is needed"
-  []
+  [& _]
   (throw (AssertionError. "no call to publish expected")))
 
 (defn test-collection [conn entity-type]

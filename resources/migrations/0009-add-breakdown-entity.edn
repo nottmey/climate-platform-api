@@ -1,0 +1,24 @@
+{:tx-data
+ [(datomic.tx-fns/create-type "Breakdown" "breakdown-id")
+  (datomic.tx-fns/add-field
+    "breakdown-id"
+    "parent"
+    :breakdown/parent
+    [:graphql.type/name "DataPoint"])
+  (datomic.tx-fns/add-field
+    [:graphql.type/name "DataPoint"]
+    "breakdowns"
+    :breakdown/parent
+    "breakdown-id"
+    true)
+  (datomic.tx-fns/add-field
+    "breakdown-id"
+    "components"
+    :breakdown/data-points
+    [:graphql.type/name "DataPoint"])
+  (datomic.tx-fns/add-field
+    [:graphql.type/name "DataPoint"]
+    "compositions"
+    :breakdown/data-points
+    "breakdown-id"
+    true)]}

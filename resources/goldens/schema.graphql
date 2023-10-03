@@ -120,9 +120,11 @@ input EntityFilter {
 type Query {
     getEntity(id: ID!): Entity
     listEntity(page: PageQuery, filter: EntityFilter): EntityListPage!
+    getBreakdown(id: ID!): Breakdown
     getDataPoint(id: ID!): DataPoint
     getPlanetaryBoundary(id: ID!): PlanetaryBoundary
     getQuantification(id: ID!): Quantification
+    listBreakdown(page: PageQuery): BreakdownListPage!
     listDataPoint(page: PageQuery): DataPointListPage!
     listPlanetaryBoundary(page: PageQuery): PlanetaryBoundaryListPage!
     listQuantification(page: PageQuery): QuantificationListPage!
@@ -140,8 +142,17 @@ interface EntityBase {
 }
 
 #generated, do not edit manually!
+type Breakdown implements EntityBase {
+    id: ID!
+    components: [DataPoint!]
+    parent: DataPoint
+}
+
+#generated, do not edit manually!
 type DataPoint implements EntityBase {
     id: ID!
+    breakdowns: [Breakdown!]
+    compositions: [Breakdown!]
     quantifications: [Quantification!]
     value: Float
 }
@@ -169,6 +180,12 @@ type EntityListPage {
 }
 
 #generated, do not edit manually!
+type BreakdownListPage {
+    info: PageInfo!
+    values: [Breakdown!]!
+}
+
+#generated, do not edit manually!
 type DataPointListPage {
     info: PageInfo!
     values: [DataPoint!]!
@@ -187,8 +204,17 @@ type QuantificationListPage {
 }
 
 #generated, do not edit manually!
+input BreakdownInput {
+    id: ID!
+    components: [DataPointInput!]
+    parent: DataPointInput
+}
+
+#generated, do not edit manually!
 input DataPointInput {
     id: ID!
+    breakdowns: [BreakdownInput!]
+    compositions: [BreakdownInput!]
     quantifications: [QuantificationInput!]
     value: Float
 }
@@ -211,21 +237,27 @@ input QuantificationInput {
 
 #generated, do not edit manually!
 type Mutation {
+    publishCreatedBreakdown(value: BreakdownInput!): Breakdown
     publishCreatedDataPoint(value: DataPointInput!): DataPoint
     publishCreatedPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary
     publishCreatedQuantification(value: QuantificationInput!): Quantification
+    publishUpdatedBreakdown(value: BreakdownInput!): Breakdown
     publishUpdatedDataPoint(value: DataPointInput!): DataPoint
     publishUpdatedPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary
     publishUpdatedQuantification(value: QuantificationInput!): Quantification
+    publishDeletedBreakdown(value: BreakdownInput!): Breakdown
     publishDeletedDataPoint(value: DataPointInput!): DataPoint
     publishDeletedPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary
     publishDeletedQuantification(value: QuantificationInput!): Quantification
+    createBreakdown(value: BreakdownInput!): Breakdown!
     createDataPoint(value: DataPointInput!): DataPoint!
     createPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary!
     createQuantification(value: QuantificationInput!): Quantification!
+    mergeBreakdown(value: BreakdownInput!): Breakdown
     mergeDataPoint(value: DataPointInput!): DataPoint
     mergePlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary
     mergeQuantification(value: QuantificationInput!): Quantification
+    deleteBreakdown(id: ID!): Breakdown
     deleteDataPoint(id: ID!): DataPoint
     deletePlanetaryBoundary(id: ID!): PlanetaryBoundary
     deleteQuantification(id: ID!): Quantification
@@ -233,6 +265,10 @@ type Mutation {
 
 #generated, do not edit manually!
 type Subscription {
+    "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
+    onCreatedBreakdown(id: ID): Breakdown
+    @aws_subscribe(mutations: ["publishCreatedBreakdown"])
+
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
     onCreatedDataPoint(id: ID, value: Float): DataPoint
     @aws_subscribe(mutations: ["publishCreatedDataPoint"])
@@ -246,6 +282,10 @@ type Subscription {
     @aws_subscribe(mutations: ["publishCreatedQuantification"])
 
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
+    onUpdatedBreakdown(id: ID): Breakdown
+    @aws_subscribe(mutations: ["publishUpdatedBreakdown"])
+
+    "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
     onUpdatedDataPoint(id: ID, value: Float): DataPoint
     @aws_subscribe(mutations: ["publishUpdatedDataPoint"])
 
@@ -256,6 +296,10 @@ type Subscription {
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
     onUpdatedQuantification(id: ID, name: String): Quantification
     @aws_subscribe(mutations: ["publishUpdatedQuantification"])
+
+    "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
+    onDeletedBreakdown(id: ID): Breakdown
+    @aws_subscribe(mutations: ["publishDeletedBreakdown"])
 
     "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
     onDeletedDataPoint(id: ID, value: Float): DataPoint

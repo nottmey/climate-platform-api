@@ -44,22 +44,26 @@
                                  :type           types/string-type
                                  :required-type? true}]))
 
-(defn gen-entity-fields [fields input?]
+(defn gen-entity-fields [fields input-type?]
   (concat
    [fields/required-id]
    (for [{:keys [graphql.field/name
                  graphql.field/attribute
-                 graphql.field/target]} (->> (vals fields)
-                                             (sort-by :graphql.field/name))]
-     (let [target-type (get target :graphql.type/name)
-           value-type  (get-in attribute [:db/valueType :db/ident])
-           field-type  (mappings/value-type->field-type value-type)
-           list?       (= (get-in attribute [:db/cardinality :db/ident])
-                          :db.cardinality/many)]
+                 graphql.field/target
+                 graphql.field/backwards-ref?]
+          :as   all} (->> (vals fields)
+                          (sort-by :graphql.field/name))]
+     (let [target-type      (get target :graphql.type/name)
+           value-type       (get-in attribute [:db/valueType :db/ident])
+           field-type       (mappings/value-type->field-type value-type)
+           attr-cardinality (get-in attribute [:db/cardinality :db/ident])
+           list?            (or (= attr-cardinality :db.cardinality/many)
+                                (and (= attr-cardinality :db.cardinality/one)
+                                     backwards-ref?))]
        (assert (some? field-type) (str "There has to be a GraphQL type configured for value type " value-type "."))
        {:name           name
         :type           (if target-type
-                          (if input?
+                          (if input-type?
                             (types/input-type target-type)
                             target-type)
                           field-type)

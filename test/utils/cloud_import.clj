@@ -1,10 +1,13 @@
 (ns utils.cloud-import
-  (:require [clojure.java.io :as io]
+  (:require [clojure.data.json :as json]
+            [clojure.java.io :as io]
             [datomic.access :as access]
             [datomic.client.api :as d]
             [datomic.local :as dl]
             [io.pedestal.log :as log]
-            [migrations :as m])
+            [ions.lambdas :as lambdas]
+            [migrations :as m]
+            [user :as u])
   (:import (java.io StringWriter)
            (java.nio.channels OverlappingFileLockException)))
 
@@ -69,3 +72,32 @@
   (d/tx-range local-conn {})
 
   (d/pull (d/db local-conn) '[*] 0))
+
+(defn call-resolver-with-local-conn
+  ([parent-type-name field-name selection-list]
+   (call-resolver-with-local-conn parent-type-name field-name selection-list {}))
+  ([parent-type-name field-name selection-list arguments]
+   (let [input-obj {"info"      {"parentTypeName"   parent-type-name
+                                 "fieldName"        field-name
+                                 "selectionSetList" selection-list}
+                    "arguments" arguments}
+         input-raw (json/write-str input-obj)]
+     (with-redefs [u/testing-conn    (fn [] local-conn)
+                   u/testing-publish (fn [& _ignored])]
+       (json/read-str
+        (lambdas/datomic-resolver
+         {:input input-raw}))))))
+
+(comment
+  (call-resolver-with-local-conn
+   "Query"
+   "listPlanetaryBoundary"
+   ["info/current"
+    "values/id"
+    "values/name"
+    "values/description"
+    "values/quantifications/id"
+    "values/quantifications/name"
+    "values/quantifications/dataPoints/id"
+    "values/quantifications/dataPoints/value"]
+   {"page" {"size" 10}}))

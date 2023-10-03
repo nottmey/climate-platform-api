@@ -1,0 +1,5 @@
+{:tx-data
+ [{:db/id    :platform/quantifications
+   :db/ident :planetary-boundary/quantifications}
+  {:db/id    :platform/data-points
+   :db/ident :quantification/data-points}]}
