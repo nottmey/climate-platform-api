@@ -6,6 +6,7 @@
    [clojure.test :refer [deftest is]]
    [clojure.walk :as walk]
    [datomic.access :as access]
+   [datomic.ion.cast :as cast]
    [io.pedestal.log :as log]
    [ions.resolvers :as resolvers]
    [user :as u])
@@ -145,6 +146,8 @@
     (log/info :message (str "Resolved " field-name " on " parent-type-name " with " arguments (when parent-value
                                                                                                 (str " from " parent-value)))
               :input app-sync-context)
+    (cast/event {:msg   "ResolvedInputEvent"
+                 :input app-sync-context})
     (when publish-queries
       (doseq [query publish-queries]
         (publish query)))
