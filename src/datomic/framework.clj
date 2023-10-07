@@ -5,13 +5,15 @@
    [clojure.walk :as walk]
    [datomic.access :as access]
    [datomic.client.api :as d]
+   [ions.logging :as logging]
    [shared.mappings :as sa]
    [user :as u]))
 
-(defn- apply-backwards-ref? [kw backref?]
-  (if backref?
-    (keyword (namespace kw) (str "_" (name kw)))
-    kw))
+(defn- correct-attr-ident [attribute backref?]
+  (let [normal-attr-ident (:db/ident attribute)]
+    (if backref?
+      (keyword (namespace normal-attr-ident) (str "_" (name normal-attr-ident)))
+      normal-attr-ident)))
 
 (defn get-schema [db]
   (let [base (->> (d/q '[:find (pull ?type [* {:graphql.type/fields [*
@@ -38,7 +40,7 @@
                                 (fn [m {:keys [graphql.field/attribute
                                                graphql.field/backwards-ref?]
                                         :as   field}]
-                                  (let [attr-ident (apply-backwards-ref? (:db/ident attribute) backwards-ref?)]
+                                  (let [attr-ident (correct-attr-ident attribute backwards-ref?)]
                                     (-> m
                                         (assoc attr-ident attribute)
                                         (update-in
@@ -162,50 +164,62 @@
                                             u/test-field-name "Quantification2"}]}
             u/test-type-planetary-boundary)))))
 
+(defn app-sync-path->attribute-path [schema entity-type app-sync-path]
+  (loop [[current-field & next-fields] (str/split app-sync-path #"/")
+         current-type entity-type
+         result       []]
+    (if (nil? current-field)
+      result
+      (let [{:keys [graphql.field/target
+                    graphql.field/attribute
+                    graphql.field/backwards-ref?]}
+            (get-in schema [::types current-type :graphql.type/fields current-field])
+            attr-type (get-in attribute [:db/valueType :db/ident])]
+        (recur
+         (if (and (nil? next-fields) (= attr-type :db.type/ref))
+           ; path to ref without explicitly specifying id implicitly becomes path to id of the referenced object
+           ["id"]
+           next-fields)
+         (:graphql.type/name target)
+         (conj
+          result
+          (if (= current-field "id")
+            :platform/id
+            (correct-attr-ident attribute backwards-ref?))))))))
+
 (defn gen-pull-pattern [schema entity-type selected-paths]
-  (->> selected-paths
-       ; assoc-in all paths as attribute seq into a map, with empty maps as leafs
-       (reduce
-        (fn [m p]
-          (let [as (loop [[current-field & next-fields] (str/split p #"/")
-                          current-type entity-type
-                          result       []]
-                     (if (nil? current-field)
-                       result
-                       (let [{:keys [graphql.field/target
-                                     graphql.field/attribute
-                                     graphql.field/backwards-ref?]}
-                             (get-in schema [::types current-type :graphql.type/fields current-field])
-                             attr-ident (:db/ident attribute)]
-                         (recur
-                          next-fields
-                          (:graphql.type/name target)
-                          (conj
-                           result
-                           (if (= current-field "id")
-                             :platform/id
-                             (apply-backwards-ref? attr-ident backwards-ref?)))))))]
-            (assoc-in m as {})))
-        {})
-       ; cleanup empty maps by moving respective entry into a list next to the filled maps
-       (walk/postwalk
-        (fn [form]
-          (if (and (map? form) (seq form))
-            (let [{value-attributes true
-                   ref-attributes   false} (group-by #(empty? (second %)) form)]
-              (concat
-               (map first value-attributes)
-               (when (some? ref-attributes)
-                 [(into {} ref-attributes)])))
-            form)))))
+  (logging/info "GeneratingPullPattern" {:paths (vec selected-paths)})
+  (let [pattern (->> selected-paths
+                     ; assoc-in all paths as attribute seq into a map, with empty maps as leafs
+                     (reduce
+                      (fn [merged-attribute-paths app-sync-path]
+                        (let [attribute-path (app-sync-path->attribute-path schema entity-type app-sync-path)]
+                          (assoc-in merged-attribute-paths attribute-path {})))
+                      {})
+                     ; cleanup empty maps by moving the respective entry into a list next to the filled maps
+                     (walk/postwalk
+                      (fn [form]
+                        (if (and (map? form) (seq form))
+                          (let [{value-attributes true
+                                 ref-attributes   false} (group-by #(empty? (second %)) form)]
+                            (concat
+                             (map first value-attributes)
+                             (when (some? ref-attributes)
+                               [(into {} ref-attributes)])))
+                          form)))
+                     vec)]
+    (logging/info "UsingPullPattern" {:pattern (str pattern)})
+    pattern))
 
 (deftest gen-pull-pattern-test
   (let [conn    (u/temp-conn)
         schema  (get-schema (d/db conn))
         paths   #{"id"
                   u/test-field-name
+                  (str u/test-field-quantifications)
                   (str u/test-field-quantifications "/id")
                   (str u/test-field-quantifications "/" u/test-field-name)
+                  (str u/test-field-quantifications "/" u/test-field-planetary-boundaries)
                   (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/id")
                   (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/" u/test-field-name)}
         pattern (gen-pull-pattern schema u/test-type-planetary-boundary paths)]

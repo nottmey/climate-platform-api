@@ -10,6 +10,8 @@
            (java.nio.file Files)
            (java.nio.file.attribute FileAttribute)))
 
+; TODO add test checking all files in migration folder that no two are using the same number (to prevent merge errors)
+
 (declare thrown?)
 (deftest dont-apply-if-migration-invalid
   (let [conn (temp/conn)]

@@ -6,8 +6,7 @@
    [clojure.test :refer [deftest is]]
    [clojure.walk :as walk]
    [datomic.access :as access]
-   [datomic.ion.cast :as cast]
-   [io.pedestal.log :as log]
+   [ions.logging :as logging]
    [ions.resolvers :as resolvers]
    [user :as u])
   (:import (clojure.lang ExceptionInfo)))
@@ -112,13 +111,14 @@
       }
     }"))
 
-; result needs to be string serialized json
+; the result needs to be a string containing serialized json
 ; default response mapping is applied: https://docs.aws.amazon.com/appsync/latest/devguide/resolver-mapping-template-reference-lambda.html#lambda-mapping-template-bypass-response
 ; FYI if you want to add a batch resolver, you need to override the default request/response mapping
 (defn datomic-resolver [{_lambda-context :context
-                         app-sync-input  :input}]
-  ; the so called `$context` in https://docs.aws.amazon.com/appsync/latest/devguide/resolver-context-reference.html
-  (let [app-sync-context (json/read-str app-sync-input)
+                         lambda-input    :input}]
+  ; the so-called `$context` in https://docs.aws.amazon.com/appsync/latest/devguide/resolver-context-reference.html
+  (let [app-sync-context (json/read-str lambda-input)
+        _                (logging/info "ResolvingField" {:app-sync-context app-sync-context})
         parent-type-name (keyword (get-in app-sync-context ["info" "parentTypeName"]))
         field-name       (keyword (get-in app-sync-context ["info" "fieldName"]))
         ; TODO adapt to use selectionSetGraphQL, so renamed fields are answered correctly
@@ -143,11 +143,6 @@
                            :arguments        arguments
                            :parent-value     parent-value})
         {:keys [response publish-queries]} resolve-result]
-    (log/info :message (str "Resolved " field-name " on " parent-type-name " with " arguments (when parent-value
-                                                                                                (str " from " parent-value)))
-              :input app-sync-context)
-    (cast/event {:msg   "ResolvedInputEvent"
-                 :input app-sync-context})
     (when publish-queries
       (doseq [query publish-queries]
         (publish query)))
@@ -170,5 +165,5 @@
   (call-datomic-resolver
    "Query"
    "getQuantification"
-   ["id" "name" "dataPoints/id" "planetaryBoundaries/id"]
+   ["id", "name", "dataPoints", "dataPoints/id", "planetaryBoundaries", "planetaryBoundaries/id"]
    {"id" "14ef1024-cbb8-408c-87d3-9c94fe73ea67"}))

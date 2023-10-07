@@ -20,13 +20,15 @@
                                                          :exclusions  [org.slf4j/slf4j-simple]}}
                        :main-opts  ["-m" "datomic.ion.dev"]}
              :migrate {:main-opts ["-m" "migrations"]}
-             :repl    {:extra-paths ["test"]
+             :repl    {:jvm-opts    ["-Dlocal.mode=true"]
+                       :extra-paths ["test"]
                        :extra-deps  {com.datomic/local {:mvn/version "1.0.267"}}}
              :format  {:extra-paths ["test"]
                        :extra-deps  {com.datomic/local      {:mvn/version "1.0.267"}
                                      dev.weavejester/cljfmt {:mvn/version "0.10.5"}}
                        :main-opts   ["-m" "cljfmt.main"]}
-             :test    {:extra-paths ["test"]
+             :test    {:jvm-opts    ["-Dlocal.mode=true"]
+                       :extra-paths ["test"]
                        :extra-deps  {com.datomic/local             {:mvn/version "1.0.267"}
                                      lambdaisland/kaocha           {:mvn/version "1.71.1119"}
                                      lambdaisland/kaocha-cloverage {:mvn/version "1.1.89"}}

@@ -26,6 +26,12 @@
 (deftest is-test-mode-on-test
   (is (test-mode?)))
 
+(defn local-mode? "returns true, if we are in repl or testing" []
+  (= (System/getProperty "local.mode") "true"))
+
+(deftest is-local-mode-on-test
+  (is (local-mode?)))
+
 (def test-type-planetary-boundary "PlanetaryBoundary")
 (def test-type-quantification "Quantification")
 (def test-field-name "name")

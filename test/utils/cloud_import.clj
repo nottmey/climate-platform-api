@@ -93,7 +93,7 @@
   (call-resolver-with-local-conn
    "Query"
    "getQuantification"
-   ["id" "name" "dataPoints/id" "planetaryBoundaries/id"]
+   ["id", "name", "dataPoints", "dataPoints/id", "planetaryBoundaries", "planetaryBoundaries/id"]
    {"id" "14ef1024-cbb8-408c-87d3-9c94fe73ea67"})
 
   (call-resolver-with-local-conn
