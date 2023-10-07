@@ -42,7 +42,9 @@
     (binding [*err* err-out]
       ; uses *err* to communicate, but it's not an error
       (dl/import-cloud config)
-      (log/info :message (str err-out)))))
+      (let [import-message (str err-out)]
+        (when (pos? (count import-message))
+          (log/info :message import-message))))))
 
 (defonce
   local-conn
@@ -77,18 +79,23 @@
   ([parent-type-name field-name selection-list]
    (call-resolver-with-local-conn parent-type-name field-name selection-list {}))
   ([parent-type-name field-name selection-list arguments]
-   (let [input-obj {"info"      {"parentTypeName"   parent-type-name
-                                 "fieldName"        field-name
-                                 "selectionSetList" selection-list}
-                    "arguments" arguments}
-         input-raw (json/write-str input-obj)]
-     (with-redefs [u/testing-conn    (fn [] local-conn)
-                   u/testing-publish (fn [& _ignored])]
-       (json/read-str
-        (lambdas/datomic-resolver
-         {:input input-raw}))))))
+   (with-redefs [u/testing-conn        (fn [] local-conn)
+                 u/testing-publish     (fn [& _ignored])
+                 ; for repl usage, also providing local-conn
+                 access/get-connection (fn [& _ignored] local-conn)]
+     (lambdas/call-datomic-resolver
+      parent-type-name
+      field-name
+      selection-list
+      arguments))))
 
 (comment
+  (call-resolver-with-local-conn
+   "Query"
+   "getQuantification"
+   ["id" "name" "dataPoints/id" "planetaryBoundaries/id"]
+   {"id" "14ef1024-cbb8-408c-87d3-9c94fe73ea67"})
+
   (call-resolver-with-local-conn
    "Query"
    "listPlanetaryBoundary"

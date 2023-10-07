@@ -6,6 +6,7 @@
    [clojure.test :refer [deftest is]]
    [clojure.walk :as walk]
    [datomic.access :as access]
+   [io.pedestal.log :as log]
    [ions.resolvers :as resolvers]
    [user :as u])
   (:import (clojure.lang ExceptionInfo)))
@@ -141,8 +142,30 @@
                            :arguments        arguments
                            :parent-value     parent-value})
         {:keys [response publish-queries]} resolve-result]
+    (log/info :message (str "Resolved " field-name " on " parent-type-name " with " arguments (when parent-value
+                                                                                                (str " from " parent-value)))
+              :input app-sync-context)
     (when publish-queries
       (doseq [query publish-queries]
         (publish query)))
     (-> response
         json/write-str)))
+
+(defn call-datomic-resolver
+  [parent-type-name field-name selection-list arguments]
+  (let [input-obj {"info"      {"parentTypeName"   parent-type-name
+                                "fieldName"        field-name
+                                "selectionSetList" selection-list}
+                   "arguments" arguments}
+        input-raw (json/write-str input-obj)]
+    (json/read-str
+     (datomic-resolver
+      {:input input-raw}))))
+
+(comment
+  ; for doing real calls to the database via repl
+  (call-datomic-resolver
+   "Query"
+   "getQuantification"
+   ["id" "name" "dataPoints/id" "planetaryBoundaries/id"]
+   {"id" "14ef1024-cbb8-408c-87d3-9c94fe73ea67"}))
