@@ -68,6 +68,13 @@
 (comment
   (get-collection (get-schema (u/temp-db)) u/test-type-planetary-boundary))
 
+(defn get-collection-id [conn entity-type-name]
+  (-> (d/pull (d/db conn) '[:graphql.type/collection] [:graphql.type/name entity-type-name])
+      (get-in [:graphql.type/collection :db/id])))
+
+(comment
+  (get-collection-id (u/temp-conn) u/test-type-planetary-boundary))
+
 (defn get-default-paths [schema entity-type]
   (->> (vals (get-in schema [::types entity-type :graphql.type/fields]))
        (map (fn [{:keys [graphql.field/name
@@ -128,7 +135,7 @@
 
 (deftest resolve-input-fields-test
   (let [conn (u/temp-conn)
-        cid  (u/test-collection conn u/test-type-planetary-boundary)]
+        cid  (get-collection-id conn u/test-type-planetary-boundary)]
     (is (= [[:db/add cid :graphql.collection/entities "00000000-0000-0000-0000-000000000001"]
             [:db/add "00000000-0000-0000-0000-000000000001" :platform/id #uuid"00000000-0000-0000-0000-000000000001"]
             [:db/add "00000000-0000-0000-0000-000000000001" u/test-attribute-name "PlanetaryBoundary"]]
@@ -141,8 +148,8 @@
             u/test-type-planetary-boundary))))
 
   (let [conn   (u/temp-conn)
-        pb-cid (u/test-collection conn u/test-type-planetary-boundary)
-        q-cid  (u/test-collection conn u/test-type-quantification)]
+        pb-cid (get-collection-id conn u/test-type-planetary-boundary)
+        q-cid  (get-collection-id conn u/test-type-quantification)]
     (is (= [[:db/add pb-cid :graphql.collection/entities "00000000-0000-0000-0000-000000000001"]
             [:db/add "00000000-0000-0000-0000-000000000001" :platform/id #uuid"00000000-0000-0000-0000-000000000001"]
             [:db/add "00000000-0000-0000-0000-000000000001" u/test-attribute-name "PlanetaryBoundary"]

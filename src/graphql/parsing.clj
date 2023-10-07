@@ -1,5 +1,6 @@
 (ns graphql.parsing
-  (:require [clojure.test :refer [deftest is]])
+  (:require [clojure.test :refer [deftest is]]
+            [utils :as utils])
   (:import (graphql.language
             Argument
             ArrayValue
@@ -13,16 +14,6 @@
             StringValue)
            (graphql.parser Parser)
            (java.util List Map)))
-
-(defn- remove-nil-vals [m]
-  (->> (for [[k v] m
-             :when (nil? v)]
-         k)
-       (apply dissoc m)))
-
-(comment
-  (remove-nil-vals {"something" nil
-                    "x"         1}))
 
 (defprotocol AstData
   (extract [this] "Returns Java implemented GraphQL AST as data."))
@@ -38,7 +29,7 @@
          :directives (.getDirectives o)
          :selection  (.getSelectionSet o)}
         extract
-        remove-nil-vals))
+        utils/remove-nil-vals))
   SelectionSet
   (extract [s] (-> s (.getSelections) extract))
   Field
@@ -49,7 +40,7 @@
          :directives (.getDirectives f)
          :selection  (.getSelectionSet f)}
         extract
-        remove-nil-vals))
+        utils/remove-nil-vals))
   Argument
   (extract [a]
     (-> {:name  (.getName a)

@@ -1,0 +1,85 @@
+[#:db{:ident :breakdown/data-points,
+      :valueType :db.type/ref,
+      :cardinality :db.cardinality/many}
+ #:db{:ident :breakdown/parent,
+      :valueType :db.type/ref,
+      :cardinality :db.cardinality/one}
+ #:db{:ident :graphql.collection/entities,
+      :valueType :db.type/ref,
+      :cardinality :db.cardinality/many,
+      :doc
+      "Stored GraphQL Schema: Entities which are part of this entity group, used for abstracting entities away from GraphQL types."}
+ #:db{:ident :graphql.field/attribute,
+      :valueType :db.type/ref,
+      :cardinality :db.cardinality/one,
+      :doc
+      "Stored GraphQL Schema: Datomic attribute which is pulled, when this GraphQL type and field is requested."}
+ #:db{:ident :graphql.field/backwards-ref?,
+      :valueType :db.type/boolean,
+      :cardinality :db.cardinality/one,
+      :doc
+      "Stored GraphQL Schema: Whether the attribute should be pulled as backwards reference, when this GraphQL field is requested. Default: `false`."}
+ #:db{:ident :graphql.field/deprecated?,
+      :valueType :db.type/boolean,
+      :cardinality :db.cardinality/one,
+      :doc
+      "Stored GraphQL Schema: Whether this GraphQL field is deprecated. Default: `false`."}
+ #:db{:ident :graphql.field/name,
+      :valueType :db.type/string,
+      :cardinality :db.cardinality/one,
+      :doc "Stored GraphQL Schema: Name of this GraphQL field."}
+ #:db{:ident :graphql.field/target,
+      :valueType :db.type/ref,
+      :cardinality :db.cardinality/one,
+      :doc
+      "Stored GraphQL Schema: Type of this GraphQL fields target, iff it is a reference to another entity."}
+ #:db{:ident :graphql.type/collection,
+      :valueType :db.type/ref,
+      :cardinality :db.cardinality/one,
+      :doc
+      "Stored GraphQL Schema: Collection used to access and group entities of this GraphQL type."}
+ #:db{:ident :graphql.type/deprecated?,
+      :valueType :db.type/boolean,
+      :cardinality :db.cardinality/one,
+      :doc
+      "Stored GraphQL Schema: Whether this GraphQL type is deprecated or not. Default: `false`."}
+ #:db{:ident :graphql.type/fields,
+      :valueType :db.type/ref,
+      :cardinality :db.cardinality/many,
+      :doc
+      "Stored GraphQL Schema: Fields contained in this GraphQL type."}
+ #:db{:ident :graphql.type/name,
+      :valueType :db.type/string,
+      :cardinality :db.cardinality/one,
+      :unique :db.unique/identity,
+      :doc "Stored GraphQL Schema: Name of this GraphQL type."}
+ #:db{:ident :migration/id,
+      :valueType :db.type/keyword,
+      :cardinality :db.cardinality/one,
+      :unique :db.unique/value,
+      :doc
+      "Unique migration ID that identifies a transaction and indicates that the migration has already been performed."}
+ #:db{:ident :planetary-boundary/quantifications,
+      :valueType :db.type/ref,
+      :cardinality :db.cardinality/many,
+      :doc "Reference to quantifications of some platform entities."}
+ #:db{:ident :platform/description,
+      :valueType :db.type/string,
+      :cardinality :db.cardinality/one,
+      :doc "Description of any non-user platform entity."}
+ #:db{:ident :platform/id,
+      :valueType :db.type/uuid,
+      :cardinality :db.cardinality/one,
+      :unique :db.unique/identity,
+      :doc
+      "Client generated external UUID for any non-user platform entity.\n\n                     It allows clients to have a simpler structure, because they can\n                     assume that they have a correct id before creating an entity."}
+ #:db{:ident :platform/name,
+      :valueType :db.type/string,
+      :cardinality :db.cardinality/one,
+      :doc "Name of any non-user platform entity."}
+ #:db{:ident :platform/value,
+      :valueType :db.type/double,
+      :cardinality :db.cardinality/one}
+ #:db{:ident :quantification/data-points,
+      :valueType :db.type/ref,
+      :cardinality :db.cardinality/many}]

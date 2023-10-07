@@ -2,15 +2,12 @@
   (:require
    [clojure.java.io :as io]
    [clojure.pprint :as pprint]
-   [clojure.set :as set]
    [clojure.test :refer [*testing-vars* deftest is]]
    [datomic.access :as access]
    [datomic.attributes :as attributes]
    [datomic.client.api :as d]
    [datomic.temp :as temp]
-   [datomic.tx-fns :as tx-fns])
-  (:import
-   (clojure.lang ExceptionInfo)))
+   [datomic.tx-fns :as tx-fns]))
 
 (comment
   ; example of historic values
@@ -44,8 +41,10 @@
 
 (defn temp-conn []
   (let [conn (temp/conn)]
+    ; TODO use golden snapshot of attributes file
     (d/transact conn {:tx-data attributes/graphql-attributes})
     (d/transact conn {:tx-data attributes/platform-attributes})
+    ; TODO use golden snapshot of framework file
     (d/transact conn {:tx-data (tx-fns/create-type (d/db conn) test-type-planetary-boundary)})
     (d/transact conn {:tx-data (tx-fns/create-type (d/db conn) test-type-quantification)})
     (d/transact conn {:tx-data (tx-fns/add-field
@@ -92,68 +91,6 @@
    or to be redefined when a different scenario is needed"
   [& _]
   (throw (AssertionError. "no call to publish expected")))
-
-(defn test-collection [conn entity-type]
-  (-> (d/pull (d/db conn) '[:graphql.type/collection] [:graphql.type/name entity-type])
-      (get-in [:graphql.type/collection :db/id])))
-
-(comment
-  (test-collection (temp-conn) test-type-planetary-boundary))
-
-(defn empty-tx-result [conn reason]
-  (let [db (d/db conn)]
-    {:db-before    db
-     :db-after     db
-     :tx-data      []
-     :tempids      {}
-     :empty-reason reason}))
-
-(defn ensure-schema
-  ([tx-data db-name]
-   {:pre [(every? map? tx-data)
-          (every? :db/ident tx-data)]}
-   (let [conn           (access/get-connection db-name)
-         test-tx-result (d/with (d/with-db conn) {:tx-data tx-data})]
-     (if (<= (count (:tx-data test-tx-result)) 1)
-       (empty-tx-result conn "empty transaction")
-       (d/transact conn {:tx-data tx-data})))))
-
-(comment
-  (ensure-schema attributes/platform-attributes access/dev-env-db-name))
-
-(defn ensure-data
-  ([tx-data db-name]
-   {:pre [(every? map? tx-data)]}
-   (let [conn               (access/get-connection db-name)
-         attributes         (->> (d/pull (d/db conn) '{:eid      0
-                                                       :selector [{:db.install/attribute [*]}]})
-                                 :db.install/attribute
-                                 (map #(update % :db/valueType :db/ident))
-                                 (map #(update % :db/cardinality :db/ident)))
-         unique-attrs       (->> attributes
-                                 (filter :db/unique)
-                                 (map :db/ident)
-                                 (map hash-set))
-         unique-tuple-attrs (->> attributes
-                                 (filter :db/unique)
-                                 (filter :db/tupleAttrs)
-                                 (map :db/tupleAttrs)
-                                 (map set))
-         uniques-sets       (concat unique-attrs unique-tuple-attrs)
-         has-uniqueness?    (fn [tx-map]
-                              (let [tx-keys (into #{} (keys tx-map))]
-                                (some #(set/superset? tx-keys %) uniques-sets)))]
-     (assert (every? has-uniqueness? tx-data))
-     (try
-       (let [test-tx-result (d/with (d/with-db conn) {:tx-data tx-data})]
-         (if (<= (count (:tx-data test-tx-result)) 1)
-           (empty-tx-result conn "empty transaction")
-           (d/transact conn {:tx-data tx-data})))
-       (catch ExceptionInfo e
-         (if (= (:db/error (ex-data e))
-                :db.error/unique-conflict)
-           (empty-tx-result conn "conflict")
-           (throw e)))))))
 
 (defn get-replayable-tx-log [conn]
   (let [idents   (->> (d/q '[:find ?e ?ident
@@ -225,56 +162,3 @@
   (revert-txs 13194139533424 access/dev-env-db-name)
 
   (revert-txs 13194139533425 access/dev-env-db-name))
-
-(defn get-db-stats
-  ([db-name]
-   (let [db (d/db (access/get-connection db-name))]
-     (d/db-stats db))))
-
-(comment
-  (get-db-stats access/dev-env-db-name))
-
-(defn download-framework-data []
-  (let [conn (access/get-connection access/dev-env-db-name)
-        db   (d/db conn)
-        data (vec
-              (concat
-               (->> (d/q '[:find (pull ?attr [*])
-                           :where [_ :graphql.relation/attribute ?attr]]
-                         db)
-                    (map first)
-                    (map #(dissoc % :db/id))
-                    (map #(update % :db/cardinality get :db/ident))
-                    (map #(update % :db/valueType get :db/ident)))
-               (->> (d/q '[:find (pull ?type [*])
-                           :where [?type :graphql.type/name]]
-                         db)
-                    (map first)
-                    (map #(assoc % :db/id (:graphql.type/name %))))
-               (->> (d/q '[:find (pull ?rel [* {:graphql.relation/type [*]}])
-                           :where [?rel :graphql.relation/type]]
-                         db)
-                    (map first)
-                    (map #(dissoc % :db/id :graphql.relation/type+field))
-                    (map #(update % :graphql.relation/attribute get :db/ident))
-                    (map #(update % :graphql.relation/type get :graphql.type/name)))))]
-    (->> (with-out-str (pprint/pprint data))
-         (spit (io/resource "datomic/framework-data.edn")))))
-
-(comment
-  (download-framework-data))
-
-(defn download-example-data []
-  (let [conn (access/get-connection access/dev-env-db-name)
-        data (->> (d/q '[:find (pull ?e [*])
-                         :where [?e :platform/id]]
-                       (d/db conn))
-                  (map first)
-                  (map #(dissoc % :db/id))
-                  (vec))]
-    (->> (with-out-str (pprint/pprint data))
-         (spit (io/resource "datomic/example-data.edn")))))
-
-(comment
-  (download-example-data))
-
