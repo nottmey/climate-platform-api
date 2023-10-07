@@ -10,7 +10,19 @@
            (java.nio.file Files)
            (java.nio.file.attribute FileAttribute)))
 
-; TODO add test checking all files in migration folder that no two are using the same number (to prevent merge errors)
+(deftest migrations-each-have-unique-number-test
+  (is
+   (empty?
+    (->> (-> (io/resource "migrations")
+             (io/file)
+             (file-seq))
+         (map #(.getName %))
+         (filter #(str/ends-with? % ".edn"))
+         (map #(subs % 0 4))
+         (frequencies)
+         (filter (fn [[_ amount]] (> amount 1)))
+         (map (fn [[prefix]]
+                (throw (AssertionError. (str "Prefix '" prefix "' may not be used by multiple migrations!")))))))))
 
 (declare thrown?)
 (deftest dont-apply-if-migration-invalid
