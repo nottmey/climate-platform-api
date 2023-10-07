@@ -4,7 +4,8 @@
    [clojure.test :refer [deftest is]]
    [graphql.parsing :as parsing]
    [ions.lambdas :refer [datomic-resolver]]
-   [user :as u])
+   [user :as u]
+   [utils.cloud-import :refer [call-resolver-with-local-conn]])
   (:import (java.util UUID)))
 
 (defn- resolve-input [input]
@@ -17,13 +18,16 @@
     (reset! publish-called? true)
     (is (= parsed-query (parsing/parse q)))))
 
-(deftest test-get-non-existent-id
-  (let [response (resolve-input
-                  {"info"      {"parentTypeName" "Query"
-                                "fieldName"      (str "get" u/test-type-planetary-boundary)}
-                   "arguments" {"id" (UUID/randomUUID)}})]
-    (is (= response nil))))
+(deftest get-non-existent-id-test
+  (is
+   (nil?
+    (call-resolver-with-local-conn
+     "Query"
+     "getPlanetaryBoundary"
+     ["id"]
+     {"id" (str (UUID/randomUUID))}))))
 
+; TODO transition tests in file to resolver
 (deftest test-list-empty-db
   (let [response (resolve-input
                   {"info"      {"parentTypeName" "Query"
