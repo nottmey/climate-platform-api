@@ -1,5 +1,8 @@
 [{:db/id "txid-Breakdown",
   :graphql.type/name "Breakdown",
+  :graphql.type/collection
+  #:db{:id "txid-Breakdown-collection",
+       :doc "Entity collection of initial type 'Breakdown'."},
   :graphql.type/fields
   [{:db/id "txid-Breakdown/parent",
     :graphql.field/name "parent",
@@ -13,6 +16,9 @@
     :graphql.field/backwards-ref? false}]}
  {:db/id "txid-DataPoint",
   :graphql.type/name "DataPoint",
+  :graphql.type/collection
+  #:db{:id "txid-DataPoint-collection",
+       :doc "Entity collection of initial type 'DataPoint'."},
   :graphql.type/fields
   [{:db/id "txid-DataPoint/value",
     :graphql.field/name "value",
@@ -34,6 +40,9 @@
     :graphql.field/backwards-ref? true}]}
  {:db/id "txid-PlanetaryBoundary",
   :graphql.type/name "PlanetaryBoundary",
+  :graphql.type/collection
+  #:db{:id "txid-PlanetaryBoundary-collection",
+       :doc "Entity collection of initial type 'PlanetaryBoundary'."},
   :graphql.type/fields
   [{:db/id "txid-PlanetaryBoundary/description",
     :graphql.field/name "description",
@@ -48,6 +57,9 @@
     :graphql.field/attribute :platform/name}]}
  {:db/id "txid-Quantification",
   :graphql.type/name "Quantification",
+  :graphql.type/collection
+  #:db{:id "txid-Quantification-collection",
+       :doc "Entity collection of initial type 'Quantification'."},
   :graphql.type/fields
   [{:db/id "txid-Quantification/name",
     :graphql.field/name "name",

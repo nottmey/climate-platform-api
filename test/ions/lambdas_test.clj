@@ -64,7 +64,8 @@
                                                                                        {:name  u/test-field-quantifications
                                                                                         :value [[{:name  "id"
                                                                                                   :value quantification-id}]]}]}],
-                                                                  :selection [{:name "id"}
+                                                                  :selection [{:name "description"}
+                                                                              {:name "id"}
                                                                               {:name u/test-field-name}
                                                                               {:name      u/test-field-quantifications
                                                                                :selection [{:name "id"}]}]}]}])]
@@ -122,7 +123,8 @@
                                                                       {:name  u/test-field-quantifications
                                                                        :value [[{:name  "id"
                                                                                  :value quantification-id}]]}]}],
-                                                 :selection [{:name "id"}
+                                                 :selection [{:name "description"}
+                                                             {:name "id"}
                                                              {:name u/test-field-name}
                                                              {:name      u/test-field-quantifications
                                                               :selection [{:name "id"}]}]}]}])]

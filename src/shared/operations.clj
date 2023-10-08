@@ -216,7 +216,8 @@
                                                {:name  "quantifications",
                                                 :value [[{:name  "id",
                                                           :value "456"}]]}]}],
-                          :selection [{:name "id"}
+                          :selection [{:name "description"}
+                                      {:name "id"}
                                       {:name "name"}
                                       {:name      "quantifications",
                                        :selection [{:name "id"}]}]}]}]
@@ -349,7 +350,8 @@
                                                     :value [{:name  "id"
                                                              :value quantification-id}]}]}]
                             :name      (str "publishUpdated" u/test-type-planetary-boundary)
-                            :selection [{:name "id"}
+                            :selection [{:name "description"}
+                                        {:name "id"}
                                         {:name "name"}
                                         {:name      "quantifications"
                                          :selection [{:name "id"}]}]}]}]

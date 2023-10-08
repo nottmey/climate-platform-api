@@ -8,7 +8,8 @@
    [datomic.access :as access]
    [ions.logging :as logging]
    [ions.resolvers :as resolvers]
-   [user :as u])
+   [user :as user]
+   [utils :as utils])
   (:import (clojure.lang ExceptionInfo)))
 
 ; example:
@@ -127,13 +128,13 @@
         ; TODO rework keywordizing inputs
         arguments        (walk/keywordize-keys (get app-sync-context "arguments"))
         parent-value     (walk/keywordize-keys (get app-sync-context "source"))
-        conn             (if (u/test-mode?)
+        conn             (if (utils/test-mode?)
                            ; making sure never to write to the real database in tests
-                           (u/testing-conn)
+                           (user/testing-conn)
                            (access/get-connection access/dev-env-db-name))
-        publish          (if (u/test-mode?)
+        publish          (if (utils/test-mode?)
                            ; making sure never to publish to the real system in tests
-                           u/testing-publish
+                           user/testing-publish
                            (build-publish (get-in app-sync-context ["request" "headers"])))
         resolve-result   (resolvers/select-and-use-resolver
                           {:conn             conn

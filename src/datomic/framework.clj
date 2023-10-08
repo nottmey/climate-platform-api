@@ -91,8 +91,8 @@
 (deftest get-default-paths-test
   (let [schema (get-schema (u/temp-db))
         paths  (get-default-paths schema u/test-type-planetary-boundary)]
-    (is (= ["id" u/test-field-name (str u/test-field-quantifications "/id")]
-           paths))))
+    (is (= #{"id" u/test-field-name "description" (str u/test-field-quantifications "/id")}
+           (set paths)))))
 
 (defn resolve-input-fields [schema input-obj entity-type]
   (let [temp-id    (get input-obj "id")

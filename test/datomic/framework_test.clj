@@ -6,11 +6,9 @@
             [clojure.test :refer [deftest is]]
             [datomic.client.api :as d]
             [datomic.temp :as temp]
+            [user :as user]
             [utils :as utils]
             [utils.cloud-import :refer [local-conn]]))
-
-(def golden-attributes-file (io/resource "goldens/attributes.edn"))
-(def golden-framework-file (io/resource "goldens/framework.edn"))
 
 (defn cleanup-ident-refs [obj]
   (->> obj
@@ -41,36 +39,45 @@
   (d/transact (temp/conn) {:tx-data (generate-attributes local-conn)})
 
   ; re-gen golden snapshot
-  (pp/pprint (generate-attributes local-conn) (io/writer golden-attributes-file)))
+  (pp/pprint (generate-attributes local-conn) (io/writer user/golden-attributes-file)))
 
 (deftest attributes-golden-snapshot-test
-  (let [golden-snapshot           (edn/read-string (slurp golden-attributes-file))
+  (let [golden-snapshot           (edn/read-string (slurp user/golden-attributes-file))
         generated-attributes-data (generate-attributes local-conn)]
     (is (= generated-attributes-data golden-snapshot))))
 
 (defn generate-framework [conn]
-  (->> (d/q '[:find (pull ?e [* {:graphql.type/fields [* {:graphql.field/target [:graphql.type/name]}]}])
+  (->> (d/q '[:find (pull ?e [*
+                              {:graphql.type/collection [*]}
+                              {:graphql.type/fields [* {:graphql.field/target [:graphql.type/name]}]}])
               :where [?e :graphql.type/name]]
             (d/db conn))
        (map first)
        (map #(assoc % :db/id (str "txid-" (get % :graphql.type/name))))
-       (map #(dissoc % :graphql.type/collection))
        (map (fn [{type-name :graphql.type/name
                   :as       type}]
-              (update type :graphql.type/fields
-                      (fn [fields]
-                        (->> fields
-                             (map
-                              (fn [{field-name :graphql.field/name
-                                    :as        field}]
-                                (-> field
-                                    (assoc :db/id (str "txid-" type-name "/" field-name))
-                                    (update :graphql.field/target
-                                            #(when % (str "txid-" (:graphql.type/name %))))
-                                    (update :graphql.field/attribute
-                                            #(:db/ident %))
-                                    (utils/remove-nil-vals))))
-                             (vec))))))
+              (-> type
+                  (update
+                   :graphql.type/collection
+                   (fn [coll]
+                     (-> coll
+                         (assoc :db/id (str "txid-" type-name "-collection"))
+                         (dissoc :graphql.collection/entities))))
+                  (update
+                   :graphql.type/fields
+                   (fn [fields]
+                     (->> fields
+                          (map
+                           (fn [{field-name :graphql.field/name
+                                 :as        field}]
+                             (-> field
+                                 (assoc :db/id (str "txid-" type-name "/" field-name))
+                                 (update :graphql.field/target
+                                         #(when % (str "txid-" (:graphql.type/name %))))
+                                 (update :graphql.field/attribute
+                                         #(:db/ident %))
+                                 (utils/remove-nil-vals))))
+                          (vec)))))))
        (sort-by :graphql.type/name)
        (vec)))
 
@@ -82,9 +89,9 @@
     (d/transact conn {:tx-data (generate-framework local-conn)}))
 
   ; re-gen golden snapshot
-  (pp/pprint (generate-framework local-conn) (io/writer golden-framework-file)))
+  (pp/pprint (generate-framework local-conn) (io/writer user/golden-framework-file)))
 
 (deftest framework-golden-snapshot-test
-  (let [golden-snapshot          (edn/read-string (slurp golden-framework-file))
+  (let [golden-snapshot          (edn/read-string (slurp user/golden-framework-file))
         generated-framework-data (generate-framework local-conn)]
     (is (= generated-framework-data golden-snapshot))))

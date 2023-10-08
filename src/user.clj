@@ -3,12 +3,9 @@
    [clojure.edn :as edn]
    [clojure.java.io :as io]
    [clojure.pprint :as pprint]
-   [clojure.test :refer [*testing-vars* deftest is]]
    [datomic.access :as access]
-   [datomic.attributes :as attributes]
    [datomic.client.api :as d]
-   [datomic.temp :as temp]
-   [datomic.tx-fns :as tx-fns]))
+   [datomic.temp :as temp]))
 
 (comment
   ; example of historic values
@@ -17,18 +14,6 @@
          [?e :platform/name "Climate Change"]
          [?e :platform/description ?v ?t ?add]]
        (d/history (d/db (access/get-connection access/dev-env-db-name)))))
-
-(defn test-mode? []
-  (boolean (seq *testing-vars*)))
-
-(deftest is-test-mode-on-test
-  (is (test-mode?)))
-
-(defn local-mode? "returns true, if we are in repl or testing" []
-  (= (System/getProperty "local.mode") "true"))
-
-(deftest is-local-mode-on-test
-  (is (local-mode?)))
 
 (def test-type-planetary-boundary "PlanetaryBoundary")
 (def test-type-quantification "Quantification")
@@ -40,36 +25,19 @@
 (def test-attribute-name :platform/name)
 (def test-attribute-quantifications :planetary-boundary/quantifications)
 
+(def golden-attributes-file (io/resource "goldens/attributes.edn"))
+(def golden-framework-file (io/resource "goldens/framework.edn"))
+
+(defn apply-golden-attributes-file [conn]
+  (d/transact conn {:tx-data (edn/read-string (slurp golden-attributes-file))}))
+
+(defn apply-golden-framework-file [conn]
+  (d/transact conn {:tx-data (edn/read-string (slurp golden-framework-file))}))
+
 (defn temp-conn []
   (let [conn (temp/conn)]
-    (d/transact conn {:tx-data (edn/read-string (slurp (io/resource "goldens/attributes.edn")))})
-    ; TODO use golden snapshot of framework file
-    #_(d/transact conn {:tx-data (edn/read-string (slurp (io/resource "goldens/framework.edn")))})
-    (d/transact conn {:tx-data (tx-fns/create-type (d/db conn) test-type-planetary-boundary)})
-    (d/transact conn {:tx-data (tx-fns/create-type (d/db conn) test-type-quantification)})
-    (d/transact conn {:tx-data (tx-fns/add-field
-                                (d/db conn)
-                                [:graphql.type/name test-type-planetary-boundary]
-                                test-field-name
-                                test-attribute-name)})
-    (d/transact conn {:tx-data (tx-fns/add-field
-                                (d/db conn)
-                                [:graphql.type/name test-type-quantification]
-                                test-field-name
-                                test-attribute-name)})
-    (d/transact conn {:tx-data (tx-fns/add-field
-                                (d/db conn)
-                                [:graphql.type/name test-type-planetary-boundary]
-                                test-field-quantifications
-                                test-attribute-quantifications
-                                [:graphql.type/name test-type-quantification])})
-    (d/transact conn {:tx-data (tx-fns/add-field
-                                (d/db conn)
-                                [:graphql.type/name test-type-quantification]
-                                test-field-planetary-boundaries
-                                test-attribute-quantifications
-                                [:graphql.type/name test-type-planetary-boundary]
-                                true)})
+    (apply-golden-attributes-file conn)
+    (apply-golden-framework-file conn)
     conn))
 
 (comment
