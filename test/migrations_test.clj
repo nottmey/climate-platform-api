@@ -5,7 +5,7 @@
             [datomic.access :as access]
             [datomic.client.api :as d]
             [datomic.temp :as temp]
-            [migrations :as migrations])
+            [migrations :as m])
   (:import (clojure.lang ExceptionInfo)
            (java.nio.file Files)
            (java.nio.file.attribute FileAttribute)))
@@ -33,21 +33,21 @@
                                  :db/unique      :db.unique/value
                                  :db/doc         "Unique migration ID that identifies a transaction and indicates that the migration has already been performed."}]})
 
-    (is (thrown? AssertionError (migrations/apply-migration! conn nil true)))
-    (is (thrown? AssertionError (migrations/apply-migration! conn {} true)))
-    (is (thrown? AssertionError (migrations/apply-migration! conn {:tx-data []} true)))
-    (is (thrown? AssertionError (migrations/apply-migration! conn {:tx-id "123"} true)))
-    (is (thrown? AssertionError (migrations/apply-migration! conn {:tx-id :123} true)))
-    (is (thrown? AssertionError (migrations/apply-migration! conn {:tx-id   :123
-                                                                   :tx-data []} true)))
-    (is (thrown? ExceptionInfo (migrations/apply-migration! conn {:tx-id   :123
-                                                                  :tx-data [:invalid-data]} true)))
+    (is (thrown? AssertionError (m/apply-migration! conn nil true)))
+    (is (thrown? AssertionError (m/apply-migration! conn {} true)))
+    (is (thrown? AssertionError (m/apply-migration! conn {:tx-data []} true)))
+    (is (thrown? AssertionError (m/apply-migration! conn {:tx-id "123"} true)))
+    (is (thrown? AssertionError (m/apply-migration! conn {:tx-id :123} true)))
+    (is (thrown? AssertionError (m/apply-migration! conn {:tx-id   :123
+                                                          :tx-data []} true)))
+    (is (thrown? ExceptionInfo (m/apply-migration! conn {:tx-id   :123
+                                                         :tx-data [:invalid-data]} true)))
 
-    (is (some? (migrations/apply-migration! conn {:tx-id   :123
-                                                  :tx-data [{:db/doc "123"}]} true)))
+    (is (some? (m/apply-migration! conn {:tx-id   :123
+                                         :tx-data [{:db/doc "123"}]} true)))
     ; same id again should throw
-    (is (thrown? ExceptionInfo (migrations/apply-migration! conn {:tx-id   :123
-                                                                  :tx-data [{:db/doc "123"}]} true)))))
+    (is (thrown? ExceptionInfo (m/apply-migration! conn {:tx-id   :123
+                                                         :tx-data [{:db/doc "123"}]} true)))))
 
 (defn custom-tx-fn [_db message] [{:db/doc message}])
 
@@ -89,7 +89,7 @@
                                                   '(migrations-test/custom-tx-fn "any call to an tx-fn")
                                                   {:db/id        "datomic.tx"
                                                    :migration/id second-migration-id}])))]
-      (migrations/-main))
+      (m/-main))
 
     ; direct call, with local tx-fns
     (with-redefs [access/get-connection (fn [_] conn)
@@ -101,4 +101,4 @@
                                                   {:db/doc "any call to an tx-fn"}
                                                   {:db/id        "datomic.tx"
                                                    :migration/id second-migration-id}])))]
-      (migrations/apply-migrations-from-resources! conn true))))
+      (m/apply-migrations-from-resources! conn true))))

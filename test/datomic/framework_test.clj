@@ -6,7 +6,7 @@
             [clojure.test :refer [deftest is]]
             [datomic.client.api :as d]
             [datomic.temp :as temp]
-            [testing :as user]
+            [testing :as t]
             [utils :as utils]
             [utils.cloud-import :refer [local-conn]]))
 
@@ -39,10 +39,10 @@
   (d/transact (temp/conn) {:tx-data (generate-attributes local-conn)})
 
   ; re-gen golden snapshot
-  (pp/pprint (generate-attributes local-conn) (io/writer testing/golden-attributes-file)))
+  (pp/pprint (generate-attributes local-conn) (io/writer t/golden-attributes-file)))
 
 (deftest attributes-golden-snapshot-test
-  (let [golden-snapshot           (edn/read-string (slurp testing/golden-attributes-file))
+  (let [golden-snapshot           (edn/read-string (slurp t/golden-attributes-file))
         generated-attributes-data (generate-attributes local-conn)]
     (is (= generated-attributes-data golden-snapshot))))
 
@@ -89,9 +89,9 @@
     (d/transact conn {:tx-data (generate-framework local-conn)}))
 
   ; re-gen golden snapshot
-  (pp/pprint (generate-framework local-conn) (io/writer testing/golden-framework-file)))
+  (pp/pprint (generate-framework local-conn) (io/writer t/golden-framework-file)))
 
 (deftest framework-golden-snapshot-test
-  (let [golden-snapshot          (edn/read-string (slurp testing/golden-framework-file))
+  (let [golden-snapshot          (edn/read-string (slurp t/golden-framework-file))
         generated-framework-data (generate-framework local-conn)]
     (is (= generated-framework-data golden-snapshot))))

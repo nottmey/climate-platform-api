@@ -1,6 +1,5 @@
 (ns utils.cloud-import
-  (:require [clojure.data.json :as json]
-            [clojure.java.io :as io]
+  (:require [clojure.java.io :as io]
             [datomic.access :as access]
             [datomic.client.api :as d]
             [datomic.local :as dl]
