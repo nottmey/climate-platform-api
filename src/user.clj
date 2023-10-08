@@ -1,5 +1,6 @@
 (ns user
   (:require
+   [clojure.edn :as edn]
    [clojure.java.io :as io]
    [clojure.pprint :as pprint]
    [clojure.test :refer [*testing-vars* deftest is]]
@@ -37,14 +38,13 @@
 (def test-field-quantifications "quantifications")
 (def test-field-planetary-boundaries "planetaryBoundaries")
 (def test-attribute-name :platform/name)
-(def test-attribute-quantifications :platform/quantifications)
+(def test-attribute-quantifications :planetary-boundary/quantifications)
 
 (defn temp-conn []
   (let [conn (temp/conn)]
-    ; TODO use golden snapshot of attributes file
-    (d/transact conn {:tx-data attributes/graphql-attributes})
-    (d/transact conn {:tx-data attributes/platform-attributes})
+    (d/transact conn {:tx-data (edn/read-string (slurp (io/resource "goldens/attributes.edn")))})
     ; TODO use golden snapshot of framework file
+    #_(d/transact conn {:tx-data (edn/read-string (slurp (io/resource "goldens/framework.edn")))})
     (d/transact conn {:tx-data (tx-fns/create-type (d/db conn) test-type-planetary-boundary)})
     (d/transact conn {:tx-data (tx-fns/create-type (d/db conn) test-type-quantification)})
     (d/transact conn {:tx-data (tx-fns/add-field

@@ -237,16 +237,16 @@
                                                                                  "name" "q1"}
                                                                                 {"id"   "00000000-0000-0000-0000-000000000002"
                                                                                  "name" "q2"}]} u/test-type-planetary-boundary)})
-    (is (= #:platform{:id              #uuid"00000000-0000-0000-0000-000000000000",
-                      :name            "pb1",
-                      :quantifications [#:platform{:name             "q1",
-                                                   :id               #uuid"00000000-0000-0000-0000-000000000001",
-                                                   :_quantifications [#:platform{:id   #uuid"00000000-0000-0000-0000-000000000000",
-                                                                                 :name "pb1"}]}
-                                        #:platform{:name             "q2",
-                                                   :id               #uuid"00000000-0000-0000-0000-000000000002",
-                                                   :_quantifications [#:platform{:id   #uuid"00000000-0000-0000-0000-000000000000",
-                                                                                 :name "pb1"}]}]}
+    (is (= {:platform/id                        #uuid"00000000-0000-0000-0000-000000000000",
+            :platform/name                      "pb1",
+            :planetary-boundary/quantifications [{:platform/name                       "q1",
+                                                  :platform/id                         #uuid"00000000-0000-0000-0000-000000000001",
+                                                  :planetary-boundary/_quantifications [#:platform{:id   #uuid"00000000-0000-0000-0000-000000000000",
+                                                                                                   :name "pb1"}]}
+                                                 {:platform/name                       "q2",
+                                                  :platform/id                         #uuid"00000000-0000-0000-0000-000000000002",
+                                                  :planetary-boundary/_quantifications [#:platform{:id   #uuid"00000000-0000-0000-0000-000000000000",
+                                                                                                   :name "pb1"}]}]}
            (d/pull (d/db conn) pattern [:platform/id #uuid "00000000-0000-0000-0000-000000000000"])))))
 
 (defn reverse-pull-pattern [schema entity-type selected-paths pulled-entity]
@@ -316,16 +316,16 @@
               (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/id")
               (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/" u/test-field-name)}
             ; TODO use u/* symbols
-            #:platform{:id              #uuid"00000000-0000-0000-0000-000000000000",
-                       :name            "pb1",
-                       :quantifications [#:platform{:name             "q1",
-                                                    :id               #uuid"00000000-0000-0000-0000-000000000001",
-                                                    :_quantifications [#:platform{:id   #uuid"00000000-0000-0000-0000-000000000000",
-                                                                                  :name "pb1"}]}
-                                         #:platform{:name             "q2",
-                                                    :id               #uuid"00000000-0000-0000-0000-000000000002",
-                                                    :_quantifications [#:platform{:id   #uuid"00000000-0000-0000-0000-000000000000",
-                                                                                  :name "pb1"}]}]})))))
+            {:platform/id                        #uuid"00000000-0000-0000-0000-000000000000",
+             :platform/name                      "pb1",
+             :planetary-boundary/quantifications [{:platform/name                       "q1",
+                                                   :platform/id                         #uuid"00000000-0000-0000-0000-000000000001",
+                                                   :planetary-boundary/_quantifications [#:platform{:id   #uuid"00000000-0000-0000-0000-000000000000",
+                                                                                                    :name "pb1"}]}
+                                                  {:platform/name                       "q2",
+                                                   :platform/id                         #uuid"00000000-0000-0000-0000-000000000002",
+                                                   :planetary-boundary/_quantifications [#:platform{:id   #uuid"00000000-0000-0000-0000-000000000000",
+                                                                                                    :name "pb1"}]}]})))))
 
 (defn pull-and-resolve-entity-value [schema entity-uuid db entity-type selected-paths]
   (let [pattern       (gen-pull-pattern schema entity-type selected-paths)
@@ -336,12 +336,12 @@
 
 (deftest pull-and-resolve-entity-test
   ; TODO use u/* symbols
-  (let [data           #:platform{:id              #uuid"00000000-0000-0000-0000-000000000000"
-                                  :name            "pb1"
-                                  :quantifications [#:platform{:name "q1"
-                                                               :id   #uuid"00000000-0000-0000-0000-000000000001"}
-                                                    #:platform{:name "q2"
-                                                               :id   #uuid"00000000-0000-0000-0000-000000000002"}]}
+  (let [data           {:platform/id                        #uuid"00000000-0000-0000-0000-000000000000"
+                        :platform/name                      "pb1"
+                        :planetary-boundary/quantifications [#:platform{:name "q1"
+                                                                        :id   #uuid"00000000-0000-0000-0000-000000000001"}
+                                                             #:platform{:name "q2"
+                                                                        :id   #uuid"00000000-0000-0000-0000-000000000002"}]}
         {:keys [db-after]} (d/transact (u/temp-conn) {:tx-data [data]})
         selected-paths #{"id"
                          u/test-field-name

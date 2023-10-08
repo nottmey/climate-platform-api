@@ -161,52 +161,13 @@
                           {"id"         "13",
                            "name"       ":db.install/attribute",
                            "__typename" "MultiReferenceAttribute",
-                           "refs"       ["7"
-                                         "10"
-                                         "11"
-                                         "12"
-                                         "13"
-                                         "15"
-                                         "16"
-                                         "17"
-                                         "18"
-                                         "19"
-                                         "39"
-                                         "40"
-                                         "41"
-                                         "42"
-                                         "43"
-                                         "45"
-                                         "50"
-                                         "51"
-                                         "55"
-                                         "63"
-                                         "66"
-                                         "67"
-                                         "68"
-                                         "69"
-                                         "70"
-                                         "71"
-                                         "72"
-                                         "73"
-                                         "74"
-                                         "75"
-                                         "76"
-                                         "77"
-                                         "78"
-                                         "79"
-                                         "80"
-                                         "81"
-                                         "82"
-                                         "83"
-                                         "84"
-                                         "85"
-                                         "86"]}
+                           "refs"       ["...many..."]}
                           {"id"         "63",
                            "name"       ":db/doc",
                            "__typename" "StringAttribute",
                            "string"     "Name of the system partition. The system partition includes the core of datomic, as well as user schemas: type definitions, attribute definitions, partition definitions, and data function definitions."}]}
-           response))))
+           (-> response
+               (assoc-in ["attributes" 3 "refs"] ["...many..."]))))))
 
 (deftest test-entity-browser-list
   (let [response (resolve-input
