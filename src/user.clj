@@ -15,16 +15,6 @@
          [?e :platform/description ?v ?t ?add]]
        (d/history (d/db (access/get-connection access/dev-env-db-name)))))
 
-(def test-type-planetary-boundary "PlanetaryBoundary")
-(def test-type-quantification "Quantification")
-(def test-field-name "name")
-(def test-field-name-value-1 " :platform/name sample value\n")
-(def test-field-name-value-2 " some other \n value")
-(def test-field-quantifications "quantifications")
-(def test-field-planetary-boundaries "planetaryBoundaries")
-(def test-attribute-name :platform/name)
-(def test-attribute-quantifications :planetary-boundary/quantifications)
-
 (def golden-attributes-file (io/resource "goldens/attributes.edn"))
 (def golden-framework-file (io/resource "goldens/framework.edn"))
 

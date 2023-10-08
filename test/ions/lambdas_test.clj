@@ -31,7 +31,7 @@
 (deftest test-list-empty-db
   (let [response (resolve-input
                   {"info"      {"parentTypeName" "Query"
-                                "fieldName"      (str "list" u/test-type-planetary-boundary)}
+                                "fieldName"      "listPlanetaryBoundary"}
                    "arguments" {}})
         expected {"info"   {"size"    20
                             "offset"  0
@@ -47,39 +47,40 @@
   ; TODO add checking of quantification name
   (let [planetary-boundary-id (.toString (UUID/randomUUID))
         quantification-id     (.toString (UUID/randomUUID))
+        example-name          " :platform/name sample value\n"
         conn                  (u/temp-conn)
         publish-called?       (atom false)
         created-response      (with-redefs
                                [u/testing-conn    (fn [] conn)
                                 u/testing-publish (expecting-query
                                                    publish-called?
-                                                   [{:name      (str "PublishCreated" u/test-type-planetary-boundary)
+                                                   [{:name      "PublishCreatedPlanetaryBoundary"
                                                      :operation :mutation,
-                                                     :selection [{:name      (str "publishCreated" u/test-type-planetary-boundary)
+                                                     :selection [{:name      "publishCreatedPlanetaryBoundary"
                                                                   :arguments [{:name  "value"
                                                                                :value [{:name  "id"
                                                                                         :value planetary-boundary-id}
-                                                                                       {:name  u/test-field-name
-                                                                                        :value u/test-field-name-value-1}
-                                                                                       {:name  u/test-field-quantifications
+                                                                                       {:name  "name"
+                                                                                        :value example-name}
+                                                                                       {:name  "quantifications"
                                                                                         :value [[{:name  "id"
                                                                                                   :value quantification-id}]]}]}],
                                                                   :selection [{:name "description"}
                                                                               {:name "id"}
-                                                                              {:name u/test-field-name}
-                                                                              {:name      u/test-field-quantifications
+                                                                              {:name "name"}
+                                                                              {:name      "quantifications"
                                                                                :selection [{:name "id"}]}]}]}])]
                                 (resolve-input
                                  {"info"      {"parentTypeName"   "Mutation"
-                                               "fieldName"        (str "create" u/test-type-planetary-boundary)
-                                               "selectionSetList" ["id" u/test-field-name (str u/test-field-quantifications "/id")]}
-                                  "arguments" {"value" {"id"                         planetary-boundary-id
-                                                        u/test-field-name            u/test-field-name-value-1
-                                                        u/test-field-quantifications [{"id"              quantification-id
-                                                                                       u/test-field-name u/test-field-name-value-2}]}}}))]
-    (is (= {"id"                         planetary-boundary-id
-            u/test-field-name            u/test-field-name-value-1
-            u/test-field-quantifications [{"id" quantification-id}]}
+                                               "fieldName"        "createPlanetaryBoundary"
+                                               "selectionSetList" ["id" "name" "quantifications/id"]}
+                                  "arguments" {"value" {"id"              planetary-boundary-id
+                                                        "name"            example-name
+                                                        "quantifications" [{"id"   quantification-id
+                                                                            "name" " some other \n value"}]}}}))]
+    (is (= {"id"              planetary-boundary-id
+            "name"            example-name
+            "quantifications" [{"id" quantification-id}]}
            created-response))
     (is @publish-called?)
 
@@ -87,8 +88,8 @@
            (with-redefs [u/testing-conn (fn [] conn)]
              (resolve-input
               {"info"      {"parentTypeName"   "Query"
-                            "fieldName"        (str "get" u/test-type-planetary-boundary)
-                            "selectionSetList" ["id" u/test-field-name (str u/test-field-quantifications "/id")]}
+                            "fieldName"        "getPlanetaryBoundary"
+                            "selectionSetList" ["id" "name" "quantifications/id"]}
                "arguments" {"id" planetary-boundary-id}}))))
 
     (is (= {"info"   {"size"    10
@@ -102,8 +103,8 @@
            (with-redefs [u/testing-conn (fn [] conn)]
              (resolve-input
               {"info"      {"parentTypeName"   "Query"
-                            "fieldName"        (str "list" u/test-type-planetary-boundary)
-                            "selectionSetList" ["values/id" (str "values/" u/test-field-name) (str "values/" u/test-field-quantifications "/id")]}
+                            "fieldName"        "listPlanetaryBoundary"
+                            "selectionSetList" ["values/id" "values/name" "values/quantifications/id"]}
                "arguments" {"page" {"size" 10}}}))))
 
     (let [publish-called? (atom false)]
@@ -112,34 +113,34 @@
               [u/testing-conn    (fn [] conn)
                u/testing-publish (expecting-query
                                   publish-called?
-                                  [{:name      (str "PublishDeleted" u/test-type-planetary-boundary)
+                                  [{:name      "PublishDeletedPlanetaryBoundary"
                                     :operation :mutation,
-                                    :selection [{:name      (str "publishDeleted" u/test-type-planetary-boundary)
+                                    :selection [{:name      "publishDeletedPlanetaryBoundary"
                                                  :arguments [{:name  "value"
                                                               :value [{:name  "id"
                                                                        :value planetary-boundary-id}
-                                                                      {:name  u/test-field-name
-                                                                       :value u/test-field-name-value-1}
-                                                                      {:name  u/test-field-quantifications
+                                                                      {:name  "name"
+                                                                       :value example-name}
+                                                                      {:name  "quantifications"
                                                                        :value [[{:name  "id"
                                                                                  :value quantification-id}]]}]}],
                                                  :selection [{:name "description"}
                                                              {:name "id"}
-                                                             {:name u/test-field-name}
-                                                             {:name      u/test-field-quantifications
+                                                             {:name "name"}
+                                                             {:name      "quantifications"
                                                               :selection [{:name "id"}]}]}]}])]
                (resolve-input
                 {"info"      {"parentTypeName"   "Mutation"
-                              "fieldName"        (str "delete" u/test-type-planetary-boundary)
-                              "selectionSetList" ["id" u/test-field-name]}
+                              "fieldName"        "deletePlanetaryBoundary"
+                              "selectionSetList" ["id" "name"]}
                  "arguments" {"id" planetary-boundary-id}}))))
       (is @publish-called?))
 
     (is (nil? (with-redefs [u/testing-conn (fn [] conn)]
                 (resolve-input
                  {"info"      {"parentTypeName"   "Query"
-                               "fieldName"        (str "get" u/test-type-planetary-boundary)
-                               "selectionSetList" ["id" u/test-field-name]}
+                               "fieldName"        "getPlanetaryBoundary"
+                               "selectionSetList" ["id" "name"]}
                   "arguments" {"id" planetary-boundary-id}}))))))
 
 (deftest test-entity-browser-get

@@ -66,14 +66,14 @@
   (get-in schema [::types entity-type :graphql.type/collection :db/id]))
 
 (comment
-  (get-collection (get-schema (u/temp-db)) u/test-type-planetary-boundary))
+  (get-collection (get-schema (u/temp-db)) "PlanetaryBoundary"))
 
 (defn get-collection-id [conn entity-type-name]
   (-> (d/pull (d/db conn) '[:graphql.type/collection] [:graphql.type/name entity-type-name])
       (get-in [:graphql.type/collection :db/id])))
 
 (comment
-  (get-collection-id (u/temp-conn) u/test-type-planetary-boundary))
+  (get-collection-id (u/temp-conn) "PlanetaryBoundary"))
 
 (defn get-default-paths [schema entity-type]
   (->> (vals (get-in schema [::types entity-type :graphql.type/fields]))
@@ -86,12 +86,12 @@
        (sort)))
 
 (comment
-  (get-default-paths (get-schema (u/temp-db)) u/test-type-planetary-boundary))
+  (get-default-paths (get-schema (u/temp-db)) "PlanetaryBoundary"))
 
 (deftest get-default-paths-test
   (let [schema (get-schema (u/temp-db))
-        paths  (get-default-paths schema u/test-type-planetary-boundary)]
-    (is (= #{"id" u/test-field-name "description" (str u/test-field-quantifications "/id")}
+        paths  (get-default-paths schema "PlanetaryBoundary")]
+    (is (= #{"id" "name" "description" (str "quantifications" "/id")}
            (set paths)))))
 
 (defn resolve-input-fields [schema input-obj entity-type]
@@ -135,41 +135,41 @@
 
 (deftest resolve-input-fields-test
   (let [conn (u/temp-conn)
-        cid  (get-collection-id conn u/test-type-planetary-boundary)]
+        cid  (get-collection-id conn "PlanetaryBoundary")]
     (is (= [[:db/add cid :graphql.collection/entities "00000000-0000-0000-0000-000000000001"]
             [:db/add "00000000-0000-0000-0000-000000000001" :platform/id #uuid"00000000-0000-0000-0000-000000000001"]
-            [:db/add "00000000-0000-0000-0000-000000000001" u/test-attribute-name "PlanetaryBoundary"]]
+            [:db/add "00000000-0000-0000-0000-000000000001" :platform/name "PlanetaryBoundary"]]
            (resolve-input-fields
             (get-schema (d/db conn))
             {"id"                        "00000000-0000-0000-0000-000000000001"
-             u/test-field-name           "PlanetaryBoundary"
+             "name"                      "PlanetaryBoundary"
              "anyNilFieldDoesntShowUp"   nil
              "anyEmptyFieldDoesntShowUp" []}
-            u/test-type-planetary-boundary))))
+            "PlanetaryBoundary"))))
 
   (let [conn   (u/temp-conn)
-        pb-cid (get-collection-id conn u/test-type-planetary-boundary)
-        q-cid  (get-collection-id conn u/test-type-quantification)]
+        pb-cid (get-collection-id conn "PlanetaryBoundary")
+        q-cid  (get-collection-id conn "Quantification")]
     (is (= [[:db/add pb-cid :graphql.collection/entities "00000000-0000-0000-0000-000000000001"]
             [:db/add "00000000-0000-0000-0000-000000000001" :platform/id #uuid"00000000-0000-0000-0000-000000000001"]
-            [:db/add "00000000-0000-0000-0000-000000000001" u/test-attribute-name "PlanetaryBoundary"]
-            [:db/add "00000000-0000-0000-0000-000000000001" u/test-attribute-quantifications "00000000-0000-0000-0000-000000000002"]
-            [:db/add "00000000-0000-0000-0000-000000000001" u/test-attribute-quantifications "00000000-0000-0000-0000-000000000003"]
+            [:db/add "00000000-0000-0000-0000-000000000001" :platform/name "PlanetaryBoundary"]
+            [:db/add "00000000-0000-0000-0000-000000000001" :planetary-boundary/quantifications "00000000-0000-0000-0000-000000000002"]
+            [:db/add "00000000-0000-0000-0000-000000000001" :planetary-boundary/quantifications "00000000-0000-0000-0000-000000000003"]
             [:db/add q-cid :graphql.collection/entities "00000000-0000-0000-0000-000000000002"]
             [:db/add "00000000-0000-0000-0000-000000000002" :platform/id #uuid"00000000-0000-0000-0000-000000000002"]
-            [:db/add "00000000-0000-0000-0000-000000000002" u/test-attribute-name "Quantification"]
+            [:db/add "00000000-0000-0000-0000-000000000002" :platform/name "Quantification"]
             [:db/add q-cid :graphql.collection/entities "00000000-0000-0000-0000-000000000003"]
             [:db/add "00000000-0000-0000-0000-000000000003" :platform/id #uuid"00000000-0000-0000-0000-000000000003"]
-            [:db/add "00000000-0000-0000-0000-000000000003" u/test-attribute-name "Quantification2"]]
+            [:db/add "00000000-0000-0000-0000-000000000003" :platform/name "Quantification2"]]
            (resolve-input-fields
             (get-schema (d/db conn))
-            {"id"                         "00000000-0000-0000-0000-000000000001"
-             u/test-field-name            "PlanetaryBoundary"
-             u/test-field-quantifications [{"id"              "00000000-0000-0000-0000-000000000002"
-                                            u/test-field-name "Quantification"}
-                                           {"id"              "00000000-0000-0000-0000-000000000003"
-                                            u/test-field-name "Quantification2"}]}
-            u/test-type-planetary-boundary)))))
+            {"id"              "00000000-0000-0000-0000-000000000001"
+             "name"            "PlanetaryBoundary"
+             "quantifications" [{"id"   "00000000-0000-0000-0000-000000000002"
+                                 "name" "Quantification"}
+                                {"id"   "00000000-0000-0000-0000-000000000003"
+                                 "name" "Quantification2"}]}
+            "PlanetaryBoundary")))))
 
 (defn app-sync-path->attribute-path [schema entity-type app-sync-path]
   (loop [[current-field & next-fields] (str/split app-sync-path #"/")
@@ -222,21 +222,21 @@
   (let [conn    (u/temp-conn)
         schema  (get-schema (d/db conn))
         paths   #{"id"
-                  u/test-field-name
-                  (str u/test-field-quantifications)
-                  (str u/test-field-quantifications "/id")
-                  (str u/test-field-quantifications "/" u/test-field-name)
-                  (str u/test-field-quantifications "/" u/test-field-planetary-boundaries)
-                  (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/id")
-                  (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/" u/test-field-name)}
-        pattern (gen-pull-pattern schema u/test-type-planetary-boundary paths)]
+                  "name"
+                  "quantifications"
+                  "quantifications/id"
+                  "quantifications/name"
+                  "quantifications/planetaryBoundaries"
+                  "quantifications/planetaryBoundaries/id"
+                  "quantifications/planetaryBoundaries/name"}
+        pattern (gen-pull-pattern schema "PlanetaryBoundary" paths)]
     ; TODO use u/* symbols
     (d/transact conn {:tx-data (resolve-input-fields schema {"id"              "00000000-0000-0000-0000-000000000000"
                                                              "name"            "pb1"
                                                              "quantifications" [{"id"   "00000000-0000-0000-0000-000000000001"
                                                                                  "name" "q1"}
                                                                                 {"id"   "00000000-0000-0000-0000-000000000002"
-                                                                                 "name" "q2"}]} u/test-type-planetary-boundary)})
+                                                                                 "name" "q2"}]} "PlanetaryBoundary")})
     (is (= {:platform/id                        #uuid"00000000-0000-0000-0000-000000000000",
             :platform/name                      "pb1",
             :planetary-boundary/quantifications [{:platform/name                       "q1",
@@ -308,13 +308,13 @@
                                                         "name" "pb1"}]}]}
            (reverse-pull-pattern
             schema
-            u/test-type-planetary-boundary
+            "PlanetaryBoundary"
             #{"id"
-              u/test-field-name
-              (str u/test-field-quantifications "/id")
-              (str u/test-field-quantifications "/" u/test-field-name)
-              (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/id")
-              (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/" u/test-field-name)}
+              "name"
+              "quantifications/id"
+              "quantifications/name"
+              "quantifications/planetaryBoundaries/id"
+              "quantifications/planetaryBoundaries/name"}
             ; TODO use u/* symbols
             {:platform/id                        #uuid"00000000-0000-0000-0000-000000000000",
              :platform/name                      "pb1",
@@ -344,13 +344,13 @@
                                                                         :id   #uuid"00000000-0000-0000-0000-000000000002"}]}
         {:keys [db-after]} (d/transact (u/temp-conn) {:tx-data [data]})
         selected-paths #{"id"
-                         u/test-field-name
-                         (str u/test-field-quantifications "/id")
-                         (str u/test-field-quantifications "/" u/test-field-name)
-                         (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/id")
-                         (str u/test-field-quantifications "/" u/test-field-planetary-boundaries "/" u/test-field-name)}
+                         "name"
+                         "quantifications/id"
+                         "quantifications/name"
+                         "quantifications/planetaryBoundaries/id"
+                         "quantifications/planetaryBoundaries/name"}
         schema         (get-schema db-after)
-        pulled-entity  (pull-and-resolve-entity-value schema #uuid"00000000-0000-0000-0000-000000000000" db-after u/test-type-planetary-boundary selected-paths)]
+        pulled-entity  (pull-and-resolve-entity-value schema #uuid"00000000-0000-0000-0000-000000000000" db-after "PlanetaryBoundary" selected-paths)]
     (is (= {"id"              "00000000-0000-0000-0000-000000000000"
             "name"            "pb1"
             "quantifications" [{"name"                "q1",

@@ -204,10 +204,10 @@
 
 (deftest create-publish-definition-test
   (let [schema        (framework/get-schema (u/temp-db))
-        default-paths (framework/get-default-paths schema u/test-type-planetary-boundary)]
-    (is (= [{:name      (str "PublishCreated" u/test-type-planetary-boundary),
+        default-paths (framework/get-default-paths schema "PlanetaryBoundary")]
+    (is (= [{:name      "PublishCreatedPlanetaryBoundary",
              :operation :mutation,
-             :selection [{:name      (str "publishCreated" u/test-type-planetary-boundary),
+             :selection [{:name      "publishCreatedPlanetaryBoundary",
                           :arguments [{:name  "value",
                                        :value [{:name  "id",
                                                 :value "123"}
@@ -223,7 +223,7 @@
                                        :selection [{:name "id"}]}]}]}]
            (parsing/parse (create-publish-definition
                            publish-created-op
-                           u/test-type-planetary-boundary
+                           "PlanetaryBoundary"
                            {"id"              "123"
                             "name"            "n"
                             "quantifications" [{"id" "456"}]}
@@ -307,38 +307,39 @@
                       :response        entity-value}))))))
 
 (deftest resolve-merge-test
-  (let [conn        (u/temp-conn)
-        entity-uuid (UUID/randomUUID)
+  (let [conn         (u/temp-conn)
+        entity-uuid  (UUID/randomUUID)
+        example-name " :platform/name sample value\n"
         {:keys [tempids]} (d/transact
                            conn
-                           {:tx-data [{:db/id                "tempid"
-                                       :platform/id          entity-uuid
-                                       u/test-attribute-name u/test-field-name-value-1
-                                       :db/doc               "other attr value"}]})
-        db-id       (get tempids "tempid")
-        db-value    (d/pull (d/db conn) '[*] db-id)]
-    (is (= {:db/id                db-id
-            :platform/id          entity-uuid
-            u/test-attribute-name u/test-field-name-value-1
-            :db/doc               "other attr value"}
+                           {:tx-data [{:db/id         "tempid"
+                                       :platform/id   entity-uuid
+                                       :platform/name example-name
+                                       :db/doc        "other attr value"}]})
+        db-id        (get tempids "tempid")
+        db-value     (d/pull (d/db conn) '[*] db-id)]
+    (is (= {:db/id         db-id
+            :platform/id   entity-uuid
+            :platform/name example-name
+            :db/doc        "other attr value"}
            db-value))
     (let [result       (resolve-dynamic
                         merge-op
                         {:conn       conn
-                         :field-name (str "merge" u/test-type-planetary-boundary)
-                         :arguments  {:value {"id"              (str entity-uuid)
-                                              u/test-field-name "123"}}})
+                         :field-name "mergePlanetaryBoundary"
+                         :arguments  {:value {"id"   (str entity-uuid)
+                                              "name" "123"}}})
           {:keys [response publish-queries]} result
           new-db-value (d/pull (d/db conn) '[*] db-id)]
-      (is (= {"id"              (str entity-uuid)
-              u/test-field-name "123"}
+      (is (= {"id"   (str entity-uuid)
+              "name" "123"}
              response))
-      (is (= {:db/id                db-id
-              :platform/id          entity-uuid
-              u/test-attribute-name "123"
-              :db/doc               "other attr value"}
+      (is (= {:db/id         db-id
+              :platform/id   entity-uuid
+              :platform/name "123"
+              :db/doc        "other attr value"}
              new-db-value))
-      (is (= [{:name      (str "PublishUpdated" u/test-type-planetary-boundary)
+      (is (= [{:name      "PublishUpdatedPlanetaryBoundary"
                :operation :mutation
                :selection [{:arguments [{:name  "value"
                                          :value [{:name  "id"
@@ -346,10 +347,10 @@
                                                  {:name  "name"
                                                   :value "123"}
                                                  ; TODO nested pull pattern
-                                                 #_{:name  u/test-field-quantifications
+                                                 #_{:name  "quantifications"
                                                     :value [{:name  "id"
                                                              :value quantification-id}]}]}]
-                            :name      (str "publishUpdated" u/test-type-planetary-boundary)
+                            :name      "publishUpdatedPlanetaryBoundary"
                             :selection [{:name "description"}
                                         {:name "id"}
                                         {:name "name"}
