@@ -6,7 +6,7 @@
    [ions.utils :as utils]
    [shared.mappings :as mappings]
    [shared.operations :as ops]
-   [user :as u]))
+   [testing :as t]))
 
 (def resolvable-paths (atom #{}))
 
@@ -26,17 +26,17 @@
       (resolve-static args))))
 
 (comment
-  (let [args {:conn             (u/temp-conn)
+  (let [args {:conn             (t/temp-conn)
               :parent-type-name :Query
               :field-name       :listPlanetaryBoundary}]
     (select-and-use-resolver args))
 
-  (let [args {:conn             (u/temp-conn)
+  (let [args {:conn             (t/temp-conn)
               :parent-type-name :Query
               :field-name       :listEntity}]
     (select-and-use-resolver args))
 
-  (let [args {:conn             (u/temp-conn)
+  (let [args {:conn             (t/temp-conn)
               :parent-type-name :Mutation
               :field-name       :createPlanetaryBoundary
               :arguments        {:value {:name "Climate Change"}}
@@ -55,7 +55,7 @@
     {:response (mappings/map-entity result attribute-index)}))
 
 (comment
-  (resolve-static {:conn             (u/temp-conn)
+  (resolve-static {:conn             (t/temp-conn)
                    :parent-type-name :Query
                    :field-name       :getEntity
                    :arguments        {:id "0"}}))
@@ -77,7 +77,7 @@
                 "values" entities}}))
 
 (comment
-  (time (resolve-static {:conn             (u/temp-conn)
+  (time (resolve-static {:conn             (t/temp-conn)
                          :parent-type-name :Query
                          :field-name       :listEntity
                          :arguments        {#_#_:filter {:attributes ["50" "77"]}

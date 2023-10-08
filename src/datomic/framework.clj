@@ -7,7 +7,7 @@
    [datomic.client.api :as d]
    [ions.logging :as logging]
    [shared.mappings :as sa]
-   [user :as u]))
+   [testing :as t]))
 
 (defn- correct-attr-ident [attribute backref?]
   (let [normal-attr-ident (:db/ident attribute)]
@@ -54,26 +54,26 @@
 (comment
   (get-schema (d/db (access/get-connection access/dev-env-db-name)))
 
-  (get-schema (u/temp-db)))
+  (get-schema (t/temp-db)))
 
 (defn get-entity-types [db]
   (sort (keys (::types (get-schema db)))))
 
 (comment
-  (get-entity-types (u/temp-db)))
+  (get-entity-types (t/temp-db)))
 
 (defn get-collection [schema entity-type]
   (get-in schema [::types entity-type :graphql.type/collection :db/id]))
 
 (comment
-  (get-collection (get-schema (u/temp-db)) "PlanetaryBoundary"))
+  (get-collection (get-schema (t/temp-db)) "PlanetaryBoundary"))
 
 (defn get-collection-id [conn entity-type-name]
   (-> (d/pull (d/db conn) '[:graphql.type/collection] [:graphql.type/name entity-type-name])
       (get-in [:graphql.type/collection :db/id])))
 
 (comment
-  (get-collection-id (u/temp-conn) "PlanetaryBoundary"))
+  (get-collection-id (t/temp-conn) "PlanetaryBoundary"))
 
 (defn get-default-paths [schema entity-type]
   (->> (vals (get-in schema [::types entity-type :graphql.type/fields]))
@@ -86,10 +86,10 @@
        (sort)))
 
 (comment
-  (get-default-paths (get-schema (u/temp-db)) "PlanetaryBoundary"))
+  (get-default-paths (get-schema (t/temp-db)) "PlanetaryBoundary"))
 
 (deftest get-default-paths-test
-  (let [schema (get-schema (u/temp-db))
+  (let [schema (get-schema (t/temp-db))
         paths  (get-default-paths schema "PlanetaryBoundary")]
     (is (= #{"id" "name" "description" (str "quantifications" "/id")}
            (set paths)))))
@@ -134,7 +134,7 @@
         (resolve-input-fields schema value target-type))))))
 
 (deftest resolve-input-fields-test
-  (let [conn (u/temp-conn)
+  (let [conn (t/temp-conn)
         cid  (get-collection-id conn "PlanetaryBoundary")]
     (is (= [[:db/add cid :graphql.collection/entities "00000000-0000-0000-0000-000000000001"]
             [:db/add "00000000-0000-0000-0000-000000000001" :platform/id #uuid"00000000-0000-0000-0000-000000000001"]
@@ -147,7 +147,7 @@
              "anyEmptyFieldDoesntShowUp" []}
             "PlanetaryBoundary"))))
 
-  (let [conn   (u/temp-conn)
+  (let [conn   (t/temp-conn)
         pb-cid (get-collection-id conn "PlanetaryBoundary")
         q-cid  (get-collection-id conn "Quantification")]
     (is (= [[:db/add pb-cid :graphql.collection/entities "00000000-0000-0000-0000-000000000001"]
@@ -219,7 +219,7 @@
     pattern))
 
 (deftest gen-pull-pattern-test
-  (let [conn    (u/temp-conn)
+  (let [conn    (t/temp-conn)
         schema  (get-schema (d/db conn))
         paths   #{"id"
                   "name"
@@ -293,7 +293,7 @@
          (into {}))))
 
 (deftest reverse-pull-pattern-test
-  (let [conn   (u/temp-conn)
+  (let [conn   (t/temp-conn)
         schema (get-schema (d/db conn))]
     ; TODO use u/* symbols
     (is (= {"id"              "00000000-0000-0000-0000-000000000000"
@@ -342,7 +342,7 @@
                                                                         :id   #uuid"00000000-0000-0000-0000-000000000001"}
                                                              #:platform{:name "q2"
                                                                         :id   #uuid"00000000-0000-0000-0000-000000000002"}]}
-        {:keys [db-after]} (d/transact (u/temp-conn) {:tx-data [data]})
+        {:keys [db-after]} (d/transact (t/temp-conn) {:tx-data [data]})
         selected-paths #{"id"
                          "name"
                          "quantifications/id"

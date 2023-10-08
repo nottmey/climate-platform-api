@@ -2,7 +2,7 @@
   (:require [clojure.test :refer [deftest is]]
             [datomic.access :as access]
             [datomic.client.api :as d]
-            [user :as u]))
+            [testing :as t]))
 
 (defn get-attribute-index [db]
   (->> (d/pull db '{:eid      0
@@ -18,7 +18,7 @@
        (sort-by first)
        (map last))
 
-  (get-attribute-index (u/temp-db)))
+  (get-attribute-index (t/temp-db)))
 
 (defn recently-updated-entities [db as]
   (->> (d/q '[:find ?e (max ?t)
@@ -38,7 +38,7 @@
        (map second)))
 
 (comment
-  (pull-entities (u/temp-db) '[:db/doc] [0 1 2 3 4 5]))
+  (pull-entities (t/temp-db) '[:db/doc] [0 1 2 3 4 5]))
 
 (defn pull-platform-entities [db pattern entity-uuids]
   (->> entity-uuids
@@ -70,7 +70,7 @@
          (map #(pull-platform-entities db '[*] %)))))
 
 (deftest get-entities-sorted-test
-  (let [conn             (u/temp-conn)
+  (let [conn             (t/temp-conn)
         {:keys [tempids]} (d/transact conn {:tx-data [{:db/id  "tempid"
                                                        :db/doc "empty collection"}]})
         collection-id    (get tempids "tempid")

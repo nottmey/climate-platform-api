@@ -4,7 +4,7 @@
    [clojure.test :refer [deftest is]]
    [graphql.parsing :as parsing]
    [ions.lambdas :refer [datomic-resolver]]
-   [user :as u]
+   [testing :as u]
    [utils.cloud-import :refer [call-resolver-with-local-conn]])
   (:import (java.util UUID)))
 

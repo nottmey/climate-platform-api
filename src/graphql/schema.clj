@@ -9,7 +9,7 @@
    [graphql.types :as types]
    [shared.mappings :as mappings]
    [shared.operations :as ops]
-   [user :as u]))
+   [testing :as t]))
 
 (defn generate-attribute-subtypes [attribute-fields]
   (str
@@ -50,9 +50,9 @@
    (for [{:keys [graphql.field/name
                  graphql.field/attribute
                  graphql.field/target
-                 graphql.field/backwards-ref?]
-          :as   all} (->> (vals fields)
-                          (sort-by :graphql.field/name))]
+                 graphql.field/backwards-ref?]}
+         (->> (vals fields)
+              (sort-by :graphql.field/name))]
      (let [target-type      (get target :graphql.type/name)
            value-type       (get-in attribute [:db/valueType :db/ident])
            field-type       (mappings/value-type->field-type value-type)
@@ -71,7 +71,7 @@
         :required-type? list?}))))
 
 (comment
-  (let [schema (framework/get-schema (u/temp-db))]
+  (let [schema (framework/get-schema (t/temp-db))]
     (for [[_ {:keys [graphql.type/fields]}] (::framework/types schema)]
       (gen-entity-fields fields true))))
 

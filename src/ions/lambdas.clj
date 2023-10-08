@@ -8,7 +8,7 @@
    [datomic.access :as access]
    [ions.logging :as logging]
    [ions.resolvers :as resolvers]
-   [user :as user]
+   [testing :as t]
    [utils :as utils])
   (:import (clojure.lang ExceptionInfo)))
 
@@ -130,11 +130,11 @@
         parent-value     (walk/keywordize-keys (get app-sync-context "source"))
         conn             (if (utils/test-mode?)
                            ; making sure never to write to the real database in tests
-                           (user/testing-conn)
+                           (t/testing-conn)
                            (access/get-connection access/dev-env-db-name))
         publish          (if (utils/test-mode?)
                            ; making sure never to publish to the real system in tests
-                           user/testing-publish
+                           t/testing-publish
                            (build-publish (get-in app-sync-context ["request" "headers"])))
         resolve-result   (resolvers/select-and-use-resolver
                           {:conn             conn

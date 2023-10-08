@@ -3,7 +3,7 @@
             [datomic.client.api :as d]
             [datomic.ion :as ion]
             [datomic.temp :as temp]
-            [user :as user])
+            [testing :as t])
   (:import (clojure.lang ExceptionInfo)))
 
 #_(datomic.ion/cancel {:cognitect.anomalies/category :cognitect.anomalies/incorrect #_:cognitect.anomalies/conflict
@@ -32,7 +32,7 @@
         selector '[{:graphql.type/collection [:db/doc
                                               {:graphql.collection/entities [:db/doc]}]}
                    {:graphql.field/_target [:db/doc]}]]
-    (user/apply-golden-attributes-file conn)
+    (t/apply-golden-attributes-file conn)
 
     (let [result (d/transact conn {:tx-data (create-type (d/db conn) "LonelyType")})]
       (is (= 4 (count (:tx-data result)))))
@@ -109,7 +109,7 @@
                                                           :graphql.field/backwards-ref?]}] type))
         some-type   [:graphql.type/name "SomeType"]
         other-type  [:graphql.type/name "OtherType"]]
-    (user/apply-golden-attributes-file conn)
+    (t/apply-golden-attributes-file conn)
     (d/transact conn {:tx-data (create-type (d/db conn) "SomeType")})
     (d/transact conn {:tx-data (create-type (d/db conn) "OtherType")})
     (d/transact conn {:tx-data [{:db/ident       :example-ref

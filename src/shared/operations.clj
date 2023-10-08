@@ -14,7 +14,7 @@
    [graphql.spec :as spec]
    [graphql.types :as types]
    [ions.utils :as utils]
-   [user :as u])
+   [testing :as t])
   (:import (java.util UUID)))
 
 (def publish-created-op
@@ -203,7 +203,7 @@
                 :selection (convert-to-selection prepared-paths)}]})))
 
 (deftest create-publish-definition-test
-  (let [schema        (framework/get-schema (u/temp-db))
+  (let [schema        (framework/get-schema (t/temp-db))
         default-paths (framework/get-default-paths schema "PlanetaryBoundary")]
     (is (= [{:name      "PublishCreatedPlanetaryBoundary",
              :operation :mutation,
@@ -307,7 +307,7 @@
                       :response        entity-value}))))))
 
 (deftest resolve-merge-test
-  (let [conn         (u/temp-conn)
+  (let [conn         (t/temp-conn)
         entity-uuid  (UUID/randomUUID)
         example-name " :platform/name sample value\n"
         {:keys [tempids]} (d/transact

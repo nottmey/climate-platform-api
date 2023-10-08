@@ -7,7 +7,7 @@
             [io.pedestal.log :as log]
             [ions.lambdas :as lambdas]
             [migrations :as m]
-            [user :as u])
+            [testing :as u])
   (:import (java.io StringWriter)
            (java.nio.channels OverlappingFileLockException)))
 

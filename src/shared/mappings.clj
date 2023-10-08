@@ -4,7 +4,7 @@
    [datomic.client.api :as d]
    [datomic.queries :as queries]
    [graphql.types :as types]
-   [user :as u])
+   [testing :as t])
   (:import
    (java.time.format DateTimeFormatter)
    (java.util Date)))
@@ -163,7 +163,7 @@
        (name gql-key) gql-value})))
 
 (comment
-  (let [db              (d/db (u/temp-conn))
+  (let [db              (d/db (t/temp-conn))
         attribute-index (queries/get-attribute-index db)]
     #_(map-value :db/ident :db.part/db attribute-index)
     #_(map-value :db.install/partition [#:db{:id    0
@@ -185,7 +185,7 @@
                          (map-value a-key a-val attribute-index)))))})
 
 (comment
-  (let [db              (d/db (u/temp-conn))
+  (let [db              (d/db (t/temp-conn))
         attribute-index (queries/get-attribute-index db)
         result          (d/pull db '[*] 0)]
     (map-entity result attribute-index)))
