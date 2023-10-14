@@ -8,6 +8,7 @@
    [utils.cloud-import :refer [call-resolver-with-local-conn]])
   (:import (java.util UUID)))
 
+; TODO use call-datomic-resolver instead
 (defn- resolve-input [input]
   (json/read-str
    (datomic-resolver

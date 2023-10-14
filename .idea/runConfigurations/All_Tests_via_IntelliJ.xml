@@ -1,8 +1,9 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="All Tests via IntelliJ" type="ClojureTestRunConfiguration" factoryName="clojure.test" singleton="true">
+    <option name="execution" value="DEPS" />
     <module name="climate-platform-api" />
     <option name="namespace" value="ions.lambdas-test" />
-    <option name="options" />
+    <option name="options" value="-A:repl" />
     <option name="profiles" />
     <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
     <extension name="software.aws.toolkits.jetbrains.core.execution.JavaAwsConnectionExtension">
