@@ -14,10 +14,12 @@
     CfnApiKey$Builder
     CfnDataSource$Builder
     CfnDataSource$LambdaConfigProperty
-    CfnGraphQLApi$Builder
-    CfnGraphQLSchema$Builder
+    CfnGraphQLApi$AdditionalAuthenticationProviderProperty CfnGraphQLApi$Builder
+    CfnGraphQLApi$CognitoUserPoolConfigProperty CfnGraphQLSchema$Builder
     CfnResolver$AppSyncRuntimeProperty
     CfnResolver$Builder CfnResolver$PipelineConfigProperty)
+   (software.amazon.awscdk.services.cognito
+    UserPool$Builder)
    (software.amazon.awscdk.services.iam
     Effect
     PolicyStatement$Builder
@@ -26,12 +28,22 @@
 
 ; Docs: https://docs.aws.amazon.com/cdk/api/v2/docs/aws-construct-library.html
 (defn app-sync [^Stack stack]
-  (let [conn   (access/get-connection access/dev-env-db-name)
-        api    (-> (CfnGraphQLApi$Builder/create stack "climate-platform-api")
-                   (.name "climate-platform-api")
-                   (.authenticationType "API_KEY")
-                   (.build))
-        api-id (-> api (.getAttrApiId))]
+  (let [conn         (access/get-connection access/dev-env-db-name)
+        user-pool    (-> (UserPool$Builder/create stack "climate-platform-user-pool")
+                         (.build))
+        cognito-auth (-> (CfnGraphQLApi$AdditionalAuthenticationProviderProperty/builder)
+                         (.authenticationType "AMAZON_COGNITO_USER_POOLS")
+                         (.userPoolConfig (-> (CfnGraphQLApi$CognitoUserPoolConfigProperty/builder)
+                                              (.awsRegion (.getRegion stack))
+                                              (.userPoolId (.getUserPoolId user-pool))
+                                              (.build)))
+                         (.build))
+        api          (-> (CfnGraphQLApi$Builder/create stack "climate-platform-api")
+                         (.name "climate-platform-api")
+                         (.authenticationType "API_KEY")
+                         (.additionalAuthenticationProviders [cognito-auth])
+                         (.build))
+        api-id       (-> api (.getAttrApiId))]
     (-> (CfnApiKey$Builder/create stack "climate-platform-api-key")
         (.apiId api-id)
         (.build))
