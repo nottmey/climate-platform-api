@@ -18,8 +18,6 @@
     CfnGraphQLApi$CognitoUserPoolConfigProperty CfnGraphQLSchema$Builder
     CfnResolver$AppSyncRuntimeProperty
     CfnResolver$Builder CfnResolver$PipelineConfigProperty)
-   (software.amazon.awscdk.services.cognito
-    UserPool$Builder)
    (software.amazon.awscdk.services.iam
     Effect
     PolicyStatement$Builder
@@ -29,13 +27,11 @@
 ; Docs: https://docs.aws.amazon.com/cdk/api/v2/docs/aws-construct-library.html
 (defn app-sync [^Stack stack]
   (let [conn         (access/get-connection access/dev-env-db-name)
-        user-pool    (-> (UserPool$Builder/create stack "climate-platform-user-pool")
-                         (.build))
         cognito-auth (-> (CfnGraphQLApi$AdditionalAuthenticationProviderProperty/builder)
                          (.authenticationType "AMAZON_COGNITO_USER_POOLS")
                          (.userPoolConfig (-> (CfnGraphQLApi$CognitoUserPoolConfigProperty/builder)
                                               (.awsRegion (.getRegion stack))
-                                              (.userPoolId (.getUserPoolId user-pool))
+                                              (.userPoolId "eu-central-1_B6EO9nao9")
                                               (.build)))
                          (.build))
         api          (-> (CfnGraphQLApi$Builder/create stack "climate-platform-api")
