@@ -67,11 +67,13 @@
              (int? value)
              (double? value)
              (string? value)
+             (keyword? value)
              (map? value)
              (sequential? value))]}
   (cond
     (nil? value) "null"
     (string? value) (escape-str value)
+    (keyword? value) (k-name value)
     (map? value) (str "{"
                       (->> value
                            (map (fn [[k v]] (str (k-name k) ": " (value-definition v))))
@@ -152,15 +154,33 @@
                                      {:name :database
                                       :type :String}]}))
 
+(defn directive-definition [{:keys [name arguments]}]
+  (let [arguments-def (when arguments
+                        (str "("
+                             (->> arguments
+                                  (map (fn [{:keys [name value]}] (str (k-name name) ": " (value-definition value))))
+                                  (str/join ", "))
+                             ")"))]
+    (str "@" (k-name name) arguments-def)))
+
+(comment
+  (printf (directive-definition {:name :aws_cognito_user_pools}))
+
+  (printf (directive-definition {:name      :aws_cognito_user_pools
+                                 :arguments [{:name  :cognito_groups
+                                              :value ["Users"]}]})))
+
 ; https://spec.graphql.org/June2018/#FieldDefinition
-(defn field-definition [{:keys [name arguments type selection value docstring directive]
+(defn field-definition [{:keys [name arguments type selection value docstring directives]
                          :as   args-with-type-ref}]
   {:pre [(valid-name? name)
          (or (nil? arguments)
              (pos? (count arguments)))
          (or (not value)
              (= (k-name type) "Int"))
-         (or type selection)]}
+         (or type selection)
+         (or (nil? directives)
+             (pos? (count directives)))]}
   (str (when docstring
          (str "\"" docstring "\"" "\n" tab-spaces))
        (k-name name) (when arguments (arguments-definition {:arguments arguments}))
@@ -170,13 +190,28 @@
          (str " " (selection-definition selection) " "))
        (when value
          (str " = " (value-definition value)))
-       (when directive
-         ; clearly separated to the next field with an additional \n
-         (str "\n" tab-spaces directive))))
+       (when directives
+         (->> directives
+              (map #(str "\n" tab-spaces (directive-definition %)))
+              (str/join)))))
 
 (comment
   (field-definition {:name      "x"
-                     :selection ["y"]}))
+                     :selection ["y"]})
+
+  (printf (field-definition
+           {:docstring      "Some documentation with `code` and punctuation."
+            :name           :onUpdatedPlanetaryBoundary
+            :arguments      [{:name :id
+                              :type :ID}
+                             {:name :name
+                              :type :String}]
+            :type           :PlanetaryBoundary
+            :required-type? true
+            :directives     [{:name :aws_iam}
+                             {:name      :aws_subscribe
+                              :arguments [{:name  :mutations
+                                           :value ["publishUpdatedPlanetaryBoundary"]}]}]})))
 
 (deftest field-definition-test
   (is (= "get(id: Int! = 1, database: String): Result"
@@ -206,7 +241,9 @@
                              :type :String}]
            :type           :PlanetaryBoundary
            :required-type? true
-           :directive      "@aws_subscribe(mutations: [\"publishUpdatedPlanetaryBoundary\"])"}))))
+           :directives     [{:name      :aws_subscribe
+                             :arguments [{:name  :mutations
+                                          :value ["publishUpdatedPlanetaryBoundary"]}]}]}))))
 
 ; https://spec.graphql.org/June2018/#FieldsDefinition
 (defn field-list-definition [{:keys [spaced? fields]}]
@@ -240,24 +277,35 @@
                                          :subscription :Subscription}})))
 
 ; https://spec.graphql.org/June2018/#ObjectTypeDefinition
-(defn object-type-definition [{:keys [name spaced-fields? fields interfaces]}]
+(defn object-type-definition [{:keys [name interfaces directives spaced-fields? fields]}]
   {:pre [(valid-name? name)
          (or (nil? interfaces)
-             (pos? (count interfaces)))]}
+             (pos? (count interfaces)))
+         (or (nil? directives)
+             (pos? (count directives)))]}
   (let [fields-def     (field-list-definition {:spaced? spaced-fields?
                                                :fields  fields})
         implements-def (when interfaces
                          (->> interfaces
                               (map k-name)
                               (str/join " & ")
-                              (str " implements ")))]
+                              (str " implements ")))
+        directives-def (when directives
+                         (->> directives
+                              (map directive-definition)
+                              (str/join " ")
+                              (str " ")))]
     (str
      generated-comment
-     "type " (k-name name) implements-def " {\n" fields-def "}\n\n")))
+     "type " (k-name name) implements-def directives-def " {\n" fields-def "}\n\n")))
 
 (comment
   (printf (object-type-definition {:name       :Query
                                    :interfaces [:Attribute :Other]
+                                   :directives [{:name      :aws_cognito_user_pools
+                                                 :arguments [{:name  :cognito_groups
+                                                              :value ["Users"]}]}
+                                                {:name :aws_api_key}]
                                    :fields     [{:name           :databases
                                                  :type           :ID
                                                  :list?          true

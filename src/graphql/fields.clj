@@ -30,14 +30,16 @@
    :type      entity-name})
 
 (defn subscription [field-name entity fields mutation-name]
-  {:docstring "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
-   :name      field-name
-   :arguments (concat
-               [arguments/optional-id]
-               (for [[field-name {:keys [graphql.field/attribute]}] fields
-                     :let [value-type (get-in attribute [:db/valueType :db/ident])]
-                     :when (not= value-type :db.type/ref)]
-                 {:name field-name
-                  :type (mappings/value-type->field-type value-type)}))
-   :type      entity
-   :directive (str "@aws_subscribe(mutations: [\"" mutation-name "\"])")})
+  {:docstring  "Reminder: A `null` argument will filter the result differently than omitting the argument entirely."
+   :name       field-name
+   :arguments  (concat
+                [arguments/optional-id]
+                (for [[field-name {:keys [graphql.field/attribute]}] fields
+                      :let [value-type (get-in attribute [:db/valueType :db/ident])]
+                      :when (not= value-type :db.type/ref)]
+                  {:name field-name
+                   :type (mappings/value-type->field-type value-type)}))
+   :type       entity
+   :directives [{:name      :aws_subscribe
+                 :arguments [{:name  :mutations
+                              :value [mutation-name]}]}]})

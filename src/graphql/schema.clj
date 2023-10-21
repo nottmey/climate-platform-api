@@ -82,14 +82,19 @@
                               {:name           :name
                                :type           types/string-type
                                :required-type? true}]
+        ; TODO make the default auth be IAM, so no-one can accidentally access too much
+        ; TODO ^ this would need a new way to generate the introspection schema
+        ; TODO make these @aws_api_key authorized (method for all guest calls)
         query-fields         (seq (for [op ops/all-operations
                                         :when (= (::ops/parent-type op) types/query-type)
                                         [entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
                                     (ops/gen-graphql-field op entity-type fields)))
+        ; TODO make these @aws_cognito_user_pools(cognito_groups: ["Users"]) authorized
         mutation-fields      (seq (for [op ops/all-operations
                                         :when (= (::ops/parent-type op) types/mutation-type)
                                         [entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
                                     (ops/gen-graphql-field op entity-type fields)))
+        ; TODO make ions call via IAM
         subscription-fields  (seq (for [op ops/all-operations
                                         :when (= (::ops/parent-type op) types/subscription-type)
                                         [entity-type {:keys [graphql.type/fields]}] dynamic-schema-types]
