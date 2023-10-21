@@ -8,6 +8,7 @@
    [datomic.framework :as framework]
    [datomic.queries :as queries]
    [graphql.arguments :as arguments]
+   [graphql.directives :as directives]
    [graphql.fields :as fields]
    [graphql.objects :as objects]
    [graphql.parsing :as parsing]
@@ -103,6 +104,8 @@
 (defn extract-entity-type [op field-name]
   (str/replace (name field-name) (::prefix op) ""))
 
+; should return data that the field generation can handle:
+#_graphql.spec/field-definition
 (defn gen-graphql-field [op entity-type fields]
   (let [{:keys [shared.operations/prefix]} op
         field-name (gen-field-name op entity-type)]
@@ -110,18 +113,21 @@
       "publishCreated" (fields/publish-mutation field-name entity-type)
       "publishUpdated" (fields/publish-mutation field-name entity-type)
       "publishDeleted" (fields/publish-mutation field-name entity-type)
-      "get" (fields/get-query field-name entity-type)
-      "list" (fields/list-page-query field-name entity-type)
+      "get" (fields/get-query field-name entity-type [directives/user-access])
+      "list" (fields/list-page-query field-name entity-type nil [directives/user-access])
       "create" {:name           field-name
                 :arguments      [(arguments/required-input-value entity-type)]
                 :type           entity-type
-                :required-type? true}
-      "merge" {:name      field-name
-               :arguments [(arguments/required-input-value entity-type)]
-               :type      entity-type}
-      "delete" {:name      field-name
-                :arguments [arguments/required-id]
-                :type      entity-type}
+                :required-type? true
+                :directives     [directives/user-access]}
+      "merge" {:name       field-name
+               :arguments  [(arguments/required-input-value entity-type)]
+               :type       entity-type
+               :directives [directives/user-access]}
+      "delete" {:name       field-name
+                :arguments  [arguments/required-id]
+                :type       entity-type
+                :directives [directives/user-access]}
       "onCreated" (fields/subscription field-name entity-type fields (gen-field-name publish-created-op entity-type))
       "onUpdated" (fields/subscription field-name entity-type fields (gen-field-name publish-updated-op entity-type))
       "onDeleted" (fields/subscription field-name entity-type fields (gen-field-name publish-deleted-op entity-type)))))
@@ -129,7 +135,7 @@
 (defn gen-graphql-object-types [op entity-type]
   (let [{:keys [shared.operations/prefix]} op]
     (case prefix
-      "list" [(objects/list-page entity-type)]
+      "list" [(objects/list-page entity-type [directives/user-access])]
       nil)))
 
 (defn- convert-to-input [entity paths]

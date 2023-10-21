@@ -3,6 +3,7 @@
    [clojure.string :as s]
    [datomic.client.api :as d]
    [datomic.framework :as framework]
+   [graphql.directives :as directives]
    [graphql.fields :as fields]
    [graphql.objects :as objects]
    [graphql.spec :as spec]
@@ -18,6 +19,7 @@
          #(spec/object-type-definition
            {:name       (:graphql/single-value-type-name %)
             :interfaces [types/attribute-type]
+            :directives [directives/admin-access]
             :fields     (conj
                          attribute-fields
                          {:name           (:graphql/single-value-field-name %)
@@ -29,6 +31,7 @@
          #(spec/object-type-definition
            {:name       (:graphql/multi-value-type-name %)
             :interfaces [types/attribute-type]
+            :directives [directives/admin-access]
             :fields     (conj
                          attribute-fields
                          {:name           (:graphql/multi-value-field-name %)
@@ -113,23 +116,24 @@
        :fields attribute-fields})
      (generate-attribute-subtypes attribute-fields)
      (spec/object-type-definition
-      {:name   types/page-info-type
-       :fields [{:name           :size
-                 :type           types/int-type
-                 :required-type? true}
-                {:name           :first
-                 :type           types/int-type
-                 :required-type? true}
-                {:name :prev
-                 :type types/int-type}
-                {:name           :current
-                 :type           types/int-type
-                 :required-type? true}
-                {:name :next
-                 :type types/int-type}
-                {:name           :last
-                 :type           types/int-type
-                 :required-type? true}]})
+      {:name       types/page-info-type
+       :directives [directives/user-access]
+       :fields     [{:name           :size
+                     :type           types/int-type
+                     :required-type? true}
+                    {:name           :first
+                     :type           types/int-type
+                     :required-type? true}
+                    {:name :prev
+                     :type types/int-type}
+                    {:name           :current
+                     :type           types/int-type
+                     :required-type? true}
+                    {:name :next
+                     :type types/int-type}
+                    {:name           :last
+                     :type           types/int-type
+                     :required-type? true}]})
      ; entity framework & dynamic schema: query inputs
      (spec/input-object-type-definition
       {:name   types/page-query-type
@@ -141,26 +145,36 @@
                  :value 20}]})
      ; TODO generate filters for dynamic types
      (spec/input-object-type-definition
-      {:name   entity-filter-type
-       :fields [{:name           :attributes
-                 :type           types/id-type
-                 :list?          true
-                 :required-type? true}]})
+      {:name       entity-filter-type
+       :directives [directives/admin-access]
+       :fields     [{:name           :attributes
+                     :type           types/id-type
+                     :list?          true
+                     :required-type? true}]})
      ;; entity framework & dynamic schema: query results
      (spec/object-type-definition
-      {:name   types/query-type
-       :fields (concat
-                [(fields/get-query (str "get" (name types/entity-type)) types/entity-type)
-                 (fields/list-page-query (str "list" (name types/entity-type)) types/entity-type entity-filter-type)]
-                query-fields)})
+      {:name           types/query-type
+       :spaced-fields? true
+       :fields         (concat
+                        [(fields/get-query
+                          (str "get" (name types/entity-type))
+                          types/entity-type
+                          [directives/admin-access])
+                         (fields/list-page-query
+                          (str "list" (name types/entity-type))
+                          types/entity-type
+                          entity-filter-type
+                          [directives/admin-access])]
+                        query-fields)})
      (spec/object-type-definition
-      {:name   types/entity-type
-       :fields [fields/required-id
-                {:name           :attributes
-                 :type           types/attribute-type
-                 :list?          true
-                 :required-type? true
-                 :required-list? true}]})
+      {:name       types/entity-type
+       :directives [directives/admin-access]
+       :fields     [fields/required-id
+                    {:name           :attributes
+                     :type           types/attribute-type
+                     :list?          true
+                     :required-type? true
+                     :required-list? true}]})
      (spec/interface-type-definition
       {:name   types/entity-base-type
        :fields [fields/required-id]})
@@ -170,9 +184,10 @@
         (spec/object-type-definition
          {:name       entity-type
           :interfaces [types/entity-base-type]
+          :directives [directives/user-access]
           :fields     (gen-entity-fields fields false)})))
      (spec/object-type-definition
-      (objects/list-page types/entity-type))
+      (objects/list-page types/entity-type [directives/admin-access]))
      (s/join
       (for [op          ops/all-operations
             entity-type (keys dynamic-schema-types)
@@ -187,8 +202,9 @@
           :fields (gen-entity-fields fields true)})))
      (when mutation-fields
        (spec/object-type-definition
-        {:name   types/mutation-type
-         :fields mutation-fields}))
+        {:name           types/mutation-type
+         :spaced-fields? true
+         :fields         mutation-fields}))
      (when subscription-fields
        (spec/object-type-definition
         {:name           types/subscription-type

@@ -6,14 +6,14 @@
 
 (def required-id arguments/required-id)
 
-(defn get-query [field-name entity]
-  {:name      field-name
-   :arguments [arguments/required-id]
-   :type      (name entity)})
+(defn get-query [field-name entity directives]
+  {:name       field-name
+   :arguments  [arguments/required-id]
+   :type       (name entity)
+   :directives directives})
 
 (defn list-page-query
-  ([field-name entity] (list-page-query field-name entity nil))
-  ([field-name entity filter-type]
+  ([field-name entity filter-type directives]
    {:name           field-name
     :arguments      (concat
                      [{:name :page
@@ -22,7 +22,8 @@
                        [{:name :filter
                          :type filter-type}]))
     :type           (types/list-page-type entity)
-    :required-type? true}))
+    :required-type? true
+    :directives     directives}))
 
 (defn publish-mutation [field-name entity-name]
   {:name      field-name

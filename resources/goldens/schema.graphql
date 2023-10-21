@@ -12,91 +12,91 @@ interface Attribute {
 }
 
 #generated, do not edit manually!
-type StringAttribute implements Attribute {
+type StringAttribute implements Attribute @aws_cognito_user_pools(cognito_groups: ["Admins"]) {
     id: ID!
     name: String!
     string: String!
 }
 
 #generated, do not edit manually!
-type BooleanAttribute implements Attribute {
+type BooleanAttribute implements Attribute @aws_cognito_user_pools(cognito_groups: ["Admins"]) {
     id: ID!
     name: String!
     boolean: Boolean!
 }
 
 #generated, do not edit manually!
-type ReferenceAttribute implements Attribute {
+type ReferenceAttribute implements Attribute @aws_cognito_user_pools(cognito_groups: ["Admins"]) {
     id: ID!
     name: String!
     ref: ID!
 }
 
 #generated, do not edit manually!
-type FloatAttribute implements Attribute {
+type FloatAttribute implements Attribute @aws_cognito_user_pools(cognito_groups: ["Admins"]) {
     id: ID!
     name: String!
     float: Float!
 }
 
 #generated, do not edit manually!
-type DateTimeAttribute implements Attribute {
+type DateTimeAttribute implements Attribute @aws_cognito_user_pools(cognito_groups: ["Admins"]) {
     id: ID!
     name: String!
     dateTime: AWSDateTime!
 }
 
 #generated, do not edit manually!
-type TupleAttribute implements Attribute {
+type TupleAttribute implements Attribute @aws_cognito_user_pools(cognito_groups: ["Admins"]) {
     id: ID!
     name: String!
     tuple: AWSJSON!
 }
 
 #generated, do not edit manually!
-type MultiStringAttribute implements Attribute {
+type MultiStringAttribute implements Attribute @aws_cognito_user_pools(cognito_groups: ["Admins"]) {
     id: ID!
     name: String!
     strings: [String!]!
 }
 
 #generated, do not edit manually!
-type MultiBooleanAttribute implements Attribute {
+type MultiBooleanAttribute implements Attribute @aws_cognito_user_pools(cognito_groups: ["Admins"]) {
     id: ID!
     name: String!
     booleans: [Boolean!]!
 }
 
 #generated, do not edit manually!
-type MultiReferenceAttribute implements Attribute {
+type MultiReferenceAttribute implements Attribute @aws_cognito_user_pools(cognito_groups: ["Admins"]) {
     id: ID!
     name: String!
     refs: [ID!]!
 }
 
 #generated, do not edit manually!
-type MultiFloatAttribute implements Attribute {
+type MultiFloatAttribute implements Attribute @aws_cognito_user_pools(cognito_groups: ["Admins"]) {
     id: ID!
     name: String!
     floats: [Float!]!
 }
 
 #generated, do not edit manually!
-type MultiDateTimeAttribute implements Attribute {
+type MultiDateTimeAttribute implements Attribute @aws_cognito_user_pools(cognito_groups: ["Admins"]) {
     id: ID!
     name: String!
     dateTimes: [AWSDateTime!]!
 }
 
 #generated, do not edit manually!
-type MultiTupleAttribute implements Attribute {
+type MultiTupleAttribute implements Attribute @aws_cognito_user_pools(cognito_groups: ["Admins"]) {
     id: ID!
     name: String!
     tuples: [AWSJSON!]!
 }
 
 #generated, do not edit manually!
-type PageInfo {
+type PageInfo @aws_cognito_user_pools(cognito_groups: ["Users"]) {
     size: Int!
     first: Int!
     prev: Int
@@ -119,19 +119,38 @@ input EntityFilter {
 #generated, do not edit manually!
 type Query {
     getEntity(id: ID!): Entity
+    @aws_cognito_user_pools(cognito_groups: ["Admins"])
+
     listEntity(page: PageQuery, filter: EntityFilter): EntityListPage!
+    @aws_cognito_user_pools(cognito_groups: ["Admins"])
+
     getBreakdown(id: ID!): Breakdown
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
+
     getDataPoint(id: ID!): DataPoint
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
+
     getPlanetaryBoundary(id: ID!): PlanetaryBoundary
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
+
     getQuantification(id: ID!): Quantification
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
+
     listBreakdown(page: PageQuery): BreakdownListPage!
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
+
     listDataPoint(page: PageQuery): DataPointListPage!
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
+
     listPlanetaryBoundary(page: PageQuery): PlanetaryBoundaryListPage!
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
+
     listQuantification(page: PageQuery): QuantificationListPage!
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
 }
 
 #generated, do not edit manually!
-type Entity {
+type Entity @aws_cognito_user_pools(cognito_groups: ["Admins"]) {
     id: ID!
     attributes: [Attribute!]!
 }
@@ -142,14 +161,14 @@ interface EntityBase {
 }
 
 #generated, do not edit manually!
-type Breakdown implements EntityBase {
+type Breakdown implements EntityBase @aws_cognito_user_pools(cognito_groups: ["Users"]) {
     id: ID!
     components: [DataPoint!]
     parent: DataPoint
 }
 
 #generated, do not edit manually!
-type DataPoint implements EntityBase {
+type DataPoint implements EntityBase @aws_cognito_user_pools(cognito_groups: ["Users"]) {
     id: ID!
     breakdowns: [Breakdown!]
     compositions: [Breakdown!]
@@ -158,7 +177,7 @@ type DataPoint implements EntityBase {
 }
 
 #generated, do not edit manually!
-type PlanetaryBoundary implements EntityBase {
+type PlanetaryBoundary implements EntityBase @aws_cognito_user_pools(cognito_groups: ["Users"]) {
     id: ID!
     description: String
     name: String
@@ -166,7 +185,7 @@ type PlanetaryBoundary implements EntityBase {
 }
 
 #generated, do not edit manually!
-type Quantification implements EntityBase {
+type Quantification implements EntityBase @aws_cognito_user_pools(cognito_groups: ["Users"]) {
     id: ID!
     dataPoints: [DataPoint!]
     name: String
@@ -174,31 +193,31 @@ type Quantification implements EntityBase {
 }
 
 #generated, do not edit manually!
-type EntityListPage {
+type EntityListPage @aws_cognito_user_pools(cognito_groups: ["Admins"]) {
     info: PageInfo!
     values: [Entity!]!
 }
 
 #generated, do not edit manually!
-type BreakdownListPage {
+type BreakdownListPage @aws_cognito_user_pools(cognito_groups: ["Users"]) {
     info: PageInfo!
     values: [Breakdown!]!
 }
 
 #generated, do not edit manually!
-type DataPointListPage {
+type DataPointListPage @aws_cognito_user_pools(cognito_groups: ["Users"]) {
     info: PageInfo!
     values: [DataPoint!]!
 }
 
 #generated, do not edit manually!
-type PlanetaryBoundaryListPage {
+type PlanetaryBoundaryListPage @aws_cognito_user_pools(cognito_groups: ["Users"]) {
     info: PageInfo!
     values: [PlanetaryBoundary!]!
 }
 
 #generated, do not edit manually!
-type QuantificationListPage {
+type QuantificationListPage @aws_cognito_user_pools(cognito_groups: ["Users"]) {
     info: PageInfo!
     values: [Quantification!]!
 }
@@ -238,29 +257,64 @@ input QuantificationInput {
 #generated, do not edit manually!
 type Mutation {
     publishCreatedBreakdown(value: BreakdownInput!): Breakdown
+
     publishCreatedDataPoint(value: DataPointInput!): DataPoint
+
     publishCreatedPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary
+
     publishCreatedQuantification(value: QuantificationInput!): Quantification
+
     publishUpdatedBreakdown(value: BreakdownInput!): Breakdown
+
     publishUpdatedDataPoint(value: DataPointInput!): DataPoint
+
     publishUpdatedPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary
+
     publishUpdatedQuantification(value: QuantificationInput!): Quantification
+
     publishDeletedBreakdown(value: BreakdownInput!): Breakdown
+
     publishDeletedDataPoint(value: DataPointInput!): DataPoint
+
     publishDeletedPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary
+
     publishDeletedQuantification(value: QuantificationInput!): Quantification
+
     createBreakdown(value: BreakdownInput!): Breakdown!
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
+
     createDataPoint(value: DataPointInput!): DataPoint!
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
+
     createPlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary!
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
+
     createQuantification(value: QuantificationInput!): Quantification!
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
+
     mergeBreakdown(value: BreakdownInput!): Breakdown
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
+
     mergeDataPoint(value: DataPointInput!): DataPoint
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
+
     mergePlanetaryBoundary(value: PlanetaryBoundaryInput!): PlanetaryBoundary
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
+
     mergeQuantification(value: QuantificationInput!): Quantification
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
+
     deleteBreakdown(id: ID!): Breakdown
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
+
     deleteDataPoint(id: ID!): DataPoint
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
+
     deletePlanetaryBoundary(id: ID!): PlanetaryBoundary
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
+
     deleteQuantification(id: ID!): Quantification
+    @aws_cognito_user_pools(cognito_groups: ["Users"])
 }
 
 #generated, do not edit manually!
